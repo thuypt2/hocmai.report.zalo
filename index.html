@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Báo cáo Zalo – HOCMAI</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#1f2937;--mut:#6b7280;--bd:#e5e7eb;--pri:#2563eb;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;}
+*{box-sizing:border-box}html,body{margin:0;padding:0;font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+header{background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%);color:#fff;padding:18px 28px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;gap:16px}
+header .title{flex:1}
+header h1{margin:0;font-size:22px;font-weight:700}
+header .meta{font-size:12px;opacity:.85;margin-top:4px}
+header .user-bar{display:flex;align-items:center;gap:10px}
+header .user-bar .btn-out{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px}
+header .user-bar .btn-out:hover{background:rgba(255,255,255,.25)}
+.login-overlay{position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.9);display:flex;align-items:center;justify-content:center}
+.login-card{background:#fff;border-radius:12px;padding:32px 28px;width:380px;max-width:95%;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center}
+.login-card h2{margin:0 0 6px;font-size:20px;color:var(--pri)}
+.login-card .sub{font-size:13px;color:var(--mut);margin-bottom:20px}
+.login-card input{width:100%;padding:10px;border:1px solid var(--bd);border-radius:6px;margin-bottom:10px;font-size:14px}
+.login-card button{width:100%;padding:10px;background:var(--pri);color:#fff;border:0;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer}
+.login-card button:hover{background:#1d4ed8}
+.login-card .msg{font-size:12px;margin-top:8px;min-height:18px}
+nav{display:flex;gap:4px;padding:0 28px;background:#fff;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:5}
+nav a{color:var(--mut);text-decoration:none;padding:12px 18px;border-bottom:3px solid transparent;font-weight:600;font-size:14px;cursor:pointer}
+nav a:hover{color:var(--pri)}
+nav a.active{color:var(--pri);border-bottom-color:var(--pri)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.sub-tab-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.sub-tab-bar .tab-pill{padding:6px 14px;border:1px solid var(--bd);border-radius:18px;cursor:pointer;background:#fff;font-size:13px;font-weight:500;color:var(--mut);transition:all .15s}
+.sub-tab-bar .tab-pill:hover{background:#eef2ff;color:var(--pri);border-color:#c7d2fe}
+.sub-tab-bar .tab-pill.active{background:var(--pri);color:#fff;border-color:var(--pri)}
+.sub-pane{display:none;margin-top:14px}
+.sub-pane.active{display:block}
+main{padding:22px 28px;max-width:1400px;margin:0 auto}
+section{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:18px 22px;margin-bottom:18px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+section h2{margin:0 0 12px;font-size:18px;color:var(--pri);border-bottom:2px solid #eef2ff;padding-bottom:8px}
+section h3{margin:18px 0 8px;font-size:15px;color:#374151}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:#f9fafb;border:1px solid var(--bd);border-radius:8px;padding:12px}
+.kpi.total{background:#eef2ff;border-color:#c7d2fe}
+.kpi .lbl{font-size:12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.kpi .val{font-size:22px;font-weight:700;color:var(--ink);margin-top:2px}
+.kpi .sub-val{font-size:13px;color:var(--mut);margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border:1px solid var(--bd);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#eef2ff;font-weight:600;color:#1e3a8a}
+tr:nth-child(even) td{background:#fafbfc}
+.right{text-align:right}.num{font-variant-numeric:tabular-nums;text-align:right}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.b-ok{background:#dcfce7;color:#166534}
+.b-no{background:#fee2e2;color:#991b1b}
+.b-mu{background:#f3f4f6;color:#374151}
+.chart-wrap{position:relative;width:100%;height:340px}
+.chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.filter-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:10px}
+.filter-row label{display:flex;flex-direction:column;font-size:12px;color:var(--mut)}
+.filter-row select,.filter-row input{padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:13px;background:#fff;color:var(--ink)}
+.tbl-wrap{max-height:calc(100vh - 280px);overflow:auto;border:1px solid var(--bd);border-radius:6px}
+.tbl-wrap th{position:sticky;top:0;z-index:2;background:#eef2ff}
+.btn{background:var(--pri);color:#fff;border:0;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500}
+.btn:hover{background:#1d4ed8}
+.btn.gray{background:#6b7280}
+.btn.gray:hover{background:#4b5563}
+.loading-box{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;color:#1d4ed8;font-weight:600;margin:12px 0}
+.loading-dot{width:10px;height:10px;border-radius:50%;background:#2563eb;animation:pulse 1s infinite ease-in-out}
+@keyframes pulse{0%{transform:scale(.8);opacity:.5}50%{transform:scale(1.2);opacity:1}100%{transform:scale(.8);opacity:.5}}
+.error-box{padding:14px 16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-weight:600;margin:12px 0;white-space:pre-wrap}
+.muted{color:var(--mut);font-size:12px}
+.popup-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+.popup-overlay.open{opacity:1;visibility:visible}
+.popup-card{background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:95%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.popup-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e5e7eb;background:#f9fafb}
+.popup-header h3{margin:0;font-size:15px}
+.popup-close{background:none;border:0;font-size:20px;cursor:pointer;color:var(--mut);padding:4px 8px}
+.popup-close:hover{color:var(--ink)}
+.popup-body{padding:16px;overflow-y:auto;flex:1}
+.tab-admin-btn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px;vertical-align:middle}
+.tab-admin-btn:hover{background:rgba(255,255,255,.22)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div id="login-gate" class="login-overlay">
+  <div class="login-card">
+    <h2>Báo cáo Zalo</h2>
+    <div class="sub">HOCMAI – Đăng nhập để xem báo cáo</div>
+    <input id="login-user" type="text" placeholder="Tên đăng nhập" autocomplete="username">
+    <input id="login-pass" type="password" placeholder="Mật khẩu" autocomplete="current-password">
+    <button onclick="doLogin()">Đăng nhập</button>
+    <div id="login-msg" class="msg" style="color:var(--bad)"></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header id="main-header" style="display:none">
+  <div class="title">
+    <h1>Báo cáo Zalo – HOCMAI</h1>
+    <div class="meta" id="header-meta">Đang tải dữ liệu...</div>
+  </div>
+  <div class="user-bar">
+    <span style="font-size:13px" id="header-user"></span>
+    <a id="admin-link" class="tab-admin-btn" href="/admin.html" style="display:none">⚙ Quản trị</a>
+    <button class="btn-out" onclick="doLogout()">Đăng xuất</button>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav id="main-nav" style="display:none">
+  <a data-tab="overview" class="active" onclick="switchTab('overview')">1 · Tổng quan</a>
+  <a data-tab="lookup" onclick="switchTab('lookup')">2 · Tra cứu</a>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main id="main-content" style="display:none">
+
+<!-- TAB 1: OVERVIEW -->
+<div id="tab-overview" class="tab-pane active">
+  <div id="overview-content">
+    <div class="loading-box"><div class="loading-dot"></div> Đang tải dữ liệu báo cáo...</div>
+  </div>
+</div>
+
+<!-- TAB 2: LOOKUP -->
+<div id="tab-lookup" class="tab-pane">
+  <section>
+    <h2>2.1 · Tra cứu học sinh theo nhóm Zalo</h2>
+    <div class="filter-row">
+      <label>Kỳ thi
+        <select id="f21-exam" onchange="applyFilter21()">
+          <option value="">-- Tất cả --</option>
+        </select>
+      </label>
+      <label>Mã lớp
+        <select id="f21-malop" onchange="applyFilter21()">
+          <option value="">-- Tất cả --</option>
+        </select>
+      </label>
+      <label>Trạng thái duyệt 1:30
+        <select id="f21-status" onchange="applyFilter21()">
+          <option value="">-- Tất cả --</option>
+          <option value="Duyệt">Đã duyệt</option>
+          <option value="Chưa duyệt">Chưa duyệt</option>
+        </select>
+      </label>
+      <label>Tìm kiếm
+        <input id="f21-search" placeholder="Username, email, SĐT..." oninput="applyFilter21()">
+      </label>
+    </div>
+    <div style="margin-bottom:8px">
+      <button class="btn gray" onclick="resetFilter21()">Đặt lại</button>
+    </div>
+    <div id="tbl21-wrap" class="tbl-wrap">
+      <table><thead><tr id="tbl21-head"></tr></thead><tbody id="tbl21-body"></tbody></table>
+    </div>
+    <div id="tbl21-info" class="muted" style="margin-top:8px"></div>
+  </section>
+
+  <section>
+    <h2>2.2 · Học sinh chưa vào nhóm</h2>
+    <div class="filter-row">
+      <label>Kỳ thi
+        <select id="f22-exam" onchange="refreshCascades22()">
+          <option value="">-- Tất cả --</option>
+        </select>
+      </label>
+      <label>Mã lớp
+        <select id="f22-malop" onchange="applyFilter22()">
+          <option value="">-- Tất cả --</option>
+        </select>
+      </label>
+    </div>
+    <div style="margin-bottom:8px">
+      <button class="btn gray" onclick="resetFilter22()">Đặt lại</button>
+    </div>
+    <div id="tbl22-wrap" class="tbl-wrap">
+      <table><thead><tr id="tbl22-head"></tr></thead><tbody id="tbl22-body"></tbody></table>
+    </div>
+    <div id="tbl22-info" class="muted" style="margin-top:8px"></div>
+  </section>
+</div>
+
+</main>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════════════════════════
+let CURRENT_USER = null;
+let DATA = null;
+let LOOKUP = [];
+
+// ═══════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const msg = document.getElementById('login-msg');
+  if (!u || !p) { msg.textContent = 'Vui lòng nhập đầy đủ thông tin'; return; }
+  msg.textContent = 'Đang đăng nhập...';
+  msg.style.color = 'var(--mut)';
+
+  fetch(`/api/auth?action=login&username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`)
+    .then(r => r.json())
+    .then(j => {
+      if (!j.ok) { msg.textContent = j.error || 'Sai thông tin đăng nhập'; msg.style.color = 'var(--bad)'; return; }
+      CURRENT_USER = { username: u, role: j.role, name: j.name, token: j.token };
+      sessionStorage.setItem('hocmai_zalo_report_auth', JSON.stringify(CURRENT_USER));
+      showApp();
+    })
+    .catch(e => { msg.textContent = 'Lỗi kết nối: ' + e.message; msg.style.color = 'var(--bad)'; });
+}
+
+function doLogout() {
+  CURRENT_USER = null;
+  sessionStorage.removeItem('hocmai_zalo_report_auth');
+  document.getElementById('login-gate').style.display = 'flex';
+  document.getElementById('main-header').style.display = 'none';
+  document.getElementById('main-nav').style.display = 'none';
+  document.getElementById('main-content').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-msg').textContent = '';
+}
+
+function isAdmin() { return CURRENT_USER && CURRENT_USER.role === 'admin'; }
+
+function applyRoleUI() {
+  const al = document.getElementById('admin-link');
+  if (al && isAdmin()) {
+    al.style.display = 'inline-block';
+    // Pass token via URL param
+    al.href = '/admin.html?token=' + encodeURIComponent(CURRENT_USER.token || '');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// APP INIT
+// ═══════════════════════════════════════════════════════
+function showApp() {
+  document.getElementById('login-gate').style.display = 'none';
+  document.getElementById('main-header').style.display = 'flex';
+  document.getElementById('main-nav').style.display = 'flex';
+  document.getElementById('main-content').style.display = 'block';
+  document.getElementById('header-user').textContent =
+    (CURRENT_USER.name || CURRENT_USER.username) + ' (' + CURRENT_USER.role + ')';
+  applyRoleUI();
+  loadData();
+}
+
+// Try auto-login from session
+(function(){
+  const saved = sessionStorage.getItem('hocmai_zalo_report_auth');
+  if (saved) {
+    try {
+      const u = JSON.parse(saved);
+      if (u && u.token) {
+        // Verify token is still valid
+        fetch(`/api/auth?action=list&token=${encodeURIComponent(u.token)}`)
+          .then(r => r.json())
+          .then(j => {
+            if (j.ok) { CURRENT_USER = u; showApp(); }
+            else { sessionStorage.removeItem('hocmai_zalo_report_auth'); }
+          })
+          .catch(() => {});
+      }
+    } catch(e) { sessionStorage.removeItem('hocmai_zalo_report_auth'); }
+  }
+
+  // Allow Enter to login
+  document.getElementById('login-pass').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLogin();
+  });
+})();
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  const pane = document.getElementById('tab-' + tab);
+  if (pane) pane.classList.add('active');
+  const link = document.querySelector(`nav a[data-tab="${tab}"]`);
+  if (link) link.classList.add('active');
+  if (tab === 'lookup') { applyFilter21(); applyFilter22(); }
+}
+
+// ═══════════════════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════════════════
+function loadData() {
+  document.getElementById('header-meta').textContent = 'Đang tải dữ liệu...';
+
+  fetch('/api/get-data')
+    .then(r => r.json())
+    .then(json => {
+      if (!json.ok) throw new Error(json.error || 'Lỗi dữ liệu');
+      DATA = json;
+      LOOKUP = json.lookup || [];
+
+      // Global filter: exclude product_id=0
+      LOOKUP = LOOKUP.filter(r => {
+        const pid = r.product_id;
+        if (pid == null || pid === '' || pid === '0' || pid === 0) return false;
+        const pidNum = parseInt(pid, 10);
+        return !isNaN(pidNum) && pidNum !== 0;
+      });
+      recomputeDataFromLookup();
+
+      document.getElementById('header-meta').textContent =
+        'Dữ liệu cập nhật: ' + (DATA.generated_at || '') + ' · ' + LOOKUP.length + ' HS';
+
+      renderOverview();
+      initFilters21();
+      initFilters22();
+    })
+    .catch(e => {
+      document.getElementById('overview-content').innerHTML =
+        '<div class="error-box">Lỗi tải dữ liệu: ' + escapeHtml(e.message) + '</div>';
+    });
+}
+
+// Recompute DATA aggregates from filtered LOOKUP
+function recomputeDataFromLookup() {
+  const rows = LOOKUP;
+  const EXAMS = DATA.exams || [];
+  const examSet = new Set(EXAMS);
+
+  // exam_stats
+  const exam_stats = {};
+  for (const ex of EXAMS) {
+    const sub = rows.filter(r => r._exam === ex);
+    const total = sub.length;
+    const d130 = sub.filter(r => r['Trạng thái duyệt 1:30'] === 'Duyệt').length;
+    const daim = sub.filter(r => r['Trạng thái duyệt AIM'] === 'Duyệt').length;
+    const soNhom = new Set(sub.map(r => r._ma_lop).filter(Boolean)).size;
+    exam_stats[ex] = {
+      tong_hs: total,
+      duyet_130: d130,
+      duyet_aim: daim,
+      so_nhom: soNhom,
+      ti_le_130: total ? Math.round(d130/total*10000)/100 : 0,
+      ti_le_aim: total ? Math.round(daim/total*10000)/100 : 0,
+    };
+  }
+  DATA.exam_stats = exam_stats;
+
+  // monthly_chart
+  const monthlyMap = {};
+  for (const ex of EXAMS) monthlyMap[ex] = {};
+  for (const r of rows) {
+    const ex = r._exam;
+    if (!examSet.has(ex)) continue;
+    const pt = r._paid_time_iso || '';
+    const dm = pt.match(/^(\d{4})-(\d{2})/);
+    if (!dm) continue;
+    const m = dm[1] + '-' + dm[2];
+    if (m.startsWith('1970')) continue;
+    if (!monthlyMap[ex][m]) monthlyMap[ex][m] = { total:0, duyet_130:0, duyet_aim:0 };
+    monthlyMap[ex][m].total++;
+    if (r['Trạng thái duyệt 1:30'] === 'Duyệt') monthlyMap[ex][m].duyet_130++;
+    if (r['Trạng thái duyệt AIM'] === 'Duyệt') monthlyMap[ex][m].duyet_aim++;
+  }
+  const all_months = [...new Set(Object.values(monthlyMap).flatMap(m => Object.keys(m)))].sort();
+  const monthly_chart = {};
+  for (const ex of EXAMS) {
+    monthly_chart[ex] = all_months.map(m => {
+      const b = monthlyMap[ex][m] || { total:0, duyet_130:0, duyet_aim:0 };
+      return { month: m, ...b };
+    });
+  }
+  DATA.all_months = all_months;
+  DATA.monthly_chart = monthly_chart;
+
+  // groups_by_exam
+  const gbxMap = {};
+  for (const r of rows) {
+    const ex = r._exam, ml = r._ma_lop;
+    if (!ex || !ml) continue;
+    const k = ex + '|||' + ml;
+    if (!gbxMap[k]) gbxMap[k] = { exam:ex, ma_lop:ml, gv:'', tong_hs:0, duyet_130:0, duyet_aim:0 };
+    gbxMap[k].tong_hs++;
+    if (r['Trạng thái duyệt 1:30'] === 'Duyệt') gbxMap[k].duyet_130++;
+    if (r['Trạng thái duyệt AIM'] === 'Duyệt') gbxMap[k].duyet_aim++;
+    if (!gbxMap[k].gv) gbxMap[k].gv = r._gv || '';
+  }
+  const groups_by_exam = {};
+  for (const g of Object.values(gbxMap)) {
+    g.ti_le_130 = g.tong_hs ? Math.round(g.duyet_130/g.tong_hs*10000)/100 : 0;
+    g.ti_le_aim = g.tong_hs ? Math.round(g.duyet_aim/g.tong_hs*10000)/100 : 0;
+    if (!groups_by_exam[g.exam]) groups_by_exam[g.exam] = [];
+    groups_by_exam[g.exam].push(g);
+  }
+  for (const ex of Object.keys(groups_by_exam)) {
+    groups_by_exam[ex].sort((a,b) => b.ti_le_130 - a.ti_le_130);
+  }
+  DATA.groups_by_exam = groups_by_exam;
+}
+
+// ═══════════════════════════════════════════════════════
+// OVERVIEW RENDERING
+// ═══════════════════════════════════════════════════════
+let _overviewCharts = [];
+
+function destroyOverviewCharts() {
+  for (const c of _overviewCharts) { try { c.destroy(); } catch(e) {} }
+  _overviewCharts = [];
+}
+
+function renderOverview() {
+  destroyOverviewCharts();
+  const c = document.getElementById('overview-content');
+  if (!DATA || !DATA.exams || DATA.exams.length === 0) {
+    c.innerHTML = '<div class="error-box">Không có dữ liệu báo cáo</div>';
+    return;
+  }
+
+  const EXAMS = DATA.exams;
+  const stats = DATA.exam_stats || {};
+
+  // Total KPIs
+  let totalHS = 0, totalDuyet130 = 0, totalDuyetAIM = 0;
+  for (const ex of EXAMS) {
+    const s = stats[ex] || {};
+    totalHS += s.tong_hs || 0;
+    totalDuyet130 += s.duyet_130 || 0;
+    totalDuyetAIM += s.duyet_aim || 0;
+  }
+  const tiLe130 = totalHS ? (totalDuyet130/totalHS*100).toFixed(1) : 0;
+  const tiLeAIM = totalHS ? (totalDuyetAIM/totalHS*100).toFixed(1) : 0;
+
+  let html = '';
+
+  // KPI cards
+  html += '<div class="kpis">';
+  html += `<div class="kpi total"><div class="lbl">Tổng học sinh</div><div class="val">${totalHS.toLocaleString('vi-VN')}</div></div>`;
+  html += `<div class="kpi"><div class="lbl">Đã duyệt 1:30</div><div class="val">${totalDuyet130.toLocaleString('vi-VN')}</div><div class="sub-val">Tỉ lệ: ${tiLe130}%</div></div>`;
+  html += `<div class="kpi"><div class="lbl">Đã duyệt AIM</div><div class="val">${totalDuyetAIM.toLocaleString('vi-VN')}</div><div class="sub-val">Tỉ lệ: ${tiLeAIM}%</div></div>`;
+  html += `<div class="kpi"><div class="lbl">Số kỳ thi</div><div class="val">${EXAMS.length}</div></div>`;
+  html += '</div>';
+
+  // Section 1.1: Exam stats table
+  html += '<section><h2>1.1 · Thống kê theo kỳ thi</h2>';
+  html += '<div class="tbl-wrap"><table><thead><tr>';
+  html += '<th>Kỳ thi</th><th class="right">Tổng HS</th><th class="right">Duyệt 1:30</th><th class="right">Tỉ lệ 1:30</th><th class="right">Duyệt AIM</th><th class="right">Tỉ lệ AIM</th><th class="right">Số nhóm</th>';
+  html += '</tr></thead><tbody>';
+  for (const ex of EXAMS) {
+    const s = stats[ex] || {};
+    html += '<tr>';
+    html += `<td><strong>${escapeHtml(ex)}</strong></td>`;
+    html += `<td class="num">${(s.tong_hs||0).toLocaleString('vi-VN')}</td>`;
+    html += `<td class="num">${(s.duyet_130||0).toLocaleString('vi-VN')}</td>`;
+    html += `<td class="num">${(s.ti_le_130||0).toFixed(1)}%</td>`;
+    html += `<td class="num">${(s.duyet_aim||0).toLocaleString('vi-VN')}</td>`;
+    html += `<td class="num">${(s.ti_le_aim||0).toFixed(1)}%</td>`;
+    html += `<td class="num">${s.so_nhom||0}</td>`;
+    html += '</tr>';
+  }
+  html += '</tbody></table></div></section>';
+
+  // Section 1.2: Monthly chart
+  html += '<section><h2>1.2 · Biểu đồ theo tháng</h2>';
+  html += '<div><label style="font-size:13px;margin-right:10px">Kỳ thi: <select id="monthly-exam-filter" onchange="renderMonthlyChart()">';
+  html += '<option value="">-- Tất cả --</option>';
+  for (const ex of EXAMS) {
+    html += `<option value="${escapeHtml(ex)}">${escapeHtml(ex)}</option>`;
+  }
+  html += '</select></label></div>';
+  html += '<div class="chart-wrap"><canvas id="chart-monthly"></canvas></div></section>';
+
+  // Section 1.3: Group summary by exam
+  html += '<section><h2>1.3 · Danh sách nhóm theo kỳ thi</h2>';
+  html += '<div class="sub-tab-bar">';
+  EXAMS.forEach((ex, i) => {
+    html += `<span class="tab-pill${i===0?' active':''}" onclick="switchExamSub('groups', '${escapeHtml(ex)}')">${escapeHtml(ex)}</span>`;
+  });
+  html += '</div>';
+  html += '<div id="groups-panes"></div>';
+  html += '</section>';
+
+  c.innerHTML = html;
+
+  // Render group sub-panes
+  renderGroupPanes();
+  // Render monthly chart
+  setTimeout(() => renderMonthlyChart(), 200);
+}
+
+function renderMonthlyChart() {
+  const canvas = document.getElementById('chart-monthly');
+  if (!canvas) return;
+  const selExam = document.getElementById('monthly-exam-filter')?.value || '';
+  const EXAMS = DATA.exams;
+  const exams = selExam ? [selExam] : EXAMS;
+  const allMonths = DATA.all_months || [];
+
+  // Destroy old
+  destroyOverviewCharts();
+
+  const datasets = [];
+  const colors = ['#2563eb','#f59e0b','#16a34a','#dc2626','#8b5cf6','#06b6d4'];
+  exams.forEach((ex, i) => {
+    const mc = DATA.monthly_chart[ex] || [];
+    const data = allMonths.map(m => {
+      const f = mc.find(d => d.month === m);
+      return f ? f.total : 0;
+    });
+    datasets.push({
+      label: 'Tổng HS - ' + ex,
+      data: data,
+      borderColor: colors[i % colors.length],
+      backgroundColor: colors[i % colors.length] + '20',
+      tension: 0.3,
+      fill: false,
+    });
+    datasets.push({
+      label: 'Duyệt 1:30 - ' + ex,
+      data: allMonths.map(m => {
+        const f = mc.find(d => d.month === m);
+        return f ? f.duyet_130 : 0;
+      }),
+      borderColor: colors[i % colors.length],
+      borderDash: [5,5],
+      tension: 0.3,
+      fill: false,
+    });
+  });
+
+  const chart = new Chart(canvas, {
+    type: 'line',
+    data: { labels: allMonths, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } },
+        x: { ticks: { maxRotation: 45, font: { size: 10 } } }
+      }
+    }
+  });
+  _overviewCharts.push(chart);
+}
+
+function renderGroupPanes() {
+  const container = document.getElementById('groups-panes');
+  if (!container) return;
+  const EXAMS = DATA.exams;
+  const gbx = DATA.groups_by_exam || {};
+
+  let html = '';
+  EXAMS.forEach((ex, i) => {
+    const groups = gbx[ex] || [];
+    html += `<div class="sub-pane${i===0?' active':''}" id="groups-pane-${escapeHtml(ex)}">`;
+    html += `<div class="tbl-wrap" style="max-height:420px"><table><thead><tr>`;
+    html += '<th>Mã lớp</th><th class="right">Tổng HS</th><th class="right">Duyệt 1:30</th><th class="right">Tỉ lệ 1:30</th><th class="right">Duyệt AIM</th><th class="right">Tỉ lệ AIM</th>';
+    html += '</tr></thead><tbody>';
+    for (const g of groups) {
+      html += '<tr>';
+      html += `<td>${escapeHtml(g.ma_lop)}</td>`;
+      html += `<td class="num">${g.tong_hs}</td>`;
+      html += `<td class="num">${g.duyet_130}</td>`;
+      html += `<td class="num">${g.ti_le_130.toFixed(1)}%</td>`;
+      html += `<td class="num">${g.duyet_aim}</td>`;
+      html += `<td class="num">${g.ti_le_aim.toFixed(1)}%</td>`;
+      html += '</tr>';
+    }
+    if (groups.length === 0) {
+      html += '<tr><td colspan="6" style="text-align:center;color:var(--mut)">Không có dữ liệu</td></tr>';
+    }
+    html += '</tbody></table></div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function switchExamSub(prefix, exam) {
+  const container = document.getElementById(prefix + '-panes');
+  if (!container) return;
+  container.querySelectorAll('.sub-pane').forEach(p => p.classList.remove('active'));
+  const pane = document.getElementById(prefix + '-pane-' + exam);
+  if (pane) pane.classList.add('active');
+
+  // Update pills
+  const section = container.parentElement;
+  section.querySelectorAll('.tab-pill').forEach(p => {
+    p.classList.toggle('active', p.textContent.trim() === exam);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// TAB 2.1 - LOOKUP WITH FILTERS
+// ═══════════════════════════════════════════════════════
+function initFilters21() {
+  const exSel = document.getElementById('f21-exam');
+  exSel.innerHTML = '<option value="">-- Tất cả --</option>';
+  (DATA.exams || []).forEach(ex => {
+    exSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(ex)}">${escapeHtml(ex)}</option>`);
+  });
+  exSel.addEventListener('change', refreshCascades21);
+  refreshCascades21();
+}
+
+function refreshCascades21() {
+  const exSel = document.getElementById('f21-exam');
+  const curEx = exSel.value;
+
+  let pool = LOOKUP;
+  if (curEx) pool = pool.filter(r => r._exam === curEx);
+
+  const malopSel = document.getElementById('f21-malop');
+  const prevMalop = malopSel.value;
+  malopSel.innerHTML = '<option value="">-- Tất cả --</option>';
+  [...new Set(pool.map(r => r._ma_lop).filter(Boolean))].sort().forEach(v => {
+    const sel = (v === prevMalop) ? 'selected' : '';
+    malopSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(v)}" ${sel}>${escapeHtml(v)}</option>`);
+  });
+  if (prevMalop && ![...malopSel.options].some(o => o.value === prevMalop)) malopSel.value = '';
+  applyFilter21();
+}
+
+function applyFilter21() {
+  const ex = document.getElementById('f21-exam').value;
+  const ml = document.getElementById('f21-malop').value;
+  const st = document.getElementById('f21-status').value;
+  const q = document.getElementById('f21-search').value.trim().toLowerCase();
+
+  let pool = LOOKUP;
+  if (ex) pool = pool.filter(r => r._exam === ex);
+  if (ml) pool = pool.filter(r => r._ma_lop === ml);
+  if (st === 'Duyệt') pool = pool.filter(r => r['Trạng thái duyệt 1:30'] === 'Duyệt');
+  if (st === 'Chưa duyệt') pool = pool.filter(r => r['Trạng thái duyệt 1:30'] !== 'Duyệt');
+  if (q) pool = pool.filter(r => {
+    return (r.username||'').toLowerCase().includes(q)
+        || (r.final_email||'').toLowerCase().includes(q)
+        || (r.final_phone||'').includes(q)
+        || (r.userid||'').toLowerCase().includes(q);
+  });
+
+  // Headers
+  const cols = ['STT','Username','SĐT','Email','Mã lớp','GV','Trạng thái 1:30','Trạng thái AIM','Paid time'];
+  document.getElementById('tbl21-head').innerHTML = cols.map(c => `<th>${c}</th>`).join('');
+
+  // Body
+  const maxRows = 500;
+  const display = pool.slice(0, maxRows);
+  let rowsHtml = '';
+  display.forEach((r, i) => {
+    const st130 = r['Trạng thái duyệt 1:30'];
+    const stAIM = r['Trạng thái duyệt AIM'];
+    rowsHtml += '<tr>';
+    rowsHtml += `<td>${i+1}</td>`;
+    rowsHtml += `<td>${escapeHtml(r.username)}</td>`;
+    rowsHtml += `<td>${escapeHtml(r.final_phone)}</td>`;
+    rowsHtml += `<td style="font-size:11px">${escapeHtml(r.final_email)}</td>`;
+    rowsHtml += `<td>${escapeHtml(r._ma_lop)}</td>`;
+    rowsHtml += `<td>${escapeHtml(r._gv)}</td>`;
+    rowsHtml += `<td><span class="badge ${st130==='Duyệt'?'b-ok':'b-no'}">${escapeHtml(st130||'Chưa')}</span></td>`;
+    rowsHtml += `<td><span class="badge ${stAIM==='Duyệt'?'b-ok':'b-no'}">${escapeHtml(stAIM||'Chưa')}</span></td>`;
+    rowsHtml += `<td style="font-size:11px">${escapeHtml((r._paid_time_iso||'').slice(0,10))}</td>`;
+    rowsHtml += '</tr>';
+  });
+  document.getElementById('tbl21-body').innerHTML = rowsHtml;
+  document.getElementById('tbl21-info').textContent =
+    `Hiển thị ${display.length} / ${pool.length} học sinh` + (pool.length > maxRows ? ` (giới hạn ${maxRows})` : '');
+}
+
+function resetFilter21() {
+  document.getElementById('f21-exam').value = '';
+  document.getElementById('f21-status').value = '';
+  document.getElementById('f21-search').value = '';
+  refreshCascades21();
+}
+
+// ═══════════════════════════════════════════════════════
+// TAB 2.2 - HỌC SINH CHƯA VÀO NHÓM
+// ═══════════════════════════════════════════════════════
+function initFilters22() {
+  const exSel = document.getElementById('f22-exam');
+  exSel.innerHTML = '<option value="">-- Tất cả --</option>';
+  (DATA.exams || []).forEach(ex => {
+    exSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(ex)}">${escapeHtml(ex)}</option>`);
+  });
+  refreshCascades22();
+}
+
+function refreshCascades22() {
+  const exSel = document.getElementById('f22-exam');
+  const curEx = exSel.value;
+
+  let pool = LOOKUP.filter(r => r['Trạng thái duyệt 1:30'] !== 'Duyệt' && r['Trạng thái duyệt AIM'] !== 'Duyệt');
+  if (curEx) pool = pool.filter(r => r._exam === curEx);
+
+  const malopSel = document.getElementById('f22-malop');
+  const prevMalop = malopSel.value;
+  malopSel.innerHTML = '<option value="">-- Tất cả --</option>';
+  [...new Set(pool.map(r => r._ma_lop).filter(Boolean))].sort().forEach(v => {
+    const sel = (v === prevMalop) ? 'selected' : '';
+    malopSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(v)}" ${sel}>${escapeHtml(v)}</option>`);
+  });
+  if (prevMalop && ![...malopSel.options].some(o => o.value === prevMalop)) malopSel.value = '';
+  applyFilter22();
+}
+
+function applyFilter22() {
+  const ex = document.getElementById('f22-exam').value;
+  const ml = document.getElementById('f22-malop').value;
+
+  let pool = LOOKUP.filter(r => r['Trạng thái duyệt 1:30'] !== 'Duyệt' && r['Trạng thái duyệt AIM'] !== 'Duyệt');
+  if (ex) pool = pool.filter(r => r._exam === ex);
+  if (ml) pool = pool.filter(r => r._ma_lop === ml);
+
+  const cols = ['STT','Username','SĐT','Email','Mã lớp','GV','Trạng thái 1:30','Trạng thái AIM','Paid time'];
+  document.getElementById('tbl22-head').innerHTML = cols.map(c => `<th>${c}</th>`).join('');
+
+  const maxRows = 500;
+  const display = pool.slice(0, maxRows);
+  let rowsHtml = '';
+  display.forEach((r, i) => {
+    rowsHtml += '<tr>';
+    rowsHtml += `<td>${i+1}</td>`;
+    rowsHtml += `<td>${escapeHtml(r.username)}</td>`;
+    rowsHtml += `<td>${escapeHtml(r.final_phone)}</td>`;
+    rowsHtml += `<td style="font-size:11px">${escapeHtml(r.final_email)}</td>`;
+    rowsHtml += `<td>${escapeHtml(r._ma_lop)}</td>`;
+    rowsHtml += `<td>${escapeHtml(r._gv)}</td>`;
+    rowsHtml += `<td><span class="badge b-no">${escapeHtml(r['Trạng thái duyệt 1:30']||'Chưa')}</span></td>`;
+    rowsHtml += `<td><span class="badge b-no">${escapeHtml(r['Trạng thái duyệt AIM']||'Chưa')}</span></td>`;
+    rowsHtml += `<td style="font-size:11px">${escapeHtml((r._paid_time_iso||'').slice(0,10))}</td>`;
+    rowsHtml += '</tr>';
+  });
+  document.getElementById('tbl22-body').innerHTML = rowsHtml;
+  document.getElementById('tbl22-info').textContent =
+    `Hiển thị ${display.length} / ${pool.length} học sinh chưa vào nhóm` + (pool.length > maxRows ? ` (giới hạn ${maxRows})` : '');
+}
+
+function resetFilter22() {
+  document.getElementById('f22-exam').value = '';
+  refreshCascades22();
+}
+</script>
+</body>
+</html>
