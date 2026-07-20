@@ -1,8 +1,14 @@
 /**
- * api/auth.js — Xác thực & quản trị tài khoản
+ * api/auth.js — Xác thực & quản trị tài khoản phân quyền
  *
  * Backend: Google Sheets (sheet "Accounts") qua Apps Script GET params.
+ * KHÔNG dùng POST (Google redirect POST về trang HTML).
+ * KHÔNG dùng fs (Vercel serverless read-only).
+ *
+ * Roles: admin | gvcn | dvkh
+ * Login → JWT HS256
  */
+
 const crypto = require('crypto');
 const https  = require('https');
 
@@ -11,6 +17,7 @@ const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
 
 const SECRET = process.env.ACCOUNTS_SECRET || '@HocmaiAdmin2026';
 
+// ── JWT helpers ──────────────────────────────────────────────────────────────
 function b64u(buf) {
   return (typeof buf === 'string' ? Buffer.from(buf) : buf)
     .toString('base64').replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
@@ -45,10 +52,12 @@ function verifyToken(token) {
   } catch(e) { return {ok:false,error:'Token lỗi: '+e.message}; }
 }
 
+// ── SHA256 Node (verify phải khớp GAS sha256Gs) ─────────────────────────────
 function sha256hex(v) {
   return crypto.createHash('sha256').update(String(v||''),'utf8').digest('hex');
 }
 
+// ── HTTP GET follow redirect ─────────────────────────────────────────────────
 function fetchGET(url, depth) {
   depth = depth||0;
   if (depth>5) return Promise.reject(new Error('Quá nhiều redirect'));
@@ -69,6 +78,7 @@ function fetchGET(url, depth) {
   });
 }
 
+// ── Gọi Apps Script qua GET params ──────────────────────────────────────────
 function gasGet(params) {
   const qs = Object.entries(params)
     .map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v==null?'':v))}`)
@@ -76,6 +86,7 @@ function gasGet(params) {
   return fetchGET(`${APPS_SCRIPT_URL}?${qs}`);
 }
 
+// ── CORS ─────────────────────────────────────────────────────────────────────
 function cors(res) {
   res.setHeader('Access-Control-Allow-Origin','*');
   res.setHeader('Access-Control-Allow-Methods','GET,POST,OPTIONS');
@@ -83,12 +94,15 @@ function cors(res) {
   res.setHeader('Cache-Control','no-store');
 }
 
+// ── Lấy token từ request ─────────────────────────────────────────────────────
 function extractToken(req, body) {
   const auth = (req.headers||{}).authorization||'';
   const m = auth.match(/^Bearer\s+(.+)$/i);
-  return (body&&body.token)||(m?m[1]:'')||((req.query||{}).token)||'';
+  return (body&&body.token)||(m?m[1]:'')
+      || ((req.query||{}).token)||'';
 }
 
+// ── Parse body ───────────────────────────────────────────────────────────────
 async function parseBody(req) {
   if (req.body && typeof req.body==='object') return req.body;
   return new Promise((resolve,reject)=>{
@@ -99,12 +113,19 @@ async function parseBody(req) {
   });
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// HANDLERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// LOGIN — gọi Apps Script verifyLogin
 async function handleLogin(req, res) {
   const username = String((req.query||{}).username||'').trim();
   const password = String((req.query||{}).password||'');
   if (!username||!password)
     return res.status(400).json({ok:false,error:'Thiếu username hoặc password'});
 
+  // Thử verifyLogin (cần Apps Script đã paste code mới)
+  // Nếu Apps Script chưa có action verifyLogin (trả total≠undefined) thì fallback tự verify
   let result;
   try {
     result = await gasGet({action:'verifyLogin', secret:SECRET, username, password});
@@ -112,7 +133,10 @@ async function handleLogin(req, res) {
     return res.status(503).json({ok:false,error:'Lỗi kết nối Apps Script: '+e.message});
   }
 
+  // Nếu Apps Script cũ (chưa có verifyLogin) → trả total = số rows, không có .role
+  // Fallback: lấy accounts kèm hash rồi tự compare
   if (result.total !== undefined || (!result.ok && !result.error)) {
+    // Apps Script chưa có action verifyLogin → tự verify qua getAccounts+includeHash
     let accsResult;
     try {
       accsResult = await gasGet({action:'getAccounts', secret:SECRET, includeHash:'1'});
@@ -127,7 +151,7 @@ async function handleLogin(req, res) {
     if (!acc) return res.status(401).json({ok:false,error:'Tài khoản không tồn tại'});
     if (!acc.active) return res.status(401).json({ok:false,error:'Tài khoản đã bị khóa'});
     if (!acc.password_hash)
-      return res.status(503).json({ok:false,error:'Chưa có thông tin hash'});
+      return res.status(503).json({ok:false,error:'Chưa có thông tin hash — paste code Apps Script mới và redeploy'});
     if (acc.password_hash !== sha256hex(password))
       return res.status(401).json({ok:false,error:'Sai mật khẩu'});
 
@@ -142,6 +166,7 @@ async function handleLogin(req, res) {
   return res.status(200).json({ok:true, role:result.role, name:result.name||'', token});
 }
 
+// LIST
 async function handleList(req, body, res) {
   const token    = extractToken(req, body);
   const verified = verifyToken(token);
@@ -156,6 +181,7 @@ async function handleList(req, body, res) {
   return res.status(200).json(r);
 }
 
+// CREATE — dùng GET params (POST bị Google chặn redirect)
 async function handleCreate(req, body, res) {
   const token    = extractToken(req, body);
   const verified = verifyToken(token);
@@ -163,6 +189,10 @@ async function handleCreate(req, body, res) {
   if (verified.payload.role!=='admin')
     return res.status(403).json({ok:false,error:'Chỉ admin mới được tạo tài khoản'});
 
+  // Tạo account trực tiếp trong Node — không POST qua Apps Script
+  // Lý do: POST bị Google redirect về trang HTML (Content-Length issue)
+  // Giải pháp: Dùng getAccounts?includeHash=1 → thêm record → writeAccounts qua Apps Script
+  // Nhưng Apps Script không có action writeAccounts... → dùng action createAccount qua GET
   let r;
   try {
     r = await gasGet({
@@ -176,6 +206,7 @@ async function handleCreate(req, body, res) {
   return res.status(200).json(r);
 }
 
+// UPDATE
 async function handleUpdate(req, body, res) {
   const token    = extractToken(req, body);
   const verified = verifyToken(token);
@@ -196,6 +227,7 @@ async function handleUpdate(req, body, res) {
   return res.status(200).json(r);
 }
 
+// DELETE
 async function handleDelete(req, body, res) {
   const token    = extractToken(req, body);
   const verified = verifyToken(token);
@@ -211,6 +243,9 @@ async function handleDelete(req, body, res) {
   return res.status(200).json(r);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN HANDLER
+// ═══════════════════════════════════════════════════════════════════════════
 module.exports = async function handler(req, res) {
   cors(res);
   if (req.method==='OPTIONS') return res.status(204).end();
