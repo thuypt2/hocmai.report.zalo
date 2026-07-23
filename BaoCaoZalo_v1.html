@@ -107,6 +107,24 @@ tr:nth-child(even) td{background:#fafbfc}
 .search-input{padding:6px 10px;border:1px solid var(--bd);border-radius:6px;font-size:13px;min-width:220px}
 .summary-pill{display:inline-block;padding:4px 10px;background:#eef2ff;color:#1e3a8a;border-radius:14px;font-size:12px;margin-right:6px;margin-bottom:4px}
 .muted{color:var(--mut);font-size:12px}
+/* === Bar table (section 1.3) === */
+.bar-tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;background:#fff}
+.bar-tbl thead th{position:sticky;top:0;z-index:2;background:#EEF4FF;font-weight:600;color:#1e3a8a;padding:12px 14px;text-align:center;border-bottom:1px solid #d0d8f0;white-space:nowrap}
+.bar-tbl thead th:first-child{text-align:left}
+.bar-tbl td{padding:16px 14px;text-align:center;vertical-align:top;border-bottom:1px solid #f0f0f0}
+.bar-tbl td:first-child{text-align:left;font-weight:600;color:#374151;white-space:nowrap}
+.bar-tbl tbody tr:hover td{background:#F8FAFC}
+.bar-tbl tfoot td{background:#FAFAFA;font-weight:700;border-top:2px solid #E5E7EB}
+.bar-tbl .cell-total{font-weight:600;font-size:15px;color:var(--ink);margin-bottom:8px}
+.bar-tbl .cell-bar{margin-bottom:6px}
+.bar-tbl .cell-bar:last-child{margin-bottom:0}
+.bar-tbl .cell-bar-cap{font-size:10px;color:var(--mut);margin-bottom:2px;display:flex;justify-content:space-between}
+.bar-tbl .cell-bar-track{position:relative;height:20px;background:#e5e7eb;border-radius:6px;overflow:hidden}
+.bar-tbl .cell-bar-fill{height:100%;display:flex;align-items:center;justify-content:flex-end;padding:0 8px;color:#fff;font-size:11px;font-weight:600;white-space:nowrap;border-radius:6px;min-width:2px}
+.bar-tbl .cell-bar-fill.blue{background:#2563eb}
+.bar-tbl .cell-bar-fill.amber{background:#f59e0b}
+.bar-tbl-wrap{max-height:calc(100vh - 260px);overflow:auto;border:none}
+.bar-tbl-wrap .bar-tbl thead th{top:0}
 footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
 /* ===== Login gate ===== */
@@ -256,7 +274,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 </section>
 
 <section id="r1-chart">
-  <h2>1.2 · Biểu đồ theo thời gian (paid_time) theo từng exam</h2>
+  <h2>1.2 · Biểu đồ xu hướng</h2>
   <div class="filter-row" style="margin-bottom:12px">
     <label>Kỳ thi
       <select id="chart-exam-filter"><option value="">-- Tất cả --</option></select>
@@ -280,8 +298,20 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
   <div class="chart-grid" id="chart-grid"></div>
 </section>
 
+<section id="r1-bar">
+  <h2>1.3 · Biểu đồ bar tỉ lệ vào nhóm theo tháng</h2>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <span class="muted" style="margin:0">Tỉ lệ duyệt nhóm 1:30 & AIM theo từng tháng, phân theo kỳ thi.</span>
+    <div style="display:flex;gap:16px;font-size:12px;color:var(--mut);align-items:center">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb;margin-right:4px;vertical-align:middle"></span> Duyệt nhóm 1:30</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#f59e0b;margin-right:4px;vertical-align:middle"></span> Duyệt nhóm AIM</span>
+    </div>
+  </div>
+  <div class="tbl-wrap bar-tbl-wrap" id="bar-tbl-wrap"></div>
+</section>
+
 <section id="r1-hsa">
-  <h2>1.3 · Pie chart</h2>
+  <h2>1.4 · Pie chart</h2>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:24px;margin-top:8px">
     <div>
       <h3 style="text-align:center">Tổng học sinh theo từng kỳ thi</h3>
@@ -296,7 +326,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 </section>
 
 <section id="r1-stats">
-  <h2>1.4 · Thống kê số lượng học sinh được duyệt theo từng nhóm lớp 1:30</h2>
+  <h2>1.5 · Thống kê số lượng học sinh được duyệt theo từng nhóm lớp 1:30</h2>
   <p class="muted">Chọn kỳ thi bên dưới để xem danh sách các nhóm lớp thuộc kỳ đó, sắp xếp theo tỉ lệ duyệt nhóm 1:30 giảm dần (cao → thấp).</p>
   <div class="sub-tab-bar" id="tabs-groups"></div>
   <div id="groups-content"></div>
@@ -901,6 +931,24 @@ function renderExamTable(){
        <td class="num">${daimN.toLocaleString('vi-VN')}</td>
        <td class="num">${taim}%</td></tr>`);
 }
+function weekDateRange(weekLabel) {
+  const m = weekLabel.match(/W(\d+)\s*\((\d{4})\)/);
+  if (!m) return weekLabel;
+  const wn = parseInt(m[1], 10), yr = parseInt(m[2], 10);
+  // First Monday of the year
+  const jan1 = new Date(yr, 0, 1);
+  const jan1Day = jan1.getDay(); // 0=Sun
+  const daysToMon = jan1Day === 0 ? 1 : jan1Day === 1 ? 0 : 8 - jan1Day;
+  const firstMon = new Date(yr, 0, 1 + daysToMon);
+  // Monday of target week
+  const mon = new Date(firstMon);
+  mon.setDate(firstMon.getDate() + (wn - 1) * 7);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  const fmt = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
+  return `${fmt(mon)}-${fmt(sun)}`;
+}
+
 function applyCharts(){
   // Destroy old charts
   if (window._overviewCharts) {
@@ -949,7 +997,7 @@ function applyCharts(){
     }
 
     const series = rawSeries.map(item => ({
-      label: chartType === 'week' ? item.week : item.month,
+      label: chartType === 'week' ? weekDateRange(item.week) : item.month,
       total: item.total,
       duyet_130: item.duyet_130,
       duyet_aim: item.duyet_aim
@@ -1132,6 +1180,84 @@ function renderGroupsByExam(){
 }
 
 // ===== Báo cáo 2 - Tra cứu =====
+function renderBarTable(){
+  const wrap = document.getElementById('bar-tbl-wrap');
+  const EXAMS = DATA.exams || [];
+  const months = [...(DATA.all_months || [])].sort();
+  if (!months.length || !EXAMS.length) {
+    wrap.innerHTML = '<p class="muted">Không có dữ liệu monthly_chart.</p>';
+    return;
+  }
+
+  // Pivot: month -> exam -> {total, duyet_130, duyet_aim}
+  const pivot = {};
+  for (const m of months) pivot[m] = {};
+  for (const ex of EXAMS) {
+    const series = DATA.monthly_chart[ex] || [];
+    for (const item of series) {
+      if (pivot[item.month]) pivot[item.month][ex] = { total: item.total, duyet_130: item.duyet_130, duyet_aim: item.duyet_aim };
+    }
+  }
+
+  // Grand totals
+  const totals = {};
+  for (const ex of EXAMS) {
+    totals[ex] = { total: 0, duyet_130: 0, duyet_aim: 0 };
+    for (const m of months) {
+      const d = pivot[m][ex];
+      if (d) { totals[ex].total += d.total; totals[ex].duyet_130 += d.duyet_130; totals[ex].duyet_aim += d.duyet_aim; }
+    }
+  }
+
+  let html = '<table class="bar-tbl"><thead><tr><th>Tháng</th>';
+  for (const ex of EXAMS) html += `<th>${escapeHtml(ex)}</th>`;
+  html += '</tr></thead><tbody>';
+
+  for (const m of months) {
+    html += `<tr><td>${m}</td>`;
+    for (const ex of EXAMS) {
+      const d = pivot[m][ex];
+      if (!d) {
+        html += '<td><div class="cell-total">—</div></td>';
+        continue;
+      }
+      const pct130 = d.total ? Math.round(d.duyet_130 / d.total * 100) : 0;
+      const pctAim = d.total ? Math.round(d.duyet_aim / d.total * 100) : 0;
+      html += `<td>
+        <div class="cell-total">Tổng: ${d.total.toLocaleString('vi-VN')}</div>
+        <div class="cell-bar">
+          <div class="cell-bar-cap"><span>Duyệt 1:30</span><span>${d.duyet_130.toLocaleString('vi-VN')} (${pct130}%)</span></div>
+          <div class="cell-bar-track"><div class="cell-bar-fill blue" style="width:${Math.min(100, pct130)}%">${pct130}%</div></div>
+        </div>
+        <div class="cell-bar">
+          <div class="cell-bar-cap"><span>Duyệt AIM</span><span>${d.duyet_aim.toLocaleString('vi-VN')} (${pctAim}%)</span></div>
+          <div class="cell-bar-track"><div class="cell-bar-fill amber" style="width:${Math.min(100, pctAim)}%">${pctAim}%</div></div>
+        </div>
+      </td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody><tfoot><tr><td>TỔNG</td>';
+  for (const ex of EXAMS) {
+    const t = totals[ex];
+    const pct130 = t.total ? Math.round(t.duyet_130 / t.total * 100) : 0;
+    const pctAim = t.total ? Math.round(t.duyet_aim / t.total * 100) : 0;
+    html += `<td>
+      <div class="cell-total">${t.total.toLocaleString('vi-VN')}</div>
+      <div class="cell-bar">
+        <div class="cell-bar-cap"><span>1:30</span><span>${t.duyet_130.toLocaleString('vi-VN')} (${pct130}%)</span></div>
+        <div class="cell-bar-track"><div class="cell-bar-fill blue" style="width:${Math.min(100, pct130)}%">${pct130}%</div></div>
+      </div>
+      <div class="cell-bar">
+        <div class="cell-bar-cap"><span>AIM</span><span>${t.duyet_aim.toLocaleString('vi-VN')} (${pctAim}%)</span></div>
+        <div class="cell-bar-track"><div class="cell-bar-fill amber" style="width:${Math.min(100, pctAim)}%">${pctAim}%</div></div>
+      </div>
+    </td>`;
+  }
+  html += '</tr></tfoot></table>';
+  wrap.innerHTML = html;
+}
+
 function escapeHtml(s){var d={"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"};return String(s==null?'':s).replace(/[&<>"']/g,function(c){return d[c]})}
 function escapeAttr(s){var d={"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;","\\":"&#92;"};return String(s==null?'':s).replace(/[&<>"'\\]/g,function(c){return d[c]})}
 function uniq(arr){return [...new Set(arr.filter(x=>x!==null&&x!==undefined&&String(x).trim()!==''))];}
@@ -1597,7 +1723,7 @@ async function loadData(){
     document.getElementById('header-meta').textContent =
       `Báo cáo nội bộ dành cho cán bộ quản lí · Cập nhật lúc ${json.generated_at}`;
 
-    renderKPI(); renderExamTable(); initChartFilters(); applyCharts(); renderExamPie(); renderHSA(); renderGroupsByExam();
+    renderKPI(); renderExamTable(); initChartFilters(); applyCharts(); renderBarTable(); renderExamPie(); renderHSA(); renderGroupsByExam();
     initLookupHeaders();
     initFilters1(); initFilters2(); applyFilter1();
 
