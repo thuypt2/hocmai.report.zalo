@@ -44,8 +44,7 @@ nav a.active{color:var(--pri);border-bottom-color:var(--pri)}
 .tbl-wrap tbody tr:nth-child(even) td.sticky-col{background:#fafbfc}
 .tbl-wrap .sticky-col.stt{left:0;min-width:50px;max-width:50px}
 .tbl-wrap .sticky-col.ma-lop{left:50px;min-width:220px;max-width:220px}
-.tbl-wrap .sticky-col.userid{left:270px;min-width:90px;max-width:90px}
-.tbl-wrap .sticky-col.username{left:360px;min-width:220px;max-width:220px}
+.tbl-wrap .sticky-col.username{left:270px;min-width:220px;max-width:220px}
 .tbl-wrap td.sticky-col.username{background:#f1f5f9;text-align:center;word-break:break-all;white-space:normal}
 .tbl-wrap tbody tr:nth-child(even) td.sticky-col.username{background:#edf2f7}
 .tbl-wrap .sticky-col.ma-lop{word-break:break-all;white-space:normal}
@@ -332,7 +331,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
   <div style="margin-bottom:14px">
     <span class="sub-tab active" data-sub="filter-group">2.1 · LỌC HỌC SINH THEO NHÓM LỚP</span>
-    <span class="sub-tab" data-sub="not-in-group">2.2 · LỌC HỌC SINH CHƯA VÀO NHÓM 1:30</span>
+    <span class="sub-tab" data-sub="email-notification">2.2 · GỬI EMAIL PHẢN HỒI, THÔNG BÁO</span>
     <span class="sub-tab" data-sub="wait-member">2.3 · HỌC SINH CHỜ DUYỆT KẾT NỐI</span>
   </div>
 
@@ -389,60 +388,57 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
       </div><!-- /sub-filter-group -->
 
-      <!-- ====== 2.2 Lọc HS chưa vào nhóm 1:30 ====== -->
-      <div class="sub-pane" id="sub-not-in-group">
+      <!-- ====== 2.2 Gửi email phản hồi, thông báo ====== -->
+      <div class="sub-pane" id="sub-email-notification">
 
-        <p class="muted" style="margin-top:0">
-          Lọc các HS thuộc nhóm lớp 1:30 chưa đầy (đếm theo số HS <em>chưa duyệt 1:30</em> trong cùng nhóm lớp).
-          Bảng <strong>chỉ hiển thị HS chưa duyệt</strong> cả 1:30 và AIM. Các trường lọc phụ thuộc nhau:
-          <em>Số HS 1:30 chưa duyệt</em> → <em>Exam</em> → <em>Mã lớp</em>.
-        </p>
-
-        <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)">
-          <label>Số HS 1:30 chưa duyệt
-            <select id="f2-sochua">
+        <div class="filter-row" style="margin-bottom:12px">
+          <label>Tìm kiếm học sinh (username / email / SĐT / userid)
+            <div style="display:flex;gap:6px">
+              <input class="search-input" id="email-search-input" style="flex:1" placeholder="Nhập username, email, hoặc số điện thoại...">
+              <button class="btn" onclick="emailSearchStudents()">Tìm</button>
+              <button class="btn gray" onclick="emailClearSearch()">Xoá</button>
+            </div>
+          </label>
+          <label>Kỳ thi (lọc theo)
+            <select id="email-exam-filter" onchange="emailSearchStudents()">
               <option value="">-- Tất cả --</option>
             </select>
           </label>
-          <label>Exam
-            <select id="f2-exam"><option value="">-- Tất cả --</option></select>
-          </label>
-          <label>Nhóm lớp (Mã lớp)
-            <select id="f2-malop"><option value="">-- Tất cả --</option></select>
-          </label>
         </div>
 
-        <div class="toolbar">
-          <button class="btn" onclick="applyFilter2()">Lọc</button>
-          <button class="btn gray" onclick="resetFilter2()">Reset</button>
-          <input class="search-input" id="q2" placeholder="Tìm nhanh: username / email / phone / userid" onkeydown="if(event.key==='Enter')applyFilter2()">
-          <span class="muted" id="result-info-2"></span>
-          <span style="flex:1"></span>
-        </div>
+        <div id="email-student-info" class="muted" style="margin-bottom:8px"></div>
 
-        <div id="summary-2" style="margin-bottom:10px"></div>
-        <div class="tbl-wrap" style="max-height:calc(100vh - 280px)">
-          <table id="tbl-lookup-2">
-            <thead><tr id="thead-lookup-2"></tr></thead>
+        <div class="tbl-wrap" style="max-height:320px;margin-bottom:16px">
+          <table id="tbl-email-students">
+            <thead><tr id="thead-email-students"></tr></thead>
             <tbody></tbody>
           </table>
         </div>
 
-        <!-- ===== Gửi email hàng loạt ===== -->
-        <div style="border:1px solid #ddd; padding:16px; border-radius:8px; margin-top:16px;">
-          <h3>Gửi email mời học sinh vào nhóm lớp</h3>
-          <p class="muted">Chỉ bấm gửi sau khi đã kiểm tra danh sách Email_Queue trên Google Sheet.</p>
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
-            <input id="adminPassword" type="password" placeholder="Nhập mật khẩu gửi email"
-              style="padding:8px; width:260px; border:1px solid var(--bd); border-radius:6px; font-size:13px;">
-            <input id="sendLimit" type="number" value="50" min="1" max="200"
-              style="padding:8px; width:80px; border:1px solid var(--bd); border-radius:6px; font-size:13px;">
-            <button class="btn" onclick="sendClassGroupEmails()">Gửi email</button>
+        <!-- === Email template selection === -->
+        <div style="border:1px solid var(--bd);border-radius:8px;padding:16px;background:#f9fafb;margin-bottom:16px">
+          <h3 style="margin:0 0 10px;font-size:15px">Chọn mẫu email gửi</h3>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <label style="font-weight:600">Mẫu
+              <select id="emailTemplate2" style="min-width:260px"></select>
+            </label>
+            <button class="btn gray" onclick="previewEmailTemplate2()">Xem mẫu</button>
           </div>
-          <pre id="sendEmailResult" style="margin-top:10px; background:#f3f4f6; padding:10px; border-radius:6px; font-size:12px; white-space:pre-wrap; min-height:20px"></pre>
+          <div id="emailPreview2" style="display:none;margin-top:10px;padding:12px;background:#fff;border:1px solid var(--bd);border-radius:6px;font-size:13px;white-space:pre-wrap;max-height:250px;overflow-y:auto"></div>
         </div>
 
-      </div><!-- /sub-not-in-group -->
+        <!-- === Send area === -->
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+          <label style="font-weight:600">Mật khẩu gửi
+            <input type="password" id="email-send-pwd" style="padding:8px;width:220px;border:1px solid var(--bd);border-radius:6px;font-size:13px">
+          </label>
+          <button class="btn" onclick="emailSendSelected()">Gửi email cho <span id="email-send-count">0</span> học sinh đã chọn</button>
+          <span class="muted" style="font-size:12px">(chỉ gửi cho HS có email hợp lệ)</span>
+        </div>
+
+        <pre id="emailSendResult2" style="margin-top:10px;background:#f3f4f6;padding:10px;border-radius:6px;font-size:12px;white-space:pre-wrap;min-height:24px;max-height:300px;overflow-y:auto"></pre>
+
+      </div><!-- /sub-email-notification -->
 
         <!-- ====== 2.3 Học sinh chờ duyệt kết nối ====== -->
         <div class="sub-pane" id="sub-wait-member">
@@ -571,7 +567,7 @@ function applyRoleUI(){
   if(tabOv&&!isAdmin()) tabOv.style.display='none';
   if(!isAdmin()) switchTab('lookup');
   if(isDVKH()){
-    ['not-in-group','wait-member'].forEach(function(s){
+    ['email-notification','wait-member'].forEach(function(s){
       var t=document.querySelector('.sub-tab[data-sub="'+s+'"]');
       var p=document.getElementById('sub-'+s);
       if(t) t.style.display='none';
@@ -608,8 +604,8 @@ let LOOKUP = [];
 const COLS_21 = [
   {key:"_stt", label:"STT", isSTT:true, width:"50px", stickyCol:"stt"},
   {key:"_ma_lop", label:"Mã lớp", width:"220px", stickyCol:"ma-lop"},
-  {key:"userid",label:"userID", width:"90px", stickyCol:"userid"},
   {key:"username",label:"username", width:"220px", stickyCol:"username"},
+  {key:"userid",label:"userID", width:"90px"},
   {key:"final_phone",label:"SĐT", width:"110px"},
   {key:"final_email",label:"Email", width:"220px"},
   {key:"paid_time",label:"Paid_Time", width:"110px"},
@@ -619,6 +615,7 @@ const COLS_21 = [
   {key:"Mã bảo mật",label:"Mã bảo mật", width:"110px"},
   {key:"hsa_type",label:"HSA_type", width:"110px"},
   {key:"Trạng thái duyệt 1:30",label:"Trạng thái duyệt 1:30", width:"100px"},
+  {key:"_ghi_chu", label:"Ghi chú", isGhiChu:true, width:"180px"},
   {key:"Trạng thái duyệt AIM",label:"Trạng thái duyệt AIM", width:"100px"},
   {key:"_approve_btn", label:"Duyệt 1:30", isApproveBtn:true, width:"110px"},
   {key:"_email_btn", label:"Gửi email", isEmailBtn:true, width:"100px"},
@@ -646,7 +643,24 @@ const COLS_22 = [
   {key:"_email_sent_time", label:"TG gửi email", isEmailSentTime:true, width:"140px"},
 ];
 
-// ===== Popup duyệt 1:30 — kết nối Google Apps Script (tab 2.1, 2.2) ===== — kết nối Google Apps Script (tab 2.1, 2.2) =====
+// ===== Templates email fallback (khi API không khả dụng) =====
+const EMAIL_TEMPLATES_FALLBACK = {
+  default: {
+    name: 'Mẫu mặc định',
+    subject: '[HOCMAI] Thông tin nhóm Zalo lớp học của bạn',
+    body: `<p>Kính gửi quý phụ huynh / học sinh,</p>
+<p>Cảm ơn bạn đã đăng ký khoá học tại HOCMAI. Dưới đây là thông tin nhóm Zalo của lớp học:</p>
+<ul>
+  <li>Mã lớp: {{ma_lop}}</li>
+  <li>Link nhóm Zalo: {{link_group}}</li>
+  <li>Giáo viên chủ nhiệm: {{gv}}</li>
+</ul>
+<p>Vui lòng tham gia nhóm Zalo để nhận thông báo và tài liệu học tập quan trọng.</p>
+<p>Trân trọng,<br>HOCMAI</p>`,
+  },
+};
+
+// ===== Popup duyệt 1:30 — kết nối Google Apps Script (tab 2.1, 2.2) =====
 const APPROVE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwiB02a0QwL3zHe9x1pj6YKq1nTQcben9MBJoRXka_CZqNh9km7sJwpHUj74-dLSEK1/exec';
 
 function openApprovePopup(username, maLop, maBaoMat, userid){
@@ -1269,7 +1283,7 @@ function switchSub(sub){
   document.querySelectorAll('.sub-tab').forEach(s=>s.classList.toggle('active', s.dataset.sub===sub));
   document.querySelectorAll('.sub-pane').forEach(p=>p.classList.toggle('active', p.id==='sub-'+sub));
   if (sub==='filter-group') applyFilter1();
-  else if (sub==='not-in-group') applyFilter2();
+  else if (sub==='email-notification') emailSearchStudents();
 }
 
 // ===== 2.1 Lọc theo nhóm lớp =====
@@ -1339,15 +1353,16 @@ function applyFilter1(){
   const to = document.getElementById('f1-to').value;
   const q = document.getElementById('q1').value.trim().toLowerCase();
 
-  // ver5: bảo mật — không có trường lọc nào thì để trống bảng
+  // ver9: bảo mật — không có trường lọc nào thì để trống bảng
   // DVKH: bắt buộc nhập đủ SĐT/email/username (>=5 ký tự) mới cho lọc
+  // Admin/GVCN: cũng cần ít nhất 1 trường lọc để hiển thị (không mặc định hiện tất cả)
   const hasFilter = isDVKH() ? (q.length >= 5) : !!(ex || malop || soChua || f130 || faim || from || to || q);
   if (!hasFilter){
     currentFilter1 = [];
     renderLookup([], 1, getCols21());
     document.getElementById('result-info-1').textContent = isDVKH()
       ? 'Vui lòng nhập đầy đủ số điện thoại, email hoặc username rồi bấm Lọc.'
-      : 'Nhập ít nhất một trường lọc để hiển thị danh sách.';
+      : 'Vui lòng chọn ít nhất một trường lọc hoặc nhập từ khóa tìm kiếm để hiển thị danh sách.';
     return;
   }
 
@@ -1396,16 +1411,7 @@ function initLookupHeaders(){
     const cls = p.length ? ` class="${p.join(' ')}"` : '';
     return `<th${w}${cls}>${c.label}</th>`;
   }).join('');
-  // Tab 2.2
-  const tr2 = document.getElementById('thead-lookup-2');
-  tr2.innerHTML = COLS_22.map(c=>{
-    const w = c.width ? ` style="width:${c.width};min-width:${c.width}"` : '';
-    const p = [];
-    if (c.isSTT || /^(userid|SĐT|email|product_id|Duyệt|Gửi)/.test(c.label)) p.push('num');
-    if (c.stickyCol) p.push('sticky-col', c.stickyCol);
-    const cls = p.length ? ` class="${p.join(' ')}"` : '';
-    return `<th${w}${cls}>${c.label}</th>`;
-  }).join('');
+  // Tab 2.2 replaced by email section (initEmailSection sets its own headers)
 }
 
 // ===== Date formatting =====
@@ -1442,7 +1448,11 @@ function renderLookup(rows, pane, cols){
         if (c.key==='Mã bảo mật'){
           const val = r['Mã bảo mật'] || '';
           const safeVal = escapeHtml(val).replace(/"/g, '&quot;');
-          return `<td>${escapeHtml(val)}<button class="copy-btn" data-copy="${safeVal}" onclick="copyText(this)">Copy</button></td>`;
+          return `<td>${escapeHtml(val)}${val ? `<button class="copy-btn" data-copy="${safeVal}" onclick="copyText(this)">Copy</button>` : ''}</td>`;
+        }
+        if (c.isGhiChu){
+          const ghiChu = r['Display Name'] || '';
+          return `<td>${escapeHtml(ghiChu)}</td>`;
         }
         if (c.key==='paid_time' || c.key==='Thời gian duyệt') return `<td>${escapeHtml(fmtDate(r[c.key]))}</td>`;
         if (c.key==='Trạng thái duyệt 1:30' || c.key==='Trạng thái duyệt AIM') return `<td>${badgeStatus(r[c.key])}</td>`;
@@ -1539,91 +1549,283 @@ function resetFilter1(){
   if (!isDVKH()) refreshCascades1();
   applyFilter1();
 }
-// ===== 2.2 Lọc HS chưa vào nhóm 1:30 (cascade: soChua -> exam -> malop) =====
-let currentFilter2 = null;
-function initFilters2(){
-  const soSel = document.getElementById('f2-sochua');
-  for (let i = 1; i <= 28; i++) {
-    soSel.insertAdjacentHTML('beforeend', `<option value="${i}">Còn ${i} HS chưa duyệt</option>`);
+// ===== 2.2 Gửi email phản hồi, thông báo =====
+let EMAIL_STUDENTS = [];  // filtered search results
+let EMAIL_SELECTED = new Set();  // selected student indices
+let EMAIL_TEMPLATES_LOADED = {};
+
+const EMAIL_API_URL_2 = '/api/send-email';
+
+function initEmailSection() {
+  // Populate exam filter dropdown
+  const exSel = document.getElementById('email-exam-filter');
+  if (exSel) {
+    DATA.exams.forEach(ex => {
+      exSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(ex)}">${escapeHtml(ex)}</option>`);
+    });
   }
-  document.getElementById('f2-sochua').addEventListener('change', refreshCascades2);
-  document.getElementById('f2-exam').addEventListener('change', refreshCascades2);
-  refreshCascades2();
+  // Populate email template dropdown
+  const tplSel = document.getElementById('emailTemplate2');
+  if (tplSel) {
+    tplSel.innerHTML = '<option value="">Đang tải mẫu email...</option>';
+  }
+  // Set up email table headers
+  const theadE = document.getElementById('thead-email-students');
+  if (theadE) {
+    theadE.innerHTML = `<th style="width:40px;text-align:center"><input type="checkbox" id="email-checkall" onchange="emailToggleAll()" title="Chọn tất cả"></th>
+      <th style="width:50px" class="num">STT</th>
+      <th>username</th>
+      <th>SĐT</th>
+      <th>Email</th>
+      <th>Mã lớp</th>
+      <th>Paid_Time</th>
+      <th>link zalo</th>
+      <th>GV</th>
+      <th>SĐT GV</th>
+      <th>Mã bảo mật</th>
+      <th>HSA_type</th>
+      <th>Trạng thái duyệt 1:30</th>
+      <th>Ghi chú</th>
+      <th>Trạng thái duyệt AIM</th>`;
+  }
+  // Fetch templates from API
+  fetchEmailTemplates();
 }
-function refreshCascades2(){
-  const soChua = document.getElementById('f2-sochua').value;
-  const soChuaNum = soChua ? parseInt(soChua, 10) : null;
 
-  let pool = getScopedLookup().filter(r => r._chua_vao_lop);
-  if (soChuaNum !== null) {
-    pool = pool.filter(r => r._so_chua_trong_nhom === soChuaNum);
-  }
-
-  const exSel = document.getElementById('f2-exam');
-  const prevEx = exSel.value;
-  exSel.innerHTML = '<option value="">-- Tất cả --</option>';
-  uniq(pool.map(r => r._exam)).forEach(v => {
-    if (!v) return;
-    const sel = (v === prevEx) ? 'selected' : '';
-    exSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(v)}" ${sel}>${escapeHtml(v)}</option>`);
-  });
-  const curEx = exSel.value;
-  if (prevEx && prevEx !== curEx) {
-    exSel.value = '';
-  }
-
-  let pool2 = pool;
-  const finalEx = exSel.value;
-  if (finalEx) {
-    pool2 = pool2.filter(r => String(r._exam || '') === finalEx);
-  }
-  const malopSel = document.getElementById('f2-malop');
-  const prevMalop = malopSel.value;
-  malopSel.innerHTML = '<option value="">-- Tất cả --</option>';
-  uniq(pool2.map(r => r._ma_lop)).forEach(v => {
-    if (!v) return;
-    const sel = (v === prevMalop) ? 'selected' : '';
-    malopSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(v)}" ${sel}>${escapeHtml(v)}</option>`);
-  });
-  if (prevMalop && ![...malopSel.options].some(o => o.value === prevMalop)) {
-    malopSel.value = '';
+async function fetchEmailTemplates() {
+  const tplSel = document.getElementById('emailTemplate2');
+  try {
+    const resp = await fetch('/api/get-email-templates');
+    const json = await resp.json();
+    if (json.ok && json.data && json.data.length) {
+      EMAIL_TEMPLATES_LOADED = {};
+      tplSel.innerHTML = '<option value="">-- Chọn mẫu email --</option>';
+      json.data.forEach(t => {
+        EMAIL_TEMPLATES_LOADED[t.key] = t;
+        tplSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(t.key)}">${escapeHtml(t.name)}</option>`);
+      });
+    } else {
+      // Fallback: use hardcoded templates
+      loadHardcodedTemplates(tplSel);
+    }
+  } catch (err) {
+    console.warn('Không thể tải mẫu email từ API:', err.message);
+    loadHardcodedTemplates(tplSel);
   }
 }
-function applyFilter2(){
-  const soChua = document.getElementById('f2-sochua').value;
-  const ex = document.getElementById('f2-exam').value;
-  const malop = document.getElementById('f2-malop').value;
-  const q = document.getElementById('q2').value.trim().toLowerCase();
-  const soChuaNum = soChua ? parseInt(soChua, 10) : null;
 
-  // ver5: bảo mật — không có trường lọc nào thì để trống bảng
-  const hasFilter = !!(soChua || ex || malop || q);
-  if (!hasFilter){
-    currentFilter2 = [];
-    renderLookup([], 2, COLS_22);
-    document.getElementById('result-info-2').textContent = 'Nhập ít nhất một trường lọc để hiển thị danh sách.';
+function loadHardcodedTemplates(tplSel) {
+  EMAIL_TEMPLATES_LOADED = {};
+  tplSel.innerHTML = '';
+  for (const [key, t] of Object.entries(EMAIL_TEMPLATES_FALLBACK)) {
+    const name = t.name || t.subject || '';
+    if (!name.trim()) continue;
+    EMAIL_TEMPLATES_LOADED[key] = { key, name: name, subject: t.subject || '', html_body: t.body || '' };
+    tplSel.insertAdjacentHTML('beforeend', `<option value="${key}">${escapeHtml(name)}</option>`);
+  }
+  if (!Object.keys(EMAIL_TEMPLATES_LOADED).length) {
+    tplSel.innerHTML = '<option value="">(Không có mẫu nào)</option>';
+  }
+}
+
+function emailSearchStudents() {
+  const q = (document.getElementById('email-search-input')?.value || '').trim().toLowerCase();
+  const examFilter = (document.getElementById('email-exam-filter')?.value || '').trim();
+  const tb = document.querySelector('#tbl-email-students tbody');
+  const info = document.getElementById('email-student-info');
+  const sendCount = document.getElementById('email-send-count');
+  tb.innerHTML = '';
+  EMAIL_STUDENTS = [];
+  EMAIL_SELECTED.clear();
+  if (sendCount) sendCount.textContent = '0';
+
+  // Require search input OR exam filter
+  if (!q && !examFilter) {
+    if (info) info.textContent = 'Nhập từ khóa tìm kiếm hoặc chọn kỳ thi để hiển thị danh sách.';
     return;
   }
 
-  const filtered = LOOKUP.filter(r => {
-    if (!r._chua_vao_lop) return false;
-    if (soChuaNum !== null && r._so_chua_trong_nhom !== soChuaNum) return false;
-    if (ex && String(r._exam || '') !== ex) return false;
-    if (malop && String(r._ma_lop || '') !== malop) return false;
-    if (q){
-      const blob = [r.username,r.final_email,r.final_phone,r.userid,r._gv,r._ma_lop,r._exam].map(x=>String(x||'').toLowerCase()).join('|');
+  // Search across LOOKUP
+  const results = getScopedLookup().filter(r => {
+    if (examFilter && String(r._exam || '').trim() !== examFilter) return false;
+    if (q) {
+      const blob = [r.username, r.final_email, r.final_phone, r.userid, r._ma_lop, r._exam, r.email]
+        .map(x => String(x || '').toLowerCase()).join('|');
       if (!blob.includes(q)) return false;
     }
     return true;
   });
-  currentFilter2 = filtered;
-  renderLookup(filtered, 2, COLS_22);
+
+  EMAIL_STUDENTS = results;
+  if (info) info.textContent = `Tìm thấy ${results.length} học sinh.`;
+
+  // Render table
+  let stt = 0;
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    stt++;
+    const tr = document.createElement('tr');
+    const linkZalo = r['link group'] || '';
+    tr.innerHTML = `
+      <td style="text-align:center"><input type="checkbox" class="email-cb" data-idx="${i}" onchange="emailUpdateSelection()"></td>
+      <td class="num">${stt}</td>
+      <td>${escapeHtml(r.username || '')}</td>
+      <td>${escapeHtml(r.final_phone || '')}</td>
+      <td>${escapeHtml(r.final_email || '')}</td>
+      <td>${escapeHtml(r._ma_lop || '')}</td>
+      <td>${escapeHtml(fmtDate(r.paid_time))}</td>
+      <td>${linkZalo ? `<a href="${escapeHtml(linkZalo)}" target="_blank" rel="noopener" class="link-zalo">zalo ↗</a>` : '<span class="muted">—</span>'}</td>
+      <td>${escapeHtml(r.GV || '')}</td>
+      <td>${escapeHtml(r['SĐT GV'] || '')}</td>
+      <td>${escapeHtml(r['Mã bảo mật'] || '')}</td>
+      <td>${escapeHtml(r.hsa_type || '')}</td>
+      <td>${badgeStatus(r['Trạng thái duyệt 1:30'])}</td>
+      <td>${escapeHtml(r['Display Name'] || r['ten_zalo'] || '')}</td>
+      <td>${badgeStatus(r['Trạng thái duyệt AIM'])}</td>
+    `;
+    tb.appendChild(tr);
+  }
+
+  // Update checkall state
+  const checkAll = document.getElementById('email-checkall');
+  if (checkAll) checkAll.checked = false;
 }
-function resetFilter2(){
-  ['f2-sochua','f2-exam','f2-malop'].forEach(id => document.getElementById(id).value='');
-  refreshCascades2();
-  document.getElementById('q2').value='';
-  applyFilter2();
+
+function emailClearSearch() {
+  const q = document.getElementById('email-search-input');
+  const ex = document.getElementById('email-exam-filter');
+  const tb = document.querySelector('#tbl-email-students tbody');
+  const info = document.getElementById('email-student-info');
+  if (q) q.value = '';
+  if (ex) ex.value = '';
+  if (tb) tb.innerHTML = '';
+  if (info) info.textContent = '';
+  EMAIL_STUDENTS = [];
+  EMAIL_SELECTED.clear();
+  const sc = document.getElementById('email-send-count');
+  if (sc) sc.textContent = '0';
+  const ca = document.getElementById('email-checkall');
+  if (ca) ca.checked = false;
+}
+
+function emailToggleAll() {
+  const checkAll = document.getElementById('email-checkall');
+  document.querySelectorAll('.email-cb').forEach(cb => {
+    cb.checked = checkAll.checked;
+  });
+  emailUpdateSelection();
+}
+
+function emailUpdateSelection() {
+  EMAIL_SELECTED.clear();
+  document.querySelectorAll('.email-cb:checked').forEach(cb => {
+    EMAIL_SELECTED.add(parseInt(cb.dataset.idx, 10));
+  });
+  const sendCount = document.getElementById('email-send-count');
+  if (sendCount) sendCount.textContent = EMAIL_SELECTED.size;
+}
+
+function previewEmailTemplate2() {
+  const sel = document.getElementById('emailTemplate2');
+  const preview = document.getElementById('emailPreview2');
+  if (!sel || !preview) return;
+  const key = sel.value;
+  const t = EMAIL_TEMPLATES_LOADED[key];
+  if (!t) return;
+  preview.style.display = 'block';
+  const body = t.html_body || t.body || '';
+  preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${body || '(Chưa có nội dung html_body)'}</div>`;
+}
+
+async function emailSendSelected() {
+  const pwd = document.getElementById('email-send-pwd')?.value;
+  const tplSel = document.getElementById('emailTemplate2');
+  const resultBox = document.getElementById('emailSendResult2');
+
+  if (!pwd) { alert('Vui lòng nhập mật khẩu gửi email.'); return; }
+  if (EMAIL_SELECTED.size === 0) { alert('Vui lòng chọn ít nhất 1 học sinh để gửi.'); return; }
+
+  const key = tplSel?.value;
+  const template = EMAIL_TEMPLATES_LOADED[key] || (EMAIL_TEMPLATES_FALLBACK.default ? {
+    key: 'default', name: EMAIL_TEMPLATES_FALLBACK.default.name,
+    subject: EMAIL_TEMPLATES_FALLBACK.default.subject,
+    html_body: EMAIL_TEMPLATES_FALLBACK.default.body
+  } : null);
+
+  if (!template) {
+    alert('Vui lòng chọn một mẫu email.');
+    return;
+  }
+
+  // Collect selected students that have valid email
+  const selected = [...EMAIL_SELECTED].map(i => EMAIL_STUDENTS[i]).filter(r => {
+    const e = (r.final_email || '').trim();
+    return e && e.includes('@');
+  });
+
+  if (selected.length === 0) {
+    alert('Không có học sinh nào trong danh sách chọn có email hợp lệ.');
+    return;
+  }
+
+  const confirmed = confirm(`Bạn muốn gửi email "${template.name}" cho ${selected.length} học sinh?`);
+  if (!confirmed) return;
+
+  resultBox.textContent = `Đang gửi email cho ${selected.length} học sinh...`;
+
+  // Send via API
+  const students = selected.map(r => ({
+    email: (r.final_email || '').trim(),
+    username: r.username || '',
+    ma_lop: r._ma_lop || '',
+    exam: r._exam || '',
+    gv: r._gv || '',
+  }));
+
+  const stamp = nowStamp();
+
+  try {
+    const resp = await fetch(EMAIL_API_URL_2, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'send_selected',
+        adminPassword: pwd,
+        templateKey: key,
+        templateSubject: template.subject,
+        templateBody: template.html_body,
+        students,
+      })
+    });
+    const result = await resp.json();
+
+    if (!result.ok) {
+      resultBox.textContent = 'Lỗi: ' + (result.error || JSON.stringify(result));
+      return;
+    }
+
+    // Ghi lại thời gian gửi + trạng thái cho từng học sinh đã gửi
+    const sentOk = result.sent || 0;
+    const sentErr = result.errors || 0;
+    resultBox.textContent =
+      `[${stamp}] Gửi xong!\n` +
+      'Thành công: ' + sentOk + '\n' +
+      'Lỗi: ' + sentErr + '\n' +
+      (result.log_ids ? 'IDs đã log: ' + result.log_ids.join(', ') : '');
+
+    // Đánh dấu thời gian gửi email cho các học sinh đã gửi thành công
+    if (result.sent_ids && result.sent_ids.length) {
+      const sentSet = new Set(result.sent_ids);
+      for (const s of selected) {
+        if (sentSet.has(s.email)) {
+          const row = LOOKUP.find(r => String(r.final_email || '').toLowerCase() === s.email.toLowerCase());
+          if (row) row._email_sent_time = stamp;
+        }
+      }
+    }
+  } catch (err) {
+    resultBox.textContent = `[${stamp}] Lỗi hệ thống: ` + err.message;
+  }
 }
 
 // ===== 2.3 Học sinh chờ duyệt kết nối =====
@@ -1717,7 +1919,7 @@ async function loadData(){
 
     renderKPI(); renderExamTable(); initChartFilters(); applyCharts(); renderBarTable(); renderExamPie(); renderHSA(); renderGroupsByExam();
     initLookupHeaders();
-    initFilters1(); initFilters2(); applyFilter1();
+    initFilters1(); initEmailSection(); applyFilter1();
 
     // Load Wait_member data for tab 2.3 (await để tránh trắng dữ liệu khi user click sớm)
     await loadWaitMember();
