@@ -255,8 +255,27 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
   </table>
 </section>
 
+<section id="r1-chart">
+  <h2>1.2 · Biểu đồ theo tháng trả tiền (paid_time) theo từng exam</h2>
+  <div class="filter-row" style="margin-bottom:12px">
+    <label>Kỳ thi (chọn nhiều)
+      <select id="chart-exam-filter" multiple style="min-height:60px"></select>
+    </label>
+    <label>Từ tháng
+      <select id="chart-month-from"><option value="">-- Tất cả --</option></select>
+    </label>
+    <label>Đến tháng
+      <select id="chart-month-to"><option value="">-- Tất cả --</option></select>
+    </label>
+    <label style="justify-content:flex-end">
+      <button class="btn" onclick="applyCharts()" style="margin-top:auto">Lọc</button>
+    </label>
+  </div>
+  <div class="chart-grid" id="chart-grid"></div>
+</section>
+
 <section id="r1-hsa">
-  <h2>1.2 · Pie chart</h2>
+  <h2>1.3 · Pie chart</h2>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:24px;margin-top:8px">
     <div>
       <h3 style="text-align:center">Tổng học sinh theo từng kỳ thi</h3>
@@ -271,16 +290,10 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 </section>
 
 <section id="r1-stats">
-  <h2>1.3 · Thống kê số lượng học sinh được duyệt theo từng nhóm lớp 1:30</h2>
+  <h2>1.4 · Thống kê số lượng học sinh được duyệt theo từng nhóm lớp 1:30</h2>
   <p class="muted">Chọn kỳ thi bên dưới để xem danh sách các nhóm lớp thuộc kỳ đó, sắp xếp theo tỉ lệ duyệt nhóm 1:30 giảm dần (cao → thấp).</p>
   <div class="sub-tab-bar" id="tabs-groups"></div>
   <div id="groups-content"></div>
-</section>
-
-<section id="r1-chart">
-  <h2>1.4 · Biểu đồ theo tháng trả tiền (paid_time) theo từng exam</h2>
-  <p class="muted">Trục X = tháng (YYYY-MM), 3 series: Tổng HS / Duyệt 1:30 / Duyệt AIM</p>
-  <div class="chart-grid" id="chart-grid"></div>
 </section>
 
 </div><!-- /tab-overview -->
@@ -882,32 +895,97 @@ function renderExamTable(){
        <td class="num">${daimN.toLocaleString('vi-VN')}</td>
        <td class="num">${taim}%</td></tr>`);
 }
-function renderCharts(){
+function applyCharts(){
+  // Destroy old charts
+  if (window._overviewCharts) {
+    window._overviewCharts.forEach(c => c.destroy());
+  }
+  window._overviewCharts = [];
+
+  // Read filters
+  const exSel = document.getElementById('chart-exam-filter');
+  const selectedExams = [...exSel.selectedOptions].map(o => o.value);
+  const exams = selectedExams.length ? selectedExams : [...DATA.exams];
+
+  const fromMonth = document.getElementById('chart-month-from').value;
+  const toMonth = document.getElementById('chart-month-to').value;
+
   const grid = document.getElementById('chart-grid');
   grid.innerHTML = '';
-  DATA.exams.forEach((ex, i)=>{
+
+  // First pass: compute global max across selected exams + month range
+  let globalMax = 0;
+  const examSeries = [];
+  for (const ex of exams) {
+    const series = (DATA.monthly_chart[ex] || []).filter(m => {
+      if (fromMonth && m.month < fromMonth) return false;
+      if (toMonth && m.month > toMonth) return false;
+      return true;
+    });
+    if (series.length) {
+      examSeries.push({ exam: ex, series });
+      for (const m of series) {
+        globalMax = Math.max(globalMax, m.total, m.duyet_130, m.duyet_aim);
+      }
+    }
+  }
+
+  // Round up to nice step
+  let step = 50;
+  if (globalMax > 1000) step = 500;
+  else if (globalMax > 500) step = 100;
+  const commonMax = Math.ceil(globalMax / step) * step || 10;
+
+  // Second pass: render charts with common Y-axis
+  examSeries.forEach(({exam, series}, i) => {
     const div = document.createElement('div');
     const id = 'c_' + i;
-    div.innerHTML = `<h3>${ex}</h3><div class="chart-wrap"><canvas id="${id}"></canvas></div>`;
+    div.innerHTML = `<h3>${exam}</h3><div class="chart-wrap"><canvas id="${id}"></canvas></div>`;
     grid.appendChild(div);
-    const series = DATA.monthly_chart[ex];
-    const labels = series.map(x=>x.month);
-    const total = series.map(x=>x.total);
-    const d130 = series.map(x=>x.duyet_130);
-    const daim = series.map(x=>x.duyet_aim);
-    new Chart(document.getElementById(id), {
-      type:'line',
-      data:{labels, datasets:[
+
+    const labels = series.map(x => x.month);
+    const total = series.map(x => x.total);
+    const d130 = series.map(x => x.duyet_130);
+    const daim = series.map(x => x.duyet_aim);
+
+    const chart = new Chart(document.getElementById(id), {
+      type: 'line',
+      data: {labels, datasets: [
         {label:'Tổng HS', data:total, borderColor:'#93c5fd', backgroundColor:'#93c5fd33', tension:0.25, fill:false, borderWidth:2},
         {label:'Duyệt 1:30', data:d130, borderColor:'#2563eb', backgroundColor:'#2563eb33', tension:0.25, fill:false, borderWidth:2},
         {label:'Duyệt AIM', data:daim, borderColor:'#16a34a', backgroundColor:'#16a34a33', tension:0.25, fill:false, borderWidth:2},
       ]},
-      options:{responsive:true, maintainAspectRatio:false,
+      options: {responsive:true, maintainAspectRatio:false,
         interaction:{mode:'index',intersect:false},
-        scales:{y:{beginAtZero:true,ticks:{precision:0}}},
+        scales:{y:{beginAtZero:true, max:commonMax, ticks:{precision:0, stepSize:step}}},
         plugins:{legend:{position:'top'},
-          tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y} HS`}}}}
+          tooltip:{callbacks:{label:c => `${c.dataset.label}: ${c.parsed.y} HS`}}}}
     });
+    window._overviewCharts.push(chart);
+  });
+
+  if (!grid.children.length) {
+    grid.innerHTML = '<p class="muted">Không có dữ liệu trong khoảng thời gian đã chọn.</p>';
+  }
+}
+
+function initChartFilters(){
+  // Populate exam multi-select (all selected by default)
+  const exSel = document.getElementById('chart-exam-filter');
+  exSel.innerHTML = '';
+  DATA.exams.forEach(ex => {
+    exSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(ex)}" selected>${escapeHtml(ex)}</option>`);
+  });
+
+  // Populate month from/to dropdowns
+  const months = DATA.all_months || [];
+  const fromSel = document.getElementById('chart-month-from');
+  const toSel = document.getElementById('chart-month-to');
+  fromSel.innerHTML = '<option value="">-- Tất cả --</option>';
+  toSel.innerHTML = '<option value="">-- Tất cả --</option>';
+  months.forEach(m => {
+    fromSel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
+    toSel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
   });
 }
 function renderHSA(){
@@ -1486,7 +1564,7 @@ async function loadData(){
     document.getElementById('header-meta').textContent =
       `Báo cáo nội bộ dành cho cán bộ quản lí · Cập nhật lúc ${json.generated_at}`;
 
-    renderKPI(); renderExamTable(); renderCharts(); renderExamPie(); renderHSA(); renderGroupsByExam();
+    renderKPI(); renderExamTable(); initChartFilters(); applyCharts(); renderExamPie(); renderHSA(); renderGroupsByExam();
     initLookupHeaders();
     initFilters1(); initFilters2(); applyFilter1();
 
