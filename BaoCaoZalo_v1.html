@@ -620,7 +620,7 @@ function applyRoleUI(){
   if(tabOv&&!isAdmin()) tabOv.style.display='none';
   if(!isAdmin()) switchTab('lookup');
   if(isDVKH()){
-    ['s-group','email-notification','wait-member'].forEach(function(s){
+    ['email-notification','wait-member'].forEach(function(s){
       var t=document.querySelector('.sub-tab[data-sub="'+s+'"]');
       var p=document.getElementById('sub-'+s);
       if(t) t.style.display='none';
@@ -1984,13 +1984,20 @@ const S_COLS = [
 
 function initSGroupHeaders() {
   const tr = document.getElementById('thead-s-group');
-  tr.innerHTML = S_COLS.map(c => {
+  const cols = getSCols();
+  tr.innerHTML = cols.map(c => {
     const w = c.width ? ` style="width:${c.width};min-width:${c.width}"` : '';
     const p = [];
     if (c.isSTT || /^(userid|SĐT|email|noti)/.test(c.label)) p.push('num');
     const cls = p.length ? ` class="${p.join(' ')}"` : '';
     return `<th${w}${cls}>${c.label}</th>`;
   }).join('');
+}
+
+function getSCols() {
+  if (!isDVKH()) return S_COLS;
+  // DVKH: ẩn cột Gửi email và TG gửi email
+  return S_COLS.filter(function(c) { return !c.isEmailBtnSGroup && c.key !== '_email_sent_time'; });
 }
 
 async function loadSGroupData() {
@@ -2032,6 +2039,7 @@ function resetFilterSGroup() {
 
 function renderSGroupTable(rows) {
   const tb = document.querySelector('#tbl-s-group tbody');
+  const cols = getSCols();
   tb.innerHTML = '';
   const MAX = 500;
   const slice = rows.slice(0, MAX);
@@ -2039,7 +2047,7 @@ function renderSGroupTable(rows) {
     const r = slice[i];
     const tr = document.createElement('tr');
     let html = '';
-    for (const c of S_COLS) {
+    for (const c of cols) {
       if (c.isSTT) { html += `<td class="num">${i + 1}</td>`; continue; }
       if (c.isLinkSGroup) {
         const url = escapeHtml(r.link_nhom || '');
