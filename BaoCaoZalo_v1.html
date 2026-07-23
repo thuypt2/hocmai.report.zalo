@@ -330,9 +330,10 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 <div class="tab-pane" id="tab-lookup">
 
   <div style="margin-bottom:14px">
-    <span class="sub-tab active" data-sub="filter-group">2.1 · LỌC HỌC SINH THEO NHÓM LỚP</span>
-    <span class="sub-tab" data-sub="email-notification">2.2 · GỬI EMAIL PHẢN HỒI, THÔNG BÁO</span>
-    <span class="sub-tab" data-sub="wait-member">2.3 · HỌC SINH CHỜ DUYỆT KẾT NỐI</span>
+    <span class="sub-tab active" data-sub="filter-group">2.1 · LỌC HỌC SINH THEO NHÓM VIP</span>
+    <span class="sub-tab" data-sub="s-group">2.2 · LỌC HỌC SINH THEO NHÓM S</span>
+    <span class="sub-tab" data-sub="email-notification">2.3 · GỬI EMAIL PHẢN HỒI, THÔNG BÁO</span>
+    <span class="sub-tab" data-sub="wait-member">2.4 · HỌC SINH CHỜ DUYỆT KẾT NỐI</span>
   </div>
 
   <!-- ====== 2.1 Lọc theo nhóm lớp ====== -->
@@ -388,7 +389,28 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
       </div><!-- /sub-filter-group -->
 
-      <!-- ====== 2.2 Gửi email phản hồi, thông báo ====== -->
+      <!-- ====== 2.2 Lọc học sinh theo nhóm S ====== -->
+      <div class="sub-pane" id="sub-s-group">
+
+        <div class="toolbar">
+          <input class="search-input" id="qS" placeholder="Tìm nhanh: username / SĐT / email" onkeydown="if(event.key==='Enter')applyFilterSGroup()">
+          <button class="btn" onclick="applyFilterSGroup()">Tìm</button>
+          <button class="btn gray" onclick="resetFilterSGroup()">Xoá</button>
+          <span class="muted" id="result-info-s"></span>
+          <span style="flex:1"></span>
+        </div>
+
+        <div id="summary-s" style="margin-bottom:10px"></div>
+        <div class="tbl-wrap" style="max-height:calc(100vh - 280px)">
+          <table id="tbl-s-group">
+            <thead><tr id="thead-s-group"></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+      </div><!-- /sub-s-group -->
+
+      <!-- ====== 2.3 Gửi email phản hồi, thông báo ====== -->
       <div class="sub-pane" id="sub-email-notification">
 
         <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)">
@@ -469,7 +491,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
       </div><!-- /sub-email-notification -->
 
-        <!-- ====== 2.3 Học sinh chờ duyệt kết nối ====== -->
+        <!-- ====== 2.4 Học sinh chờ duyệt kết nối ====== -->
         <div class="sub-pane" id="sub-wait-member">
           <p class="muted" style="margin-top:0">
             Danh sách học sinh chờ duyệt kết nối vào nhóm lớp. Dữ liệu lấy từ sheet <strong>Wait_member</strong> trên Google Sheets.
@@ -523,6 +545,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 const AUTH_API_URL='/api/auth';
 const AUTH_SESS_KEY='hocmai_zalo_auth_v7';
 const EMAIL_API_URL = '/api/send-class-group-email';
+const SGROUP_API_URL = '/api/get-sgroup-data';
 let CURRENT_USER = null;
 function getStoredAuth(){try{var r=sessionStorage.getItem(AUTH_SESS_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
 function setStoredAuth(a){try{sessionStorage.setItem(AUTH_SESS_KEY,JSON.stringify(a));}catch(e){}}
@@ -596,7 +619,7 @@ function applyRoleUI(){
   if(tabOv&&!isAdmin()) tabOv.style.display='none';
   if(!isAdmin()) switchTab('lookup');
   if(isDVKH()){
-    ['email-notification','wait-member'].forEach(function(s){
+    ['s-group','email-notification','wait-member'].forEach(function(s){
       var t=document.querySelector('.sub-tab[data-sub="'+s+'"]');
       var p=document.getElementById('sub-'+s);
       if(t) t.style.display='none';
@@ -1312,6 +1335,7 @@ function switchSub(sub){
   document.querySelectorAll('.sub-tab').forEach(s=>s.classList.toggle('active', s.dataset.sub===sub));
   document.querySelectorAll('.sub-pane').forEach(p=>p.classList.toggle('active', p.id==='sub-'+sub));
   if (sub==='filter-group') applyFilter1();
+  else if (sub==='s-group') applyFilterSGroup();
   else if (sub==='email-notification') applyFilter2();
 }
 
@@ -1939,7 +1963,150 @@ async function emailSendSelected() {
   }
 }
 
-// ===== 2.3 Học sinh chờ duyệt kết nối =====
+// ===== 2.2 Lọc học sinh theo nhóm S =====
+let S_GROUP_DATA = [];
+const S_COLS = [
+  {key:"_stt", label:"STT", isSTT:true, width:"50px"},
+  {key:"username", label:"Username", width:"180px"},
+  {key:"userid", label:"UserID", width:"90px"},
+  {key:"sdt", label:"SĐT", width:"110px"},
+  {key:"email", label:"Email", width:"220px"},
+  {key:"product", label:"product", width:"100px"},
+  {key:"mabaomat", label:"mabaomat", width:"110px"},
+  {key:"link_nhom", label:"link nhóm", isLinkSGroup:true, width:"130px"},
+  {key:"maillan1", label:"maillan1", width:"100px"},
+  {key:"noti", label:"noti", width:"80px"},
+  {key:"trang_thai_duyet", label:"Trạng thái duyệt", width:"100px"},
+  {key:"_email_btn", label:"Gửi email", isEmailBtnSGroup:true, width:"100px"},
+  {key:"_email_sent_time", label:"TG gửi email", width:"140px"},
+];
+
+function initSGroupHeaders() {
+  const tr = document.getElementById('thead-s-group');
+  tr.innerHTML = S_COLS.map(c => {
+    const w = c.width ? ` style="width:${c.width};min-width:${c.width}"` : '';
+    const p = [];
+    if (c.isSTT || /^(userid|SĐT|email|noti)/.test(c.label)) p.push('num');
+    const cls = p.length ? ` class="${p.join(' ')}"` : '';
+    return `<th${w}${cls}>${c.label}</th>`;
+  }).join('');
+}
+
+async function loadSGroupData() {
+  try {
+    const resp = await fetch(SGROUP_API_URL);
+    const json = await resp.json();
+    if (json.ok && json.data) {
+      S_GROUP_DATA = json.data;
+    } else {
+      S_GROUP_DATA = [];
+    }
+  } catch (err) {
+    console.warn('Không tải được dữ liệu nhóm S:', err.message);
+    S_GROUP_DATA = [];
+  }
+  initSGroupHeaders();
+}
+
+function applyFilterSGroup() {
+  const q = (document.getElementById('qS')?.value || '').trim().toLowerCase();
+  if (!q) {
+    renderSGroupTable([]);
+    document.getElementById('result-info-s').textContent = 'Vui lòng nhập từ khóa tìm kiếm.';
+    return;
+  }
+  const filtered = S_GROUP_DATA.filter(r => {
+    const blob = [r.username, r.sdt, r.email, r.userid, r.product, r.mabaomat]
+      .map(x => String(x || '').toLowerCase()).join('|');
+    return blob.includes(q);
+  });
+  renderSGroupTable(filtered);
+}
+
+function resetFilterSGroup() {
+  document.getElementById('qS').value = '';
+  renderSGroupTable([]);
+  document.getElementById('result-info-s').textContent = '';
+}
+
+function renderSGroupTable(rows) {
+  const tb = document.querySelector('#tbl-s-group tbody');
+  tb.innerHTML = '';
+  const MAX = 500;
+  const slice = rows.slice(0, MAX);
+  for (let i = 0; i < slice.length; i++) {
+    const r = slice[i];
+    const tr = document.createElement('tr');
+    let html = '';
+    for (const c of S_COLS) {
+      if (c.isSTT) { html += `<td class="num">${i + 1}</td>`; continue; }
+      if (c.isLinkSGroup) {
+        const url = escapeHtml(r.link_nhom || '');
+        if (url) {
+          const safeUrl = url.replace(/"/g, '&quot;');
+          html += `<td><a href="${safeUrl}" target="_blank" rel="noopener" class="link-zalo">zalo ↗</a><button class="copy-btn" onclick="copyLink(this, '${safeUrl}')">Copy</button></td>`;
+        } else {
+          html += '<td><span class="muted">—</span></td>';
+        }
+        continue;
+      }
+      if (c.key === 'trang_thai_duyet') {
+        html += `<td>${badgeStatus(r.trang_thai_duyet)}</td>`;
+        continue;
+      }
+      if (c.isEmailBtnSGroup) {
+        const em = escapeHtml(r.email || '');
+        const un = escapeHtml(r.username || '');
+        if (!em) { html += '<td><span class="muted">(trống)</span></td>'; continue; }
+        html += `<td><button class="btn-email" onclick="sendEmailSGroup('${em.replace(/'/g, "\\'")}','${un.replace(/'/g, "\\'")}',this)">Gửi email</button></td>`;
+        continue;
+      }
+      if (c.key === '_email_sent_time') {
+        const t = r._email_sent_time || '';
+        html += `<td class="email-sent-cell">${t ? escapeHtml(t) : '<span class="muted">—</span>'}</td>`;
+        continue;
+      }
+      html += `<td>${escapeHtml(r[c.key] || '')}</td>`;
+    }
+    tr.innerHTML = html;
+    tb.appendChild(tr);
+  }
+  const total = rows.length;
+  document.getElementById('result-info-s').textContent =
+    total > MAX ? `Hiển thị ${MAX} / ${total} dòng` : `Hiển thị ${total} dòng`;
+}
+
+function sendEmailSGroup(email, username, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Đang gửi...';
+  fetch(EMAIL_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, username, ma_lop: '', exam: '', gv: '', link_group: '', sdt_gv: '', ma_bao_mat: '', nhom_aim: '', link_aim: '', final_phone: '' })
+  })
+    .then(r => r.text())
+    .then(text => {
+      const stamp = nowStamp();
+      // Tìm row trong S_GROUP_DATA để ghi thời gian
+      const row = S_GROUP_DATA.find(r => String(r.email || '').toLowerCase() === email.toLowerCase());
+      if (row) row._email_sent_time = stamp;
+      const td = btn.closest('td');
+      if (td) {
+        const tr = td.closest('tr');
+        const timeCell = tr?.querySelector('.email-sent-cell');
+        if (timeCell) timeCell.textContent = stamp;
+      }
+      btn.textContent = '✓ Đã gửi';
+      setTimeout(() => { btn.textContent = 'Gửi email'; btn.disabled = false; }, 3000);
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.textContent = 'Gửi email';
+      alert('Lỗi: ' + err.message);
+    });
+}
+
+// ===== 2.4 Học sinh chờ duyệt kết nối =====
 let WAIT_DATA = [];
 function initFilters3(){
   // Populate unique exams và mã lớp từ WAIT_DATA
@@ -2032,8 +2199,11 @@ async function loadData(){
     initLookupHeaders();
     initFilters1(); initEmailSection(); applyFilter1();
 
-    // Load Wait_member data for tab 2.3 (await để tránh trắng dữ liệu khi user click sớm)
+    // Load Wait_member data for tab 2.4 (await để tránh trắng dữ liệu khi user click sớm)
     await loadWaitMember();
+
+    // Load S-group data for tab 2.2
+    loadSGroupData();
 
   } catch(err) {
     loadBox.style.display = 'none';
