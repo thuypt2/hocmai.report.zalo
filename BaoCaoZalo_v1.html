@@ -284,7 +284,10 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
       <select id="chart-month-to"><option value="">-- Tất cả --</option></select>
     </label>
     <label style="justify-content:flex-end">
-      <button class="btn" onclick="applyCharts()" style="margin-top:auto">Lọc</button>
+      <span style="display:flex;gap:6px;margin-top:auto">
+        <button class="btn" onclick="applyCharts()">Lọc</button>
+        <button class="btn gray" onclick="resetChartFilters()">Xóa</button>
+      </span>
     </label>
   </div>
   <div class="chart-grid" id="chart-grid"></div>
@@ -1143,6 +1146,15 @@ function initChartFilters(){
     toSel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
   });
 }
+
+function resetChartFilters() {
+  document.getElementById('chart-exam-filter').value = '';
+  document.getElementById('chart-type-filter').value = 'month';
+  document.getElementById('chart-month-from').value = '';
+  document.getElementById('chart-month-to').value = '';
+  applyCharts();
+}
+
 function renderHSA(){
   const pieLabels = Object.keys(DATA.hsa_pie);
   const pieVals = pieLabels.map(k=>DATA.hsa_pie[k]);
