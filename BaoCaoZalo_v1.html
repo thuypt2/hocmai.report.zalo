@@ -392,8 +392,8 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
       <!-- ====== 2.2 Lọc học sinh theo nhóm S ====== -->
       <div class="sub-pane" id="sub-s-group">
 
-        <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)">
-          <label>Trạng thái duyệt AIM
+        <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)" id="fS-filter-row">
+          <label id="fS-aim-label">Trạng thái duyệt AIM
             <select id="fS-aim">
               <option value="">-- Tất cả --</option>
               <option value="duyet">Đã duyệt</option>
@@ -639,6 +639,11 @@ function applyRoleUI(){
     var fr=document.querySelector('#sub-filter-group .filter-row');
     if(fr) fr.style.display='none';
     document.querySelectorAll('#sub-filter-group .toolbar .btn').forEach(function(b){b.style.display='none';});
+    // Ẩn filter AIM trong 2.2
+    var sfAimLabel = document.getElementById('fS-aim-label');
+    if(sfAimLabel) sfAimLabel.style.display='none';
+    var sfFilterRow = document.getElementById('fS-filter-row');
+    if(sfFilterRow) sfFilterRow.style.display='none';
   }
 }
 (function autoGate(){
@@ -2006,8 +2011,8 @@ function initSGroupHeaders() {
 
 function getSCols() {
   if (!isDVKH()) return S_COLS;
-  // DVKH: ẩn cột Gửi email và TG gửi email
-  return S_COLS.filter(function(c) { return !c.isEmailBtnSGroup && c.key !== '_email_sent_time'; });
+  // DVKH: ẩn cột Gửi email, TG gửi email và Trạng thái duyệt
+  return S_COLS.filter(function(c) { return !c.isEmailBtnSGroup && c.key !== '_email_sent_time' && c.key !== 'trang_thai_duyet'; });
 }
 
 async function loadSGroupData() {
