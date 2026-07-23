@@ -394,6 +394,13 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
         <div class="toolbar">
           <input class="search-input" id="qS" placeholder="Tìm nhanh: username / SĐT / email" onkeydown="if(event.key==='Enter')applyFilterSGroup()">
+          <label style="font-size:12px;color:var(--mut);display:flex;flex-direction:column">Trạng thái AIM
+            <select id="fS-aim" style="padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:13px">
+              <option value="">-- Tất cả --</option>
+              <option value="duyet">Đã duyệt</option>
+              <option value="chua">Chưa duyệt</option>
+            </select>
+          </label>
           <button class="btn" onclick="applyFilterSGroup()">Tìm</button>
           <button class="btn gray" onclick="resetFilterSGroup()">Xoá</button>
           <span class="muted" id="result-info-s"></span>
@@ -2073,6 +2080,7 @@ function renderVActSOverview() {
 
 function applyFilterSGroup() {
   const q = (document.getElementById('qS')?.value || '').trim().toLowerCase();
+  const fAim = (document.getElementById('fS-aim')?.value || '');
   if (!q) {
     renderSGroupTable([]);
     document.getElementById('result-info-s').textContent = 'Vui lòng nhập từ khóa tìm kiếm.';
@@ -2081,13 +2089,18 @@ function applyFilterSGroup() {
   const filtered = S_GROUP_DATA.filter(r => {
     const blob = [r.username, r.sdt, r.email, r.userid, r.product, r.mabaomat]
       .map(x => String(x || '').toLowerCase()).join('|');
-    return blob.includes(q);
+    if (!blob.includes(q)) return false;
+    if (fAim === 'duyet' && (r.trang_thai_duyet || '').trim() !== 'Duyệt') return false;
+    if (fAim === 'chua' && (r.trang_thai_duyet || '').trim() === 'Duyệt') return false;
+    return true;
   });
   renderSGroupTable(filtered);
 }
 
 function resetFilterSGroup() {
   document.getElementById('qS').value = '';
+  const aimSel = document.getElementById('fS-aim');
+  if (aimSel) aimSel.value = '';
   renderSGroupTable([]);
   document.getElementById('result-info-s').textContent = '';
 }
