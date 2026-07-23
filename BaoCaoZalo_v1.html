@@ -2011,8 +2011,8 @@ function initSGroupHeaders() {
 
 function getSCols() {
   if (!isDVKH()) return S_COLS;
-  // DVKH: ẩn cột Gửi email, TG gửi email và Trạng thái duyệt
-  return S_COLS.filter(function(c) { return !c.isEmailBtnSGroup && c.key !== '_email_sent_time' && c.key !== 'trang_thai_duyet'; });
+  // DVKH: ẩn cột Gửi email và TG gửi email, vẫn hiển thị Trạng thái duyệt
+  return S_COLS.filter(function(c) { return !c.isEmailBtnSGroup && c.key !== '_email_sent_time'; });
 }
 
 async function loadSGroupData() {
