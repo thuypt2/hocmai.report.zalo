@@ -105,23 +105,6 @@ tr:nth-child(even) td{background:#fafbfc}
 .popup-body iframe{width:100%;height:100%;border:0;display:block}
 .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 12px}
 .search-input{padding:6px 10px;border:1px solid var(--bd);border-radius:6px;font-size:13px;min-width:220px}
-/* === Material Design Checkbox Dropdown === */
-.chk-dropdown{position:relative;width:100%}
-.chk-dd-trigger{width:100%;padding:8px 14px;border:1px solid #d0d5dd;border-radius:8px;font-family:'Inter','Segoe UI',system-ui,sans-serif;font-size:14px;background:#fff;color:#222;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px;transition:border-color .2s,box-shadow .2s;line-height:1.4}
-.chk-dd-trigger:hover{border-color:#005BAC;box-shadow:0 0 0 3px rgba(0,91,172,.08)}
-.chk-dd-trigger:focus-visible{outline:2px solid #005BAC;outline-offset:2px}
-.chk-dd-trigger .chk-dd-count{display:inline-flex;align-items:center;justify-content:center;background:#005BAC;color:#fff;border-radius:12px;padding:1px 9px;font-size:12px;font-weight:600;min-width:22px;height:22px;flex-shrink:0}
-.chk-dd-trigger .chk-dd-arrow{transition:transform .2s ease;display:inline-flex;flex-shrink:0}
-.chk-dd-trigger.open .chk-dd-arrow{transform:rotate(180deg)}
-.chk-dd-panel{position:absolute;top:calc(100% + 4px);left:0;z-index:20;background:#fff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12),0 2px 4px rgba(0,0,0,.06);min-width:100%;max-height:280px;overflow-y:auto;padding:8px 0}
-.chk-dd-item{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;font-family:'Inter','Segoe UI',system-ui,sans-serif;font-size:15px;color:#222;margin:0;transition:background .15s;position:relative;line-height:1.3}
-.chk-dd-item:hover{background:#F5F7FA}
-.chk-cb{position:absolute;opacity:0;width:0;height:0;overflow:hidden}
-.chk-box{width:18px;height:18px;border:2px solid #757575;border-radius:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,border-color .2s;box-sizing:border-box}
-.chk-box svg{width:14px;height:14px;opacity:0;transition:opacity .15s;display:block}
-.chk-cb:checked+.chk-box{background:#005BAC;border-color:#005BAC}
-.chk-cb:checked+.chk-box svg{opacity:1}
-.chk-dd-sep{height:1px;background:#e0e0e0;margin:4px 14px}
 .summary-pill{display:inline-block;padding:4px 10px;background:#eef2ff;color:#1e3a8a;border-radius:14px;font-size:12px;margin-right:6px;margin-bottom:4px}
 .muted{color:var(--mut);font-size:12px}
 footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
@@ -273,28 +256,21 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 </section>
 
 <section id="r1-chart">
-  <h2>1.2 · Biểu đồ theo tháng trả tiền (paid_time) theo từng exam</h2>
+  <h2>1.2 · Biểu đồ theo thời gian (paid_time) theo từng exam</h2>
   <div class="filter-row" style="margin-bottom:12px">
     <label>Kỳ thi
-      <div class="chk-dropdown" id="chart-exam-dd">
-        <button class="chk-dd-trigger" id="chart-exam-trigger" type="button" onclick="toggleChartExamDD(event)">
-          <span class="chk-dd-label">Tất cả kỳ thi</span>
-          <svg class="chk-dd-arrow" width="20" height="20" viewBox="0 0 24 24" fill="#757575"><path d="M7 10l5 5 5-5z"/></svg>
-        </button>
-        <div class="chk-dd-panel" id="chart-exam-panel" style="display:none">
-          <label class="chk-dd-item">
-            <input type="checkbox" class="chk-cb" value="__all__" checked onchange="toggleAllChartExams(this)">
-            <span class="chk-box"><svg viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span>
-            <b>Tất cả</b>
-          </label>
-          <div class="chk-dd-sep"></div>
-        </div>
-      </div>
+      <select id="chart-exam-filter"><option value="">-- Tất cả --</option></select>
     </label>
-    <label>Từ tháng
+    <label>Loại biểu đồ
+      <select id="chart-type-filter" onchange="applyCharts()">
+        <option value="month">Theo tháng</option>
+        <option value="week">Theo tuần</option>
+      </select>
+    </label>
+    <label id="lbl-month-from">Từ tháng
       <select id="chart-month-from"><option value="">-- Tất cả --</option></select>
     </label>
-    <label>Đến tháng
+    <label id="lbl-month-to">Đến tháng
       <select id="chart-month-to"><option value="">-- Tất cả --</option></select>
     </label>
     <label style="justify-content:flex-end">
@@ -925,66 +901,6 @@ function renderExamTable(){
        <td class="num">${daimN.toLocaleString('vi-VN')}</td>
        <td class="num">${taim}%</td></tr>`);
 }
-function getChartSelectedExams(){
-  const panel = document.getElementById('chart-exam-panel');
-  if (!panel) return [...DATA.exams]; // fallback
-  const cbAll = panel.querySelector('input[value="__all__"]');
-  if (cbAll && cbAll.checked) return [...DATA.exams];
-  const cbs = panel.querySelectorAll('input.exam-cb:checked');
-  const vals = [...cbs].map(cb => cb.value);
-  return vals.length ? vals : [...DATA.exams]; // empty = all
-}
-function updateChartExamTrigger(){
-  const trigger = document.getElementById('chart-exam-trigger');
-  const labelEl = trigger.querySelector('.chk-dd-label');
-  const total = DATA.exams.length;
-  const sel = getChartSelectedExams();
-  const isAll = sel.length === total;
-
-  // Remove old count badge if exists
-  const oldBadge = trigger.querySelector('.chk-dd-count');
-  if (oldBadge) oldBadge.remove();
-
-  if (isAll) {
-    labelEl.textContent = 'Tất cả kỳ thi';
-    const badge = document.createElement('span');
-    badge.className = 'chk-dd-count';
-    badge.textContent = total;
-    trigger.insertBefore(badge, trigger.querySelector('.chk-dd-arrow'));
-  } else if (sel.length === 0) {
-    labelEl.textContent = 'Chọn kỳ thi';
-  } else if (sel.length === 1) {
-    labelEl.textContent = sel[0];
-  } else {
-    labelEl.textContent = sel.length + ' kỳ thi';
-    const badge = document.createElement('span');
-    badge.className = 'chk-dd-count';
-    badge.textContent = sel.length;
-    trigger.insertBefore(badge, trigger.querySelector('.chk-dd-arrow'));
-  }
-}
-function toggleAllChartExams(cb){
-  const panel = document.getElementById('chart-exam-panel');
-  panel.querySelectorAll('input.exam-cb').forEach(c => { c.checked = cb.checked; });
-  updateChartExamTrigger();
-}
-function onChartExamCbChange(){
-  const panel = document.getElementById('chart-exam-panel');
-  const cbAll = panel.querySelector('input[value="__all__"]');
-  const allCbs = panel.querySelectorAll('input.exam-cb');
-  const checkedCbs = panel.querySelectorAll('input.exam-cb:checked');
-  cbAll.checked = checkedCbs.length === allCbs.length;
-  updateChartExamTrigger();
-}
-function toggleChartExamDD(e){
-  e.stopPropagation();
-  const panel = document.getElementById('chart-exam-panel');
-  const trigger = document.getElementById('chart-exam-trigger');
-  const isOpen = panel.style.display === 'block';
-  panel.style.display = isOpen ? 'none' : 'block';
-  trigger.classList.toggle('open', !isOpen);
-}
-
 function applyCharts(){
   // Destroy old charts
   if (window._overviewCharts) {
@@ -993,26 +909,47 @@ function applyCharts(){
   window._overviewCharts = [];
 
   // Read filters
-  const exams = getChartSelectedExams();
-  const fromMonth = document.getElementById('chart-month-from').value;
-  const toMonth = document.getElementById('chart-month-to').value;
+  const exVal = document.getElementById('chart-exam-filter').value;
+  const exams = exVal ? [exVal] : [...DATA.exams];
+
+  const chartType = document.getElementById('chart-type-filter').value; // 'month' or 'week'
+  const showMonths = (chartType === 'month');
+  document.getElementById('lbl-month-from').style.display = showMonths ? '' : 'none';
+  document.getElementById('lbl-month-to').style.display = showMonths ? '' : 'none';
+
+  const fromMonth = showMonths ? document.getElementById('chart-month-from').value : '';
+  const toMonth = showMonths ? document.getElementById('chart-month-to').value : '';
 
   const grid = document.getElementById('chart-grid');
   grid.innerHTML = '';
 
-  // First pass: compute global max across selected exams + month range
+  // First pass: compute global max across selected exams
   let globalMax = 0;
   const examSeries = [];
+
   for (const ex of exams) {
-    const series = (DATA.monthly_chart[ex] || []).filter(m => {
-      if (fromMonth && m.month < fromMonth) return false;
-      if (toMonth && m.month > toMonth) return false;
-      return true;
-    });
+    let rawSeries;
+    if (chartType === 'week') {
+      rawSeries = DATA.weekly_chart[ex] || [];
+    } else {
+      rawSeries = (DATA.monthly_chart[ex] || []).filter(m => {
+        if (fromMonth && m.month < fromMonth) return false;
+        if (toMonth && m.month > toMonth) return false;
+        return true;
+      });
+    }
+
+    const series = rawSeries.map(item => ({
+      label: chartType === 'week' ? item.week : item.month,
+      total: item.total,
+      duyet_130: item.duyet_130,
+      duyet_aim: item.duyet_aim
+    }));
+
     if (series.length) {
       examSeries.push({ exam: ex, series });
-      for (const m of series) {
-        globalMax = Math.max(globalMax, m.total, m.duyet_130, m.duyet_aim);
+      for (const s of series) {
+        globalMax = Math.max(globalMax, s.total, s.duyet_130, s.duyet_aim);
       }
     }
   }
@@ -1030,7 +967,7 @@ function applyCharts(){
     div.innerHTML = `<h3>${exam}</h3><div class="chart-wrap"><canvas id="${id}"></canvas></div>`;
     grid.appendChild(div);
 
-    const labels = series.map(x => x.month);
+    const labels = series.map(x => x.label);
     const total = series.map(x => x.total);
     const d130 = series.map(x => x.duyet_130);
     const daim = series.map(x => x.duyet_aim);
@@ -1054,27 +991,14 @@ function applyCharts(){
   if (!grid.children.length) {
     grid.innerHTML = '<p class="muted">Không có dữ liệu trong khoảng thời gian đã chọn.</p>';
   }
-  // Close panel after applying
-  document.getElementById('chart-exam-panel').style.display = 'none';
-  document.getElementById('chart-exam-trigger').classList.remove('open');
 }
 
 function initChartFilters(){
-  // Populate exam checkboxes in dropdown
-  const panel = document.getElementById('chart-exam-panel');
-  // Keep "Tất cả" row + separator, remove old exam rows
-  panel.querySelectorAll('label.chk-dd-item').forEach(el => {
-    if (!el.querySelector('input[value="__all__"]')) el.remove();
-  });
-  // Remove old separator duplicates
-  panel.querySelectorAll('.chk-dd-sep').forEach((s, i) => { if (i > 0) s.remove(); });
-
-  const sep = panel.querySelector('.chk-dd-sep');
+  // Populate exam select
+  const exSel = document.getElementById('chart-exam-filter');
+  exSel.innerHTML = '<option value="">-- Tất cả --</option>';
   DATA.exams.forEach(ex => {
-    const label = document.createElement('label');
-    label.className = 'chk-dd-item';
-    label.innerHTML = `<input type="checkbox" class="chk-cb exam-cb" value="${escapeHtml(ex)}" checked onchange="onChartExamCbChange()"><span class="chk-box"><svg viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></span> ${escapeHtml(ex)}`;
-    panel.appendChild(label);
+    exSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(ex)}">${escapeHtml(ex)}</option>`);
   });
 
   // Populate month from/to dropdowns
@@ -1087,19 +1011,7 @@ function initChartFilters(){
     fromSel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
     toSel.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`);
   });
-
-  updateChartExamTrigger();
 }
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(e){
-  const dd = document.getElementById('chart-exam-dd');
-  const panel = document.getElementById('chart-exam-panel');
-  if (dd && panel && !dd.contains(e.target)) {
-    panel.style.display = 'none';
-    document.getElementById('chart-exam-trigger').classList.remove('open');
-  }
-});
 function renderHSA(){
   const pieLabels = Object.keys(DATA.hsa_pie);
   const pieVals = pieLabels.map(k=>DATA.hsa_pie[k]);
