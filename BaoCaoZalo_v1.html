@@ -392,17 +392,20 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
       <!-- ====== 2.2 Lọc học sinh theo nhóm S ====== -->
       <div class="sub-pane" id="sub-s-group">
 
-        <div class="toolbar">
-          <input class="search-input" id="qS" placeholder="Tìm nhanh: username / SĐT / email" onkeydown="if(event.key==='Enter')applyFilterSGroup()">
-          <label style="font-size:12px;color:var(--mut);display:flex;flex-direction:column">Trạng thái AIM
-            <select id="fS-aim" style="padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:13px">
+        <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)">
+          <label>Trạng thái duyệt AIM
+            <select id="fS-aim">
               <option value="">-- Tất cả --</option>
               <option value="duyet">Đã duyệt</option>
               <option value="chua">Chưa duyệt</option>
             </select>
           </label>
-          <button class="btn" onclick="applyFilterSGroup()">Tìm</button>
-          <button class="btn gray" onclick="resetFilterSGroup()">Xoá</button>
+        </div>
+
+        <div class="toolbar">
+          <input class="search-input" id="qS" placeholder="Tìm nhanh: username / SĐT / email" onkeydown="if(event.key==='Enter')applyFilterSGroup()">
+          <button class="btn" onclick="applyFilterSGroup()">Lọc</button>
+          <button class="btn gray" onclick="resetFilterSGroup()">Reset</button>
           <span class="muted" id="result-info-s"></span>
           <span style="flex:1"></span>
         </div>
@@ -2081,20 +2084,26 @@ function renderVActSOverview() {
 function applyFilterSGroup() {
   const q = (document.getElementById('qS')?.value || '').trim().toLowerCase();
   const fAim = (document.getElementById('fS-aim')?.value || '');
-  if (!q) {
-    renderSGroupTable([]);
-    document.getElementById('result-info-s').textContent = 'Vui lòng nhập từ khóa tìm kiếm.';
-    return;
+
+  let pool = S_GROUP_DATA;
+
+  // Lọc theo ô tìm kiếm (độc lập với AIM)
+  if (q) {
+    pool = pool.filter(r => {
+      const blob = [r.username, r.sdt, r.email, r.userid, r.product, r.mabaomat]
+        .map(x => String(x || '').toLowerCase()).join('|');
+      return blob.includes(q);
+    });
   }
-  const filtered = S_GROUP_DATA.filter(r => {
-    const blob = [r.username, r.sdt, r.email, r.userid, r.product, r.mabaomat]
-      .map(x => String(x || '').toLowerCase()).join('|');
-    if (!blob.includes(q)) return false;
-    if (fAim === 'duyet' && (r.trang_thai_duyet || '').trim() !== 'Duyệt') return false;
-    if (fAim === 'chua' && (r.trang_thai_duyet || '').trim() === 'Duyệt') return false;
-    return true;
-  });
-  renderSGroupTable(filtered);
+
+  // Lọc theo trạng thái AIM (độc lập với search)
+  if (fAim === 'duyet') {
+    pool = pool.filter(r => (r.trang_thai_duyet || '').trim() === 'Duyệt');
+  } else if (fAim === 'chua') {
+    pool = pool.filter(r => (r.trang_thai_duyet || '').trim() !== 'Duyệt');
+  }
+
+  renderSGroupTable(pool);
 }
 
 function resetFilterSGroup() {
