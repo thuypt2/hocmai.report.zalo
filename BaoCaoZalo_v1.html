@@ -546,6 +546,7 @@ const AUTH_API_URL='/api/auth';
 const AUTH_SESS_KEY='hocmai_zalo_auth_v7';
 const EMAIL_API_URL = '/api/send-class-group-email';
 const SGROUP_API_URL = '/api/get-sgroup-data';
+const SGROUP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxmqBq0z2jOoLqfETe5uWPyT71y-9-jrjQSOUZq4vjvQkn5dAU1gg-yzIN6Fmb4rfKG/exec';
 let CURRENT_USER = null;
 function getStoredAuth(){try{var r=sessionStorage.getItem(AUTH_SESS_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
 function setStoredAuth(a){try{sessionStorage.setItem(AUTH_SESS_KEY,JSON.stringify(a));}catch(e){}}
@@ -2079,13 +2080,13 @@ function renderSGroupTable(rows) {
 function sendEmailSGroup(email, username, btn) {
   btn.disabled = true;
   btn.textContent = 'Đang gửi...';
-  fetch(EMAIL_API_URL, {
+  fetch(SGROUP_SCRIPT_URL + '?action=sendEmail', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, username, ma_lop: '', exam: '', gv: '', link_group: '', sdt_gv: '', ma_bao_mat: '', nhom_aim: '', link_aim: '', final_phone: '' })
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ email, username })
   })
-    .then(r => r.text())
-    .then(text => {
+    .then(r => r.json())
+    .then(json => {
       const stamp = nowStamp();
       // Tìm row trong S_GROUP_DATA để ghi thời gian
       const row = S_GROUP_DATA.find(r => String(r.email || '').toLowerCase() === email.toLowerCase());
