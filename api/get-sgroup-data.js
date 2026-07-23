@@ -1,6 +1,6 @@
 // Vercel API route — proxy sang Apps Script lấy dữ liệu nhóm S (sheet users)
 const SGROUP_APPS_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbxmqBq0z2jOoLqfETe5uWPyT71y-9-jrjQSOUZq4vjvQkn5dAU1gg-yzIN6Fmb4rfKG/exec';
+  'https://script.google.com/macros/s/AKfycbzohK5ZYFFhD5yHJZqpnsQ-PbC5ttjHEUP4vbs7CgDcqadCodc4zsHSk2haWisOBbWb/exec';
 
 const CACHE_TTL_MS = 2 * 60 * 1000; // 2 phút cache
 let _cache = null;

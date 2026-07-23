@@ -546,7 +546,7 @@ const AUTH_API_URL='/api/auth';
 const AUTH_SESS_KEY='hocmai_zalo_auth_v7';
 const EMAIL_API_URL = '/api/send-class-group-email';
 const SGROUP_API_URL = '/api/get-sgroup-data';
-const SGROUP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxmqBq0z2jOoLqfETe5uWPyT71y-9-jrjQSOUZq4vjvQkn5dAU1gg-yzIN6Fmb4rfKG/exec';
+const SGROUP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzohK5ZYFFhD5yHJZqpnsQ-PbC5ttjHEUP4vbs7CgDcqadCodc4zsHSk2haWisOBbWb/exec';
 let CURRENT_USER = null;
 function getStoredAuth(){try{var r=sessionStorage.getItem(AUTH_SESS_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
 function setStoredAuth(a){try{sessionStorage.setItem(AUTH_SESS_KEY,JSON.stringify(a));}catch(e){}}
