@@ -2021,8 +2021,14 @@ async function loadSGroupData() {
 }
 
 function renderVActSOverview() {
-  const total = S_GROUP_DATA.length;
-  const duyetAim = S_GROUP_DATA.filter(function(r) {
+  // Lọc bỏ dòng trống (không có username, email lẫn sđt)
+  const validRows = S_GROUP_DATA.filter(function(r) {
+    return (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim();
+  });
+  if (!validRows.length) return;
+
+  const total = validRows.length;
+  const duyetAim = validRows.filter(function(r) {
     return (r.trang_thai_duyet || '').trim() === 'Duyệt';
   }).length;
   const pctAim = total ? (duyetAim / total * 100) : 0;
