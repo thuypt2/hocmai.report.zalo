@@ -1331,8 +1331,9 @@ function escapeAttr(s){var d={"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'
 function uniq(arr){return [...new Set(arr.filter(x=>x!==null&&x!==undefined&&String(x).trim()!==''))];}
 function getSelectedValues(sel){return [...sel.selectedOptions].map(o=>o.value);}
 function badgeStatus(v){
-  if (v==='Duyệt') return `<span class="badge b-ok">Duyệt</span>`;
-  if (v===''||v==null||v===undefined) return `<span class="badge b-no">Chưa duyệt</span>`;
+  const n = (v||'').trim().toLowerCase();
+  if (n==='duyệt'||n==='duyet') return `<span class="badge b-ok">Duyệt</span>`;
+  if (n===''||v==null||v===undefined) return `<span class="badge b-no">Chưa duyệt</span>`;
   return `<span class="badge b-mu">${escapeHtml(v)}</span>`;
 }
 
@@ -1977,7 +1978,7 @@ async function emailSendSelected() {
 let S_GROUP_DATA = [];
 const S_COLS = [
   {key:"_stt", label:"STT", isSTT:true, width:"50px"},
-  {key:"username", label:"Username", width:"180px"},
+  {key:"username", label:"Username", width:"280px", wordBreak:true},
   {key:"userid", label:"UserID", width:"90px"},
   {key:"sdt", label:"SĐT", width:"110px"},
   {key:"email", label:"Email", width:"220px"},
@@ -2098,9 +2099,15 @@ function applyFilterSGroup() {
 
   // Lọc theo trạng thái AIM (độc lập với search)
   if (fAim === 'duyet') {
-    pool = pool.filter(r => (r.trang_thai_duyet || '').trim() === 'Duyệt');
+    pool = pool.filter(r => {
+      const v = (r.trang_thai_duyet || '').trim().toLowerCase();
+      return v === 'duyệt' || v === 'duyet';
+    });
   } else if (fAim === 'chua') {
-    pool = pool.filter(r => (r.trang_thai_duyet || '').trim() !== 'Duyệt');
+    pool = pool.filter(r => {
+      const v = (r.trang_thai_duyet || '').trim().toLowerCase();
+      return v !== 'duyệt' && v !== 'duyet';
+    });
   }
 
   renderSGroupTable(pool);
@@ -2152,7 +2159,7 @@ function renderSGroupTable(rows) {
         html += `<td class="email-sent-cell">${t ? escapeHtml(t) : '<span class="muted">—</span>'}</td>`;
         continue;
       }
-      html += `<td>${escapeHtml(r[c.key] || '')}</td>`;
+      html += `<td${c.wordBreak ? ' style="word-break:break-all;white-space:normal"' : ''}>${escapeHtml(r[c.key] || '')}</td>`;
     }
     tr.innerHTML = html;
     tb.appendChild(tr);
