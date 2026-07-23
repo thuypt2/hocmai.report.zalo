@@ -913,12 +913,8 @@ function applyCharts(){
   const exams = exVal ? [exVal] : [...DATA.exams];
 
   const chartType = document.getElementById('chart-type-filter').value; // 'month' or 'week'
-  const showMonths = (chartType === 'month');
-  document.getElementById('lbl-month-from').style.display = showMonths ? '' : 'none';
-  document.getElementById('lbl-month-to').style.display = showMonths ? '' : 'none';
-
-  const fromMonth = showMonths ? document.getElementById('chart-month-from').value : '';
-  const toMonth = showMonths ? document.getElementById('chart-month-to').value : '';
+  const fromMonth = document.getElementById('chart-month-from').value;
+  const toMonth = document.getElementById('chart-month-to').value;
 
   const grid = document.getElementById('chart-grid');
   grid.innerHTML = '';
@@ -930,7 +926,20 @@ function applyCharts(){
   for (const ex of exams) {
     let rawSeries;
     if (chartType === 'week') {
-      rawSeries = DATA.weekly_chart[ex] || [];
+      // Filter weekly data by approximate month derived from week label
+      // Format: "W01 (2025)" → weekNum=1, year=2025 → month ≈ ceil(weekNum / 4.345)
+      rawSeries = (DATA.weekly_chart[ex] || []).filter(w => {
+        if (!fromMonth && !toMonth) return true;
+        const m = w.week.match(/W(\d+)\s*\((\d{4})\)/);
+        if (!m) return true;
+        const wk = parseInt(m[1], 10);
+        const yr = parseInt(m[2], 10);
+        const mm = Math.min(12, Math.max(1, Math.ceil(wk / 4.345)));
+        const wkMonth = yr + '-' + String(mm).padStart(2, '0');
+        if (fromMonth && wkMonth < fromMonth) return false;
+        if (toMonth && wkMonth > toMonth) return false;
+        return true;
+      });
     } else {
       rawSeries = (DATA.monthly_chart[ex] || []).filter(m => {
         if (fromMonth && m.month < fromMonth) return false;
