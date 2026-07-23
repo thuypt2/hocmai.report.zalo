@@ -895,7 +895,7 @@ async function sendClassGroupEmails() {
 function renderKPI(){
   const root = document.getElementById('kpis');
   root.innerHTML = '';
-  function kpiCard(label, total, d130, daim, isTotal, isSOnly){
+  function kpiCard(label, total, d130, daim, isTotal){
     const pct130 = total ? (d130/total*100) : 0;
     const pctAim = total ? (daim/total*100) : 0;
     const cls = 'kpi' + (isTotal ? ' total' : '');
@@ -903,19 +903,14 @@ function renderKPI(){
     const wAim = Math.max(0, Math.min(100, pctAim));
     const label130Inside = pct130 >= 8;
     const labelAimInside = pctAim >= 8;
-    const bar130 = isSOnly
-      ? `<div class="bar-cap" style="margin-top:6px"><span>Nhóm 1:30</span><span class="muted" style="font-size:11px">(chỉ có AIM)</span></div>`
-      : `<div class="bar-row">
-        <div class="bar-cap"><span>Nhóm 1:30</span><span><b>${d130.toLocaleString('vi-VN')}</b> · ${pct130.toFixed(1).replace('.',',')}%</span></div>
-        <div class="bar"><div class="fill fill-130" style="width:${w130}%">${label130Inside ? d130.toLocaleString('vi-VN')+' · '+pct130.toFixed(1).replace('.',',')+'%' : ''}</div></div>
-        ${!label130Inside && pct130>0 ? `<div style="font-size:10px;color:#374151;text-align:right;margin-top:-4px">${d130.toLocaleString('vi-VN')} · ${pct130.toFixed(1).replace('.',',')}%</div>` : ''}
-      </div>`;
     return `<div class="${cls}">
       <div class="lbl">${escapeHtml(label)}</div>
       <div class="val">${total.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span></div>
-      ${bar130}
       <div class="bar-row">
-        <div class="bar-cap" style="margin-top:${isSOnly ? '0' : '6px'}"><span>Nhóm AIM</span><span><b>${daim.toLocaleString('vi-VN')}</b> · ${pctAim.toFixed(1).replace('.',',')}%</span></div>
+        <div class="bar-cap"><span>Nhóm 1:30</span><span><b>${d130.toLocaleString('vi-VN')}</b> · ${pct130.toFixed(1).replace('.',',')}%</span></div>
+        <div class="bar"><div class="fill fill-130" style="width:${w130}%">${label130Inside ? d130.toLocaleString('vi-VN')+' · '+pct130.toFixed(1).replace('.',',')+'%' : ''}</div></div>
+        ${!label130Inside && pct130>0 ? `<div style="font-size:10px;color:#374151;text-align:right;margin-top:-4px">${d130.toLocaleString('vi-VN')} · ${pct130.toFixed(1).replace('.',',')}%</div>` : ''}
+        <div class="bar-cap" style="margin-top:6px"><span>Nhóm AIM</span><span><b>${daim.toLocaleString('vi-VN')}</b> · ${pctAim.toFixed(1).replace('.',',')}%</span></div>
         <div class="bar"><div class="fill fill-aim" style="width:${wAim}%">${labelAimInside ? daim.toLocaleString('vi-VN')+' · '+pctAim.toFixed(1).replace('.',',')+'%' : ''}</div></div>
         ${!labelAimInside && pctAim>0 ? `<div style="font-size:10px;color:#374151;text-align:right;margin-top:-4px">${daim.toLocaleString('vi-VN')} · ${pctAim.toFixed(1).replace('.',',')}%</div>` : ''}
       </div>
@@ -929,8 +924,7 @@ function renderKPI(){
   for (const ex of DATA.exams){
     const s = DATA.exam_stats[ex];
     const label = ex || '(rỗng)';
-    const isSOnly = (ex === 'V-ACT S');
-    root.insertAdjacentHTML('beforeend', kpiCard(label, s.tong_hs, s.duyet_130, s.duyet_aim, false, isSOnly));
+    root.insertAdjacentHTML('beforeend', kpiCard(label, s.tong_hs, s.duyet_130, s.duyet_aim, false));
   }
   // Card riêng cho dòng chưa có exam/mã lớp
   const noExam = DATA.rows_no_exam || 0;
@@ -967,38 +961,20 @@ function renderExamTable(){
   // Sort by exam order (DATA.exams)
   for (const ex of DATA.exams) {
     const entries = Object.entries(gvMap).filter(([k]) => k.startsWith(ex + '|||'));
-    if (entries.length) {
-      for (const [, g] of entries) {
-        const so_nhom = g.so_nhom.size;
-        const ti_le_130 = g.tong_hs ? Math.round((g.duyet_130 / g.tong_hs) * 10000) / 100 : 0;
-        const ti_le_aim = g.tong_hs ? Math.round((g.duyet_aim / g.tong_hs) * 10000) / 100 : 0;
-        tb.insertAdjacentHTML('beforeend',
-          `<tr><td><b>${g.exam}</b></td><td>${escapeHtml(g.gv||'')}</td>
-            <td class="num">${so_nhom.toLocaleString('vi-VN')}</td>
-            <td class="num">${g.tong_hs.toLocaleString('vi-VN')}</td>
-            <td class="num">${g.duyet_130.toLocaleString('vi-VN')}</td>
-            <td class="num">${ti_le_130}%</td>
-            <td class="num">${g.duyet_aim.toLocaleString('vi-VN')}</td>
-            <td class="num">${ti_le_aim}%</td></tr>`);
-        totalN += g.tong_hs; d130N += g.duyet_130; daimN += g.duyet_aim; nhomN += so_nhom;
-        if (g.gv && g.gv !== '(không có)') gvN++;
-      }
-    } else {
-      // Exam không có trong LOOKUP (VD: V-ACT S từ nguồn riêng) — lấy từ exam_stats
-      const s = DATA.exam_stats[ex];
-      if (s) {
-        const t130 = s.tong_hs ? (s.duyet_130 / s.tong_hs * 100).toFixed(2) : '0';
-        const taim = s.tong_hs ? (s.duyet_aim / s.tong_hs * 100).toFixed(2) : '0';
-        tb.insertAdjacentHTML('beforeend',
-          `<tr style="background:#fffbeb"><td><b>${ex}</b> <span style="font-size:11px;color:#b45309">(chỉ AIM)</span></td><td class="muted">—</td>
-            <td class="num muted">—</td>
-            <td class="num">${s.tong_hs.toLocaleString('vi-VN')}</td>
-            <td class="num muted">—</td>
-            <td class="num muted">—</td>
-            <td class="num">${s.duyet_aim.toLocaleString('vi-VN')}</td>
-            <td class="num">${taim}%</td></tr>`);
-        totalN += s.tong_hs; daimN += s.duyet_aim;
-      }
+    for (const [, g] of entries) {
+      const so_nhom = g.so_nhom.size;
+      const ti_le_130 = g.tong_hs ? Math.round((g.duyet_130 / g.tong_hs) * 10000) / 100 : 0;
+      const ti_le_aim = g.tong_hs ? Math.round((g.duyet_aim / g.tong_hs) * 10000) / 100 : 0;
+      tb.insertAdjacentHTML('beforeend',
+        `<tr><td><b>${g.exam}</b></td><td>${escapeHtml(g.gv||'')}</td>
+          <td class="num">${so_nhom.toLocaleString('vi-VN')}</td>
+          <td class="num">${g.tong_hs.toLocaleString('vi-VN')}</td>
+          <td class="num">${g.duyet_130.toLocaleString('vi-VN')}</td>
+          <td class="num">${ti_le_130}%</td>
+          <td class="num">${g.duyet_aim.toLocaleString('vi-VN')}</td>
+          <td class="num">${ti_le_aim}%</td></tr>`);
+      totalN += g.tong_hs; d130N += g.duyet_130; daimN += g.duyet_aim; nhomN += so_nhom;
+      if (g.gv && g.gv !== '(không có)') gvN++;
     }
   }
   const t130 = totalN? (d130N/totalN*100).toFixed(2) : '0';
@@ -2038,45 +2014,55 @@ async function loadSGroupData() {
   }
   initSGroupHeaders();
 
-  // Merge V-ACT S stats vào DATA cho mục 1. Tổng quan
-  if (S_GROUP_DATA.length > 0 && DATA) {
-    mergeVActSIntoData();
+  // Thêm V-ACT S vào mục 1.1 Tổng quan (dữ liệu độc lập, không merge vào DATA)
+  if (S_GROUP_DATA.length > 0) {
+    renderVActSOverview();
   }
 }
 
-function mergeVActSIntoData() {
-  if (!DATA) return;
-  const examName = 'V-ACT S';
-  // Tránh thêm trùng nếu loadSGroupData chạy lại
-  if (DATA.exams.includes(examName)) return;
-
+function renderVActSOverview() {
   const total = S_GROUP_DATA.length;
   const duyetAim = S_GROUP_DATA.filter(function(r) {
     return (r.trang_thai_duyet || '').trim() === 'Duyệt';
   }).length;
+  const pctAim = total ? (duyetAim / total * 100) : 0;
+  const wAim = Math.max(0, Math.min(100, pctAim));
+  const labelAimInside = pctAim >= 8;
 
-  // V-ACT S chỉ có nhóm AIM, không có 1:30
-  DATA.exams.push(examName);
-  DATA.exam_stats[examName] = {
-    tong_hs: total,
-    duyet_130: 0,
-    duyet_aim: duyetAim
-  };
-  // Không có dữ liệu monthly/weekly chart cho V-ACT S
-  DATA.monthly_chart[examName] = [];
-  DATA.weekly_chart[examName] = [];
-  DATA.groups_by_exam[examName] = [];
+  // Thêm KPI card cho V-ACT S (chỉ AIM)
+  const kpisRoot = document.getElementById('kpis');
+  // Xóa card V-ACT S cũ nếu có (tránh trùng khi reload)
+  const old = document.getElementById('kpi-vacts');
+  if (old) old.remove();
+  kpisRoot.insertAdjacentHTML('beforeend',
+    `<div class="kpi" id="kpi-vacts" style="border-left:3px solid #f59e0b">
+      <div class="lbl">V-ACT S <span style="font-size:10px;color:#b45309">(chỉ AIM)</span></div>
+      <div class="val">${total.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span></div>
+      <div class="bar-cap" style="margin-top:6px"><span>Nhóm 1:30</span><span class="muted" style="font-size:11px">(chỉ có AIM)</span></div>
+      <div class="bar-row">
+        <div class="bar-cap"><span>Nhóm AIM</span><span><b>${duyetAim.toLocaleString('vi-VN')}</b> · ${pctAim.toFixed(1).replace('.',',')}%</span></div>
+        <div class="bar"><div class="fill fill-aim" style="width:${wAim.toFixed(1)}%">${labelAimInside ? duyetAim.toLocaleString('vi-VN')+' · '+pctAim.toFixed(1).replace('.',',')+'%' : ''}</div></div>
+        ${!labelAimInside && pctAim>0 ? `<div style="font-size:10px;color:#374151;text-align:right;margin-top:-4px">${duyetAim.toLocaleString('vi-VN')} · ${pctAim.toFixed(1).replace('.',',')}%</div>` : ''}
+      </div>
+    </div>`);
 
-  // Cập nhật total_rows
-  DATA.total_rows = (DATA.total_rows || 0) + total;
-
-  // Render lại các section bị ảnh hưởng
-  renderKPI();
-  renderExamTable();
-  renderGroupsByExam();
-  initChartFilters();
-  applyCharts();
-  renderBarTable();
+  // Thêm dòng V-ACT S vào exam table
+  const tb = document.querySelector('#tbl-exam tbody');
+  // Xóa dòng V-ACT S cũ nếu có
+  const oldRow = document.getElementById('row-vacts');
+  if (oldRow) oldRow.remove();
+  const taim = total ? (duyetAim / total * 100).toFixed(2) : '0';
+  tb.insertAdjacentHTML('beforeend',
+    `<tr id="row-vacts" style="background:#fffbeb">
+      <td><b>V-ACT S</b> <span style="font-size:11px;color:#b45309">(chỉ AIM)</span></td>
+      <td class="muted">—</td>
+      <td class="num muted">—</td>
+      <td class="num">${total.toLocaleString('vi-VN')}</td>
+      <td class="num muted">—</td>
+      <td class="num muted">—</td>
+      <td class="num">${duyetAim.toLocaleString('vi-VN')}</td>
+      <td class="num">${taim}%</td>
+    </tr>`);
 }
 
 function applyFilterSGroup() {
