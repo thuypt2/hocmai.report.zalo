@@ -2112,6 +2112,11 @@ function applyFilterSGroup() {
 
   let pool = S_GROUP_DATA;
 
+  // Lọc bỏ dòng trống (không có username, email lẫn sđt)
+  pool = pool.filter(function(r) {
+    return (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim();
+  });
+
   // Lọc theo ô tìm kiếm (độc lập với AIM)
   if (q) {
     pool = pool.filter(r => {
