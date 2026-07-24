@@ -95,7 +95,7 @@ module.exports = async function handler(req, res) {
 
     // Format data từ sheet Waiting_member
     // Apps Script ver8 trả về TẤT CẢ cột raw → proxy map ở đây
-    const formattedData = (json.data || []).map((item, idx) => {
+    const rawData = (json.data || []).map((item, idx) => {
       // Extract Group_id & Zalo_id (required by Flow 7 accept-members API)
       // Try header: "Group_id", "group_id", "ID Group", "Group ID"
       // Fallback cột A(0), C(2)
@@ -121,6 +121,9 @@ module.exports = async function handler(req, res) {
         zalo_id: zalo_id,
       };
     });
+
+    // Lọc bỏ dòng không có dữ liệu: ten_zalo phải có giá trị
+    const formattedData = rawData.filter(r => (r.ten_zalo || '').trim() !== '');
 
     _cache = {
       ok: true,
