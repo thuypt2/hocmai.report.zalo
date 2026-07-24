@@ -2334,7 +2334,11 @@ async function loadWaitMember(){
     const resp = await fetch('/api/get-wait-members');
     const json = await resp.json();
     if (json.ok && json.data) {
-      WAIT_DATA = filterWaitDataByRole(json.data);
+      // Lọc bỏ dòng không có dữ liệu (tất cả trường chính đều trống)
+      const cleanData = json.data.filter(r => {
+        return (r.ten_zalo || '').trim() || (r.ma_lop || '').trim() || (r.exam || '').trim();
+      });
+      WAIT_DATA = filterWaitDataByRole(cleanData);
     } else {
       console.warn('Wait_member API warning:', json.error || 'no data');
     }
