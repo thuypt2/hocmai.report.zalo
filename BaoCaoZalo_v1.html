@@ -2103,6 +2103,13 @@ function applyFilterSGroup() {
   const q = (document.getElementById('qS')?.value || '').trim().toLowerCase();
   const fAim = (document.getElementById('fS-aim')?.value || '');
 
+  // DVKH: phải nhập từ khóa tìm kiếm mới hiển thị danh sách (không hiển thị toàn bộ)
+  if (isDVKH() && !q) {
+    renderSGroupTable([]);
+    document.getElementById('result-info-s').textContent = 'Vui lòng nhập từ khóa tìm kiếm (username / SĐT / email) để hiển thị danh sách.';
+    return;
+  }
+
   let pool = S_GROUP_DATA;
 
   // Lọc theo ô tìm kiếm (độc lập với AIM)
@@ -2134,8 +2141,7 @@ function resetFilterSGroup() {
   document.getElementById('qS').value = '';
   const aimSel = document.getElementById('fS-aim');
   if (aimSel) aimSel.value = '';
-  renderSGroupTable([]);
-  document.getElementById('result-info-s').textContent = '';
+  applyFilterSGroup();
 }
 
 function renderSGroupTable(rows) {
