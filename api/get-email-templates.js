@@ -83,7 +83,7 @@ module.exports = async function handler(req, res) {
     const formattedData = (json.data || []).map((item) => {
       const subject = getField(item, ['Subject', 'subject', 'Chủ đề', 'Chu de', 'Tên mẫu'], [1]); // Cột B
       const htmlBody = getField(item, ['html_body', 'Html_body', 'HTML_body', 'htmlBody', 'HTMLBody', 'Nội dung HTML', 'Noi dung HTML'], [2]); // Cột C
-      const templateName = getField(item, ['TemplateName', 'template_name', 'Template Name', 'Tên mẫu', 'Mã mẫu'], [0]); // Cột A
+      const templateName = getField(item, ['template_key', 'templatekey', 'TemplateName', 'template_name', 'Template Name', 'Tên mẫu', 'Mã mẫu', 'key'], [0]); // Cột A
 
       return {
         key: templateName || subject || 'template_' + Math.random().toString(36).substr(2, 9),
