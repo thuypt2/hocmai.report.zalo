@@ -255,6 +255,10 @@ function handleSendIndividualEmail(body) {
   var nhom_aim    = body.nhom_aim    || '';
   var link_aim    = body.link_aim    || '';
   var final_phone = body.final_phone || '';
+  // SSC:HDAIM-S fields
+  var tencongdong = body.tencongdong || '';
+  var linknhom    = body.linknhom    || '';
+  var mabaomats   = body.mabaomats   || '';
 
   if (!email || email.indexOf('@') === -1) {
     return jsonError('Thieu email hoac email khong hop le');
@@ -279,6 +283,10 @@ function handleSendIndividualEmail(body) {
     'Nhom_AIM':   nhom_aim,
     'username':   username,
     'finalphone': final_phone,
+    // SSC:HDAIM-S placeholders
+    'tencongdong': tencongdong,
+    'linknhom':    linknhom,
+    'mabaomatS':   mabaomats,
   };
 
   var subject = renderTemplate(tmpl.subject, data);
@@ -367,6 +375,10 @@ function handleSendSelectedEmails(ss, body) {
         'Nhom_AIM':   student.nhom_aim   || '',
         'username':   student.username   || '',
         'finalphone': student.final_phone || '',
+        // SSC:HDAIM-S placeholders
+        'tencongdong': student.tencongdong || '',
+        'linknhom':    student.linknhom    || '',
+        'mabaomatS':   student.mabaomats   || '',
       };
 
       var subject, htmlBody;

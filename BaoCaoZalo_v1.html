@@ -2224,7 +2224,15 @@ function renderSGroupTable(rows) {
         const em = escapeHtml(r.email || '');
         const un = escapeHtml(r.username || '');
         if (!em) { html += '<td><span class="muted">(trống)</span></td>'; continue; }
-        html += `<td><button class="btn-email" onclick="sendEmailSGroup('${em.replace(/'/g, "\\'")}','${un.replace(/'/g, "\\'")}',this)">Gửi email</button></td>`;
+        // Lưu data S-group vào data-* attributes để sendEmailSGroup đọc
+        const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        html += `<td><button class="btn-email"
+          data-email="${esc(r.email||'')}"
+          data-username="${esc(r.username||'')}"
+          data-linknhom="${esc(r.link_nhom||'')}"
+          data-mabaomat="${esc(r.mabaomat||'')}"
+          data-userid="${esc(r.userid||'')}"
+          onclick="sendEmailSGroup(this)">Gửi email</button></td>`;
         continue;
       }
       if (c.key === '_email_sent_time') {
@@ -2242,18 +2250,42 @@ function renderSGroupTable(rows) {
     total > MAX ? `Hiển thị ${MAX} / ${total} dòng` : `Hiển thị ${total} dòng`;
 }
 
-function sendEmailSGroup(email, username, btn) {
+function sendEmailSGroup(btn) {
+  const email    = btn.getAttribute('data-email')    || '';
+  const username = btn.getAttribute('data-username') || '';
+  const linknhom = btn.getAttribute('data-linknhom') || '';
+  const mabaomat = btn.getAttribute('data-mabaomat') || '';
+  const userid   = btn.getAttribute('data-userid')   || '';
+
+  if (!email) return;
   btn.disabled = true;
   btn.textContent = 'Đang gửi...';
-  fetch(SGROUP_SCRIPT_URL + '?action=sendEmail', {
+
+  fetch(EMAIL_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ email, username })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email,
+      username,
+      ma_lop:       '',
+      exam:         '',
+      gv:           '',
+      link_group:   '',
+      sdt_gv:       '',
+      ma_bao_mat:   mabaomat,
+      nhom_aim:     '',
+      link_aim:     '',
+      final_phone:  '',
+      // SSC:HDAIM-S fields
+      templateKey:  'SSC:HDAIM-S',
+      tencongdong:  '',
+      linknhom:     linknhom,
+      mabaomats:    mabaomat,
+    })
   })
     .then(r => r.json())
     .then(json => {
       const stamp = nowStamp();
-      // Tìm row trong S_GROUP_DATA để ghi thời gian
       const row = S_GROUP_DATA.find(r => String(r.email || '').toLowerCase() === email.toLowerCase());
       if (row) row._email_sent_time = stamp;
       const td = btn.closest('td');

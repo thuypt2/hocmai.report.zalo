@@ -98,10 +98,12 @@ export default async function handler(req, res) {
     // ===== Individual send =====
     if (isIndividual) {
       const { email, username, ma_lop, exam, gv, link_group,
-              sdt_gv, ma_bao_mat, nhom_aim, link_aim, final_phone } = body;
+              sdt_gv, ma_bao_mat, nhom_aim, link_aim, final_phone,
+              tencongdong, linknhom, mabaomats } = body;
       const result = await callAppsScript({
         action: 'sendIndividualEmail',
         secret: APPS_SCRIPT_SECRET,
+        templateKey: body.templateKey || '',
         email,
         username,
         ma_lop,
@@ -113,6 +115,9 @@ export default async function handler(req, res) {
         nhom_aim:    nhom_aim    || '',
         link_aim:    link_aim    || '',
         final_phone: final_phone || '',
+        tencongdong: tencongdong || '',
+        linknhom:    linknhom    || '',
+        mabaomats:   mabaomats   || '',
       });
 
       return res.status(200).json(result);
