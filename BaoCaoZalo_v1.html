@@ -1245,7 +1245,7 @@ function renderGroupsByExam(){
     const rows = groups[currentEx] || [];
     const buckets = { 'Đủ thành viên':0, 'Từ 25-27':0, 'Từ 20-24':0, 'Từ 15-19':0, 'Từ 10-14':0, 'Từ 9 trở xuống':0 };
     for (const r of rows) {
-      const n = r.tong_hs || 0;
+      const n = r.duyet_130 || 0;
       if (n >= 28) buckets['Đủ thành viên']++;
       else if (n >= 25) buckets['Từ 25-27']++;
       else if (n >= 20) buckets['Từ 20-24']++;
