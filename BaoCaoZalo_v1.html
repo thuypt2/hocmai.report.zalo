@@ -1376,8 +1376,9 @@ function switchSub(sub){
 // ===== 2.1 Lọc theo nhóm lớp =====
 let currentFilter1 = null;
 function initFilters1(){
+  const scoped = getScopedLookup();
   const exSel = document.getElementById('f1-exam');
-  uniq(LOOKUP.map(r=>r._exam)).forEach(v=>exSel.insertAdjacentHTML('beforeend',`<option>${escapeHtml(v)}</option>`));
+  uniq(scoped.map(r=>r._exam)).forEach(v=>exSel.insertAdjacentHTML('beforeend',`<option>${escapeHtml(v)}</option>`));
   // Populate soChua options 1..28
   const soSel = document.getElementById('f1-sochua');
   for (let i = 1; i <= 28; i++) {
@@ -1457,7 +1458,7 @@ function applyFilter1(){
   const toTs = to ? new Date(to).getTime() + 86399999 : Infinity;
   const hasDateFilter = !!from || !!to;
 
-  const filtered = LOOKUP.filter(r=>{
+  const filtered = getScopedLookup().filter(r=>{
     if (!isDVKH() && ex && String(r._exam||'')!==ex) return false;
     if (!isDVKH() && malop && String(r._ma_lop||'')!==malop) return false;
     // Filter Số HS chưa duyệt
@@ -1646,9 +1647,10 @@ const EMAIL_API_URL_2 = '/api/send-email';
 
 // ===== 2.2 Cascade filters (same pattern as 2.1) =====
 function initEmailSection() {
-  // Cascade filter init
+  // Cascade filter init — dùng scoped lookup để GVCN chỉ thấy lớp của mình
+  const scoped = getScopedLookup();
   const exSel = document.getElementById('f2-exam');
-  uniq(LOOKUP.map(r => r._exam)).forEach(v => exSel.insertAdjacentHTML('beforeend', `<option>${escapeHtml(v)}</option>`));
+  uniq(scoped.map(r => r._exam)).forEach(v => exSel.insertAdjacentHTML('beforeend', `<option>${escapeHtml(v)}</option>`));
   const soSel = document.getElementById('f2-sochua');
   for (let i = 1; i <= 28; i++) {
     soSel.insertAdjacentHTML('beforeend', `<option value="${i}">Còn ${i} HS chưa duyệt</option>`);
@@ -1739,7 +1741,7 @@ function applyFilter2() {
   const toTs = to ? new Date(to).getTime() + 86399999 : Infinity;
   const hasDateFilter = !!from || !!to;
 
-  const filtered = LOOKUP.filter(r => {
+  const filtered = getScopedLookup().filter(r => {
     if (ex && String(r._exam || '') !== ex) return false;
     if (malop && String(r._ma_lop || '') !== malop) return false;
     if (soChua) {
