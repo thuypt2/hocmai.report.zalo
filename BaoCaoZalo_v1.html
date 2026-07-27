@@ -514,6 +514,9 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
             <label>Exam
               <select id="f3-exam"><option value="">-- Tất cả --</option></select>
             </label>
+            <label>GVCN
+              <select id="f3-gvcn"><option value="">-- Tất cả --</option></select>
+            </label>
             <label>Mã lớp
               <select id="f3-malop"><option value="">-- Tất cả --</option></select>
             </label>
@@ -533,6 +536,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
               <thead><tr>
                 <th style="width:50px">STT</th>
                 <th>Mã lớp</th>
+                <th>GVCN</th>
                 <th>Tên Zalo</th>
                 <th>Ngày yêu cầu</th>
                 <th>Duyệt 1:30</th>
@@ -2230,11 +2234,16 @@ function sendEmailSGroup(email, username, btn) {
 // ===== 2.4 Học sinh chờ duyệt kết nối =====
 let WAIT_DATA = [];
 function initFilters3(){
-  // Populate unique exams và mã lớp từ WAIT_DATA
+  // Populate unique exams, GVCN và mã lớp từ WAIT_DATA
   const exSel = document.getElementById('f3-exam');
   exSel.innerHTML = '<option value="">-- Tất cả --</option>';
   const exams = [...new Set(WAIT_DATA.map(r => (r.exam || '').trim()).filter(Boolean))].sort();
   exams.forEach(v => exSel.insertAdjacentHTML('beforeend', `<option>${escapeHtml(v)}</option>`));
+
+  const gvSel = document.getElementById('f3-gvcn');
+  gvSel.innerHTML = '<option value="">-- Tất cả --</option>';
+  const gvUniq = [...new Set(WAIT_DATA.map(r => (r.gvcn || '').trim()).filter(Boolean))].sort();
+  gvUniq.forEach(v => gvSel.insertAdjacentHTML('beforeend', `<option>${escapeHtml(v)}</option>`));
 
   const mlSel = document.getElementById('f3-malop');
   mlSel.innerHTML = '<option value="">-- Tất cả --</option>';
@@ -2243,6 +2252,7 @@ function initFilters3(){
 }
 function applyFilter3(){
   const ex  = document.getElementById('f3-exam').value;
+  const gvcn = document.getElementById('f3-gvcn').value;
   const malop = document.getElementById('f3-malop').value;
   const q   = document.getElementById('q3').value.trim().toLowerCase();
 
@@ -2251,12 +2261,15 @@ function applyFilter3(){
   if (ex) {
     filtered = filtered.filter(r => (r.exam || '').trim() === ex);
   }
+  if (gvcn) {
+    filtered = filtered.filter(r => (r.gvcn || '').trim() === gvcn);
+  }
   if (malop) {
     filtered = filtered.filter(r => r.ma_lop === malop);
   }
   if (q) {
     filtered = filtered.filter(r => {
-      const txt = ((r.ten_zalo || '') + '|' + (r.ma_lop || '') + '|' + (r.exam || '')).toLowerCase();
+      const txt = ((r.ten_zalo || '') + '|' + (r.ma_lop || '') + '|' + (r.exam || '') + '|' + (r.gvcn || '')).toLowerCase();
       return txt.includes(q);
     });
   }
@@ -2266,7 +2279,7 @@ function applyFilter3(){
 
   const tbody = document.querySelector('#tbl-lookup-3 tbody');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center;padding:20px">Không có dữ liệu phù hợp.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;padding:20px">Không có dữ liệu phù hợp.</td></tr>';
     return;
   }
 
@@ -2277,6 +2290,7 @@ function applyFilter3(){
     return `<tr>
       <td class="num">${r.stt}</td>
       <td>${escapeHtml(r.ma_lop)}</td>
+      <td>${escapeHtml(r.gvcn || '')}</td>
       <td>${avatarHtml} ${escapeHtml(r.ten_zalo)}</td>
       <td>${escapeHtml(r.ngay_yeu_cau)}</td>
       <td><button class="btn-approve" onclick="acceptMember(this,'${escapeAttr(r.group_id||'')}','${escapeAttr(r.zalo_id||'')}','${escapeAttr(r.ten_zalo||'')}','${escapeAttr(r.ma_lop||'')}','${escapeAttr(r.avatar||'')}','${escapeAttr(r.ngay_yeu_cau||'')}')">Duyệt</button></td>
@@ -2285,6 +2299,7 @@ function applyFilter3(){
 }
 function resetFilter3(){
   document.getElementById('f3-exam').value = '';
+  document.getElementById('f3-gvcn').value = '';
   document.getElementById('f3-malop').value = '';
   document.getElementById('q3').value = '';
   applyFilter3();
@@ -2342,6 +2357,17 @@ async function loadWaitMember(){
       // Lọc bỏ dòng không có dữ liệu (ten_zalo trống = dòng trắng từ sheet)
       const cleanData = json.data.filter(r => (r.ten_zalo || '').trim() !== '');
       WAIT_DATA = filterWaitDataByRole(cleanData);
+
+      // Tra cứu ngược GVCN từ LOOKUP: map mã_lớp → tên GV
+      const gvcnMap = {};
+      LOOKUP.forEach(r => {
+        const ml = (r._ma_lop || '').trim();
+        const gv = (r._gv || '').trim();
+        if (ml && gv && !gvcnMap[ml]) gvcnMap[ml] = gv;
+      });
+      WAIT_DATA.forEach(r => {
+        r.gvcn = gvcnMap[r.ma_lop] || '';
+      });
     } else {
       console.warn('Wait_member API warning:', json.error || 'no data');
     }
