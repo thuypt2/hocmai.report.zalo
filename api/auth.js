@@ -13,7 +13,7 @@ const crypto = require('crypto');
 const https  = require('https');
 
 const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
-  'https://script.google.com/macros/s/AKfycbwtPmnT_Q_WSzgH9VrH3LwW3PrIL9-p35VVTuADjcHnmHIadv6g4E2miRqQKs002_x2Nw/exec';
+  'https://script.google.com/macros/s/AKfycbyBtnp4vHEIVommWqDXR60AS7Dx_oHogCQY7VZ3cpGkGBlzBMQsy_SkrVf-kpaWEUIwmA/exec';
 
 const SECRET = process.env.ACCOUNTS_SECRET || '@HocmaiAdmin2026';
 
