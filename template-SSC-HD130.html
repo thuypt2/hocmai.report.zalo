@@ -1,69 +1,771 @@
-<!-- TEMPLATE SSC:HD130 — Dùng cho Google Sheets Email_templates -->
-<!-- Copy nội dung bên dưới vào sheet Email_templates -->
-<!-- Cột A: template_key | B: subject | C: html_body | D: active -->
+<!DOCTYPE html>
+<html lang="vi">
 
-<!-- ===== CỘT B (subject): ===== -->
-[HOCMAI] Thông tin nhóm Zalo lớp học – Mã bảo mật {{Mã bảo mật}}
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOCMAI TopUni 2027</title>
+</head>
 
-<!-- ===== CỘT C (html_body): ===== -->
-<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
-  <div style="background:#2563eb;padding:20px;border-radius:12px 12px 0 0;text-align:center">
-    <h1 style="color:#fff;margin:0;font-size:22px">🏫 HOCMAI</h1>
-    <p style="color:#e0e7ff;margin:6px 0 0;font-size:14px">Thông tin nhóm học tập của bạn</p>
-  </div>
+<body style="margin:0;padding:0;background:#F3F6FB;">
 
-  <div style="background:#fff;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px">
+<center style="width:100%;background:#F3F6FB;">
 
-    <p>Kính gửi <strong>{{username}}</strong>,</p>
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       bgcolor="#F3F6FB">
 
-    <p>Cảm ơn bạn đã đăng ký khóa học tại <strong>HOCMAI</strong>. Dưới đây là thông tin nhóm học tập của bạn:</p>
+<tr>
 
-    <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px">
-      <tr>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600;width:140px">📋 Mã lớp</td>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb">{{Mã lớp}}</td>
-      </tr>
-      <tr>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600">👩‍🏫 Giáo viên</td>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb">{{GV}}</td>
-      </tr>
-      <tr>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600">🔐 Mã bảo mật</td>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb;font-size:18px;font-weight:700;color:#2563eb;letter-spacing:2px">{{Mã bảo mật}}</td>
-      </tr>
-      <tr>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600">📱 SĐT giáo viên</td>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb">{{SĐT GV}}</td>
-      </tr>
-      <tr>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600">💬 Link nhóm Zalo 1:30</td>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb">
-          <a href="{{link group}}" style="color:#2563eb;text-decoration:underline;word-break:break-all">Tham gia nhóm Zalo 1:30</a>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600">🎯 Nhóm AIM</td>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb">{{Nhom_AIM}}</td>
-      </tr>
-      <tr>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb;background:#f9fafb;font-weight:600">🔗 Link nhóm AIM</td>
-        <td style="padding:10px 12px;border:1px solid #e5e7eb">
-          <a href="{{Link_AIM}}" style="color:#2563eb;text-decoration:underline;word-break:break-all">Tham gia nhóm AIM</a>
-        </td>
-      </tr>
-    </table>
+<td align="center" style="padding:20px 10px;">
 
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px;margin:20px 0">
-      <p style="margin:0;font-size:14px;color:#1e40af">
-        ⚠️ <strong>Lưu ý:</strong> Vui lòng tham gia nhóm Zalo để nhận thông báo, tài liệu và hướng dẫn quan trọng từ giáo viên. Mã bảo mật <strong style="color:#2563eb">{{Mã bảo mật}}</strong> dùng để xác nhận khi vào nhóm.
-      </p>
-    </div>
+<!-- ================= CONTAINER ================= -->
 
-    <p style="margin-top:24px;color:#6b7280;font-size:13px">
-      Trân trọng,<br>
-      <strong style="color:#2563eb">Đội ngũ HOCMAI</strong><br>
-      <span style="font-size:12px">Email này được gửi tự động, vui lòng không trả lời.</span>
-    </p>
+<table role="presentation"
+       width="800"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       style="
+       width:800px;
+       max-width:800px;
+       background:#FFFFFF;
+       border:1px solid #D9E7FF;">
 
-  </div>
+<!-- ================= HEADER ================= -->
+
+<tr>
+
+<td style="padding:20px 24px;">
+
+<a href="https://hocmai.vn"
+target="_blank"
+style="text-decoration:none;">
+
+<img
+src="https://static.ladipage.net/5cff118624dbba3522f3cf7a/logo-hm-topuni-2-20240318143350-y-lvd.png"
+alt="HOCMAI TopUni"
+width="240"
+style="
+display:block;
+width:240px;
+max-width:240px;
+height:auto;
+border:0;
+outline:none;
+text-decoration:none;">
+
+</a>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="border-top:1px solid #E7EEF8;"></td>
+
+</tr>
+
+<!-- ================= NỘI DUNG ================= -->
+
+<tr>
+
+<td style="padding:40px;">
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0">
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:16px;
+line-height:30px;
+color:#333333;">
+
+Chào em,
+
+</td>
+
+</tr>
+
+<tr>
+<td height="18"></td>
+</tr>
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:16px;
+line-height:30px;
+color:#333333;">
+
+Em đã đăng ký giải pháp
+<strong>HOCMAI TopUni 2027 VIP</strong>
+nhưng chưa tham gia các nhóm lớp và kết bạn với giáo viên chủ nhiệm.
+
+<br>
+
+Em hãy nhanh chóng thực hiện theo hướng dẫn dưới đây để không bỏ lỡ những thông tin quan trọng về học tập cũng như nhận được sự hỗ trợ từ giáo viên và mentor trong suốt quá trình học tập tại HOCMAI.
+
+</td>
+
+</tr>
+
+<tr>
+<td height="30"></td>
+</tr>
+
+<!-- ================= P2 NỐI TIẾP TỪ ĐÂY ================= -->
+<!-- ================= THÔNG TIN NHÓM LỚP ================= -->
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       style="border:1px solid #D9E7FF;background:#F8FBFF;">
+
+<tr>
+
+<td style="padding:24px;">
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0">
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:22px;
+font-weight:bold;
+color:#005BAC;">
+
+THÔNG TIN NHÓM LỚP
+
+</td>
+
+</tr>
+
+<tr>
+<td height="18"></td>
+</tr>
+
+</table>
+
+<!-- Dòng 1 -->
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+
+<td width="72%"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:24px;
+color:#333333;
+padding:12px 0;">
+
+<strong>Zalo {{GV}}:</strong>
+
+</td>
+
+<td width="28%"
+align="right"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+font-weight:bold;
+color:#005BAC;">
+
+{{SĐT GV}}
+
+</td>
+
+</tr>
+
+<tr>
+
+<td colspan="2"
+style="border-top:1px dashed #D9E7FF;"></td>
+
+</tr>
+
+</table>
+
+<!-- Dòng 2 -->
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+
+<td width="72%"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:24px;
+color:#333333;
+padding:12px 0;">
+
+<strong>Nhóm Zalo lớp (trao đổi với GVCN) {{Mã lớp}}:</strong>
+
+</td>
+
+<td width="28%"
+align="right">
+
+<a href="{{link group}}"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+font-weight:bold;
+color:#005BAC;
+text-decoration:none;">
+
+Tham gia ngay
+
+</a>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td colspan="2"
+style="border-top:1px dashed #D9E7FF;"></td>
+
+</tr>
+
+</table>
+
+<!-- Dòng 3 -->
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+
+<td width="72%"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:24px;
+color:#333333;
+padding:12px 0;">
+
+<strong>Nhóm mục tiêu (hỏi bài với bạn bè, mentor) {{Nhom_AIM}}:</strong>
+
+</td>
+
+<td width="28%"
+align="right">
+
+<a href="{{Link_AIM}}"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+font-weight:bold;
+color:#005BAC;
+text-decoration:none;">
+
+Tham gia ngay
+
+</a>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td colspan="2"
+style="border-top:1px dashed #D9E7FF;"></td>
+
+</tr>
+
+</table>
+
+<!-- Dòng 4 -->
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+
+<td width="72%"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:24px;
+color:#333333;
+padding:12px 0;">
+
+<strong>Mã bảo mật:</strong>
+
+</td>
+
+<td width="28%"
+align="right"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:16px;
+font-weight:bold;
+color:#E53935;">
+
+{{Mã bảo mật}}
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+
+<td height="28"></td>
+
+</tr>
+
+</table>
+<!-- ================= VIỆC CẦN LÀM NGAY ================= -->
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       style="border:1px solid #D8F0D9;background:#FBFFFB;">
+
+<tr>
+
+<td style="padding:24px 28px;">
+
+<table width="100%" cellpadding="0" cellspacing="0">
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:22px;
+font-weight:bold;
+color:#2E7D32;">
+
+VIỆC EM CẦN LÀM NGAY HÔM NAY
+
+</td>
+
+</tr>
+
+<tr><td height="24"></td></tr>
+
+<!-- STEP 1 -->
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:28px;
+color:#333333;">
+
+<strong>Bước 1.</strong>
+
+Mở ứng dụng <strong>Zalo trên điện thoại</strong>, bấm vào liên kết nhóm lớp hoặc quét mã QR của nhóm lớp trên máy tính, gửi yêu cầu tham gia và trả lời câu hỏi với mã bảo mật
+<strong style="color:#E53935;">{{Mã bảo mật}}</strong>.
+
+</td>
+
+</tr>
+
+<tr><td height="18"></td></tr>
+
+<!-- LƯU Ý -->
+
+<tr>
+
+<td>
+
+<table width="100%"
+cellpadding="0"
+cellspacing="0"
+style="
+background:#FFF8EA;
+border:1px solid #FFD98A;">
+
+<tr>
+
+<td style="padding:18px;">
+
+<div style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+font-weight:bold;
+color:#E67E00;">
+
+LƯU Ý
+
 </div>
+
+<div style="height:10px;"></div>
+
+<div style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:14px;
+line-height:26px;
+color:#444444;">
+
+<strong style="color:#E53935;">
+
+Hệ thống sẽ tự động duyệt trong vòng 24 giờ nếu em điền đúng mã bảo mật.
+
+</strong>
+
+<br>
+
+Nếu điền sai, em hãy hủy yêu cầu tham gia và thực hiện lại các thao tác trên.
+
+<br>
+
+Mỗi tài khoản chỉ được duyệt 01 số điện thoại vào nhóm lớp.
+
+</div>
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+
+</tr>
+
+<tr><td height="24"></td></tr>
+
+<!-- STEP 2 -->
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:28px;
+color:#333333;">
+
+<strong>Bước 2.</strong>
+
+Kết bạn Zalo với cô và gửi tin nhắn theo mẫu dưới đây.
+
+</td>
+
+</tr>
+
+<tr><td height="18"></td></tr>
+
+<tr>
+
+<td>
+
+<table width="100%"
+cellpadding="0"
+cellspacing="0"
+style="
+background:#F2FBF4;
+border:1px solid #D6F0DA;">
+
+<tr>
+
+<td style="padding:18px 20px;">
+
+<div style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:28px;
+color:#2E7D32;">
+
+Em là học sinh có tên đăng nhập là
+<strong>{{username}}</strong>, số điện thoại
+<strong>{{finalphone}}</strong>, học lớp
+<strong>{{Mã lớp}}</strong>, 
+mã bảo mật
+<strong>{{Mã bảo mật}}</strong>
+
+</div>
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+
+</tr>
+
+<tr><td height="28"></td></tr>
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:28px;
+color:#333333;">
+
+Tham gia ngay để không bỏ lỡ những thông tin quan trọng về học tập và thi cử nhé!
+
+</td>
+
+</tr>
+
+<td height="32"></td></tr>
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
+
+<!-- ======================= CTA ======================= -->
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0">
+
+    <tr>
+        <td height="12"></td>
+    </tr>
+
+    <tr>
+
+        <td align="center">
+
+            <table role="presentation"
+                   cellpadding="0"
+                   cellspacing="0"
+                   border="0">
+
+                <tr>
+
+                    <!-- Nút VIP -->
+
+                    <td align="center">
+
+                        <a href="{{link group}}"
+                           target="_blank"
+                           style="
+                           display:inline-block;
+                           width:230px;
+                           background:#005BAC;
+                           color:#FFFFFF;
+                           font-family:Arial,Helvetica,sans-serif;
+                           font-size:15px;
+                           font-weight:bold;
+                           line-height:48px;
+                           text-align:center;
+                           text-decoration:none;
+                           border-radius:6px;">
+
+                            THAM GIA NHÓM VIP
+
+                        </a>
+
+                    </td>
+
+                    <td width="20"></td>
+
+                    <!-- Nút AIM -->
+
+                    <td align="center">
+
+                        <a href="{{Link_AIM}}"
+                           target="_blank"
+                           style="
+                           display:inline-block;
+                           width:230px;
+                           background:#FF8A00;
+                           color:#FFFFFF;
+                           font-family:Arial,Helvetica,sans-serif;
+                           font-size:15px;
+                           font-weight:bold;
+                           line-height:48px;
+                           text-align:center;
+                           text-decoration:none;
+                           border-radius:6px;">
+
+                            THAM GIA NHÓM AIM
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+            </table>
+
+        </td>
+
+    </tr>
+
+    <tr>
+        <td height="40"></td>
+    </tr>
+
+</table>
+
+<!-- ======================= CHỮ KÝ ======================= -->
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0">
+
+    <tr>
+
+        <td align="right"
+            style="
+            padding:0 40px;
+            font-family:Arial,Helvetica,sans-serif;
+            font-size:16px;
+            line-height:30px;
+            color:#333333;">
+
+            Thân gửi,
+
+            <br>
+
+            <strong style="color:#005BAC;">
+
+                Giáo viên chủ nhiệm {{GV}}
+
+            </strong>
+
+        </td>
+
+    </tr>
+
+    <tr>
+        <td height="40"></td>
+    </tr>
+
+</table>
+
+<!-- ======================= KẾT THÚC PHẦN NỘI DUNG ======================= -->
+
+        </td>
+    </tr>
+
+<!-- ======================= FOOTER ======================= -->
+
+<tr>
+
+    <td bgcolor="#005BAC"
+        style="padding:18px 30px;">
+
+        <table role="presentation"
+               width="100%"
+               cellpadding="0"
+               cellspacing="0"
+               border="0">
+
+            <tr>
+
+                <td align="center"
+                    width="25%"
+                    style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#FFFFFF;">
+
+                    1900 6933
+
+                </td>
+
+                <td width="1" bgcolor="#4A8ED8"></td>
+
+                <td align="center"
+                    width="25%">
+
+                    <a href="https://hocmai.vn"
+                       target="_blank"
+                       style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#FFFFFF;text-decoration:none;">
+
+                        Hocmai.vn
+
+                    </a>
+
+                </td>
+
+                <td width="1" bgcolor="#4A8ED8"></td>
+
+                <td align="center"
+                    width="25%">
+
+                    <a href="mailto:hotro@hocmai.vn"
+                       style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#FFFFFF;text-decoration:none;">
+
+                        hotro@hocmai.vn
+
+                    </a>
+
+                </td>
+
+                <td width="1" bgcolor="#4A8ED8"></td>
+
+                <td align="center"
+                    width="25%">
+
+                    <a href="https://www.facebook.com/Hocmai.vnTHPT"
+                       target="_blank"
+                       style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#FFFFFF;text-decoration:none;">
+
+                        HOCMAI THPT
+
+                    </a>
+
+                </td>
+
+            </tr>
+
+        </table>
+
+    </td>
+
+</tr>
+
+<!-- ======================= ĐÓNG CONTAINER ======================= -->
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
+
+</center>
+
+</body>
+
+</html>
