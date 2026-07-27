@@ -635,8 +635,8 @@ function applyRoleUI(){
     if(al) al.style.display=isAdmin()?'':'none';
   }
   var tabOv=document.querySelector('#mainNav a[data-tab="overview"]');
-  if(tabOv&&!isAdmin()) tabOv.style.display='none';
-  if(!isAdmin()) switchTab('lookup');
+  if(tabOv&&isDVKH()) tabOv.style.display='none';
+  if(isDVKH()) switchTab('lookup');
   if(isDVKH()){
     ['wait-member'].forEach(function(s){
       var t=document.querySelector('.sub-tab[data-sub="'+s+'"]');
