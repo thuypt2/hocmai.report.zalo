@@ -237,6 +237,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 <nav id="mainNav">
   <a href="#tab-overview" data-tab="overview" class="active">1 · TỔNG QUAN</a>
   <a href="#tab-lookup" data-tab="lookup">2 · TRA CỨU HỌC SINH THEO NHÓM LỚP</a>
+  <a href="#tab-email" data-tab="email">3 · GỬI EMAIL PHẢN HỒI, THÔNG BÁO</a>
 </nav>
 <main>
 <div id="loadingBox" class="loading-box"><span class="loading-dot"></span><span>Đang tải dữ liệu mới nhất từ hệ thống...</span></div>
@@ -335,8 +336,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
   <div style="margin-bottom:14px">
     <span class="sub-tab active" data-sub="filter-group">2.1 · LỌC HỌC SINH THEO NHÓM VIP</span>
     <span class="sub-tab" data-sub="s-group">2.2 · LỌC HỌC SINH THEO NHÓM S</span>
-    <span class="sub-tab" data-sub="email-notification">2.3 · GỬI EMAIL PHẢN HỒI, THÔNG BÁO</span>
-    <span class="sub-tab" data-sub="wait-member">2.4 · HỌC SINH CHỜ DUYỆT KẾT NỐI</span>
+    <span class="sub-tab" data-sub="wait-member">2.3 · HỌC SINH CHỜ DUYỆT KẾT NỐI</span>
   </div>
 
   <!-- ====== 2.1 Lọc theo nhóm lớp ====== -->
@@ -423,88 +423,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
       </div><!-- /sub-s-group -->
 
-      <!-- ====== 2.3 Gửi email phản hồi, thông báo ====== -->
-      <div class="sub-pane" id="sub-email-notification">
-
-        <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)">
-          <label>Exam
-            <select id="f2-exam"><option value="">-- Tất cả --</option></select>
-          </label>
-          <label>Mã nhóm 1:30
-            <select id="f2-malop"><option value="">-- Tất cả --</option></select>
-          </label>
-          <label>Số HS 1:30 chưa duyệt
-            <select id="f2-sochua"><option value="">-- Tất cả --</option></select>
-          </label>
-          <label>Từ ngày (paid_time)
-            <input type="date" id="f2-from">
-          </label>
-          <label>Đến ngày
-            <input type="date" id="f2-to">
-          </label>
-          <label>Trạng thái duyệt 1:30
-            <select id="f2-130">
-              <option value="">-- Tất cả --</option>
-              <option value="duyet">Đã duyệt</option>
-              <option value="chua">Chưa duyệt</option>
-            </select>
-          </label>
-          <label>Trạng thái duyệt AIM
-            <select id="f2-aim">
-              <option value="">-- Tất cả --</option>
-              <option value="duyet">Đã duyệt</option>
-              <option value="chua">Chưa duyệt</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="toolbar">
-          <button class="btn" onclick="applyFilter2()">Lọc</button>
-          <button class="btn gray" onclick="resetFilter2()">Reset</button>
-          <input class="search-input" id="q2" placeholder="Tìm nhanh: username / email / phone / userid" onkeydown="if(event.key==='Enter')applyFilter2()">
-          <span class="muted" id="result-info-2"></span>
-          <span style="flex:1"></span>
-        </div>
-
-        <div class="tbl-wrap" style="max-height:320px;margin-bottom:16px">
-          <table id="tbl-email-students">
-            <thead><tr id="thead-email-students"></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-        <div id="email-send-info" style="display:none;align-items:center;gap:10px;margin-bottom:16px">
-          <span class="muted">Đã chọn: <b id="email-selected-count">0</b> học sinh</span>
-          <button class="btn" onclick="emailSelectAll()">Chọn tất cả</button>
-          <button class="btn gray" onclick="emailDeselectAll()">Bỏ chọn</button>
-        </div>
-
-        <!-- === Email template selection === -->
-        <div style="border:1px solid var(--bd);border-radius:8px;padding:16px;background:#f9fafb;margin-bottom:16px">
-          <h3 style="margin:0 0 10px;font-size:15px">Chọn mẫu email gửi</h3>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <label style="font-weight:600">Mẫu
-              <select id="emailTemplate2" style="min-width:260px"></select>
-            </label>
-            <button class="btn gray" onclick="previewEmailTemplate2()">Xem mẫu</button>
-          </div>
-          <div id="emailPreview2" style="display:none;margin-top:10px;padding:12px;background:#fff;border:1px solid var(--bd);border-radius:6px;font-size:13px;white-space:pre-wrap;max-height:250px;overflow-y:auto"></div>
-        </div>
-
-        <!-- === Send area === -->
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-          <label style="font-weight:600">Mật khẩu gửi
-            <input type="password" id="email-send-pwd" style="padding:8px;width:220px;border:1px solid var(--bd);border-radius:6px;font-size:13px">
-          </label>
-          <button class="btn" onclick="emailSendSelected()">Gửi email cho <span id="email-send-count">0</span> học sinh đã chọn</button>
-          <span class="muted" style="font-size:12px">(chỉ gửi cho HS có email hợp lệ)</span>
-        </div>
-
-        <pre id="emailSendResult2" style="margin-top:10px;background:#f3f4f6;padding:10px;border-radius:6px;font-size:12px;white-space:pre-wrap;min-height:24px;max-height:300px;overflow-y:auto"></pre>
-
-      </div><!-- /sub-email-notification -->
-
-        <!-- ====== 2.4 Học sinh chờ duyệt kết nối ====== -->
+        <!-- ====== 2.3 Học sinh chờ duyệt kết nối ====== -->
         <div class="sub-pane" id="sub-wait-member">
           <p class="muted" style="margin-top:0">
             Danh sách học sinh chờ duyệt kết nối vào nhóm lớp. Dữ liệu lấy từ sheet <strong>Wait_member</strong> trên Google Sheets.
@@ -547,6 +466,87 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
         </div><!-- /sub-wait-member -->
 
   </div><!-- /tab-lookup -->
+
+<!-- ============ TAB 3: GỬI EMAIL PHẢN HỒI, THÔNG BÁO ============ -->
+<div class="tab-pane" id="tab-email">
+
+  <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)">
+    <label>Exam
+      <select id="f2-exam"><option value="">-- Tất cả --</option></select>
+    </label>
+    <label>Mã nhóm 1:30
+      <select id="f2-malop"><option value="">-- Tất cả --</option></select>
+    </label>
+    <label>Số HS 1:30 chưa duyệt
+      <select id="f2-sochua"><option value="">-- Tất cả --</option></select>
+    </label>
+    <label>Từ ngày (paid_time)
+      <input type="date" id="f2-from">
+    </label>
+    <label>Đến ngày
+      <input type="date" id="f2-to">
+    </label>
+    <label>Trạng thái duyệt 1:30
+      <select id="f2-130">
+        <option value="">-- Tất cả --</option>
+        <option value="duyet">Đã duyệt</option>
+        <option value="chua">Chưa duyệt</option>
+      </select>
+    </label>
+    <label>Trạng thái duyệt AIM
+      <select id="f2-aim">
+        <option value="">-- Tất cả --</option>
+        <option value="duyet">Đã duyệt</option>
+        <option value="chua">Chưa duyệt</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn" onclick="applyFilter2()">Lọc</button>
+    <button class="btn gray" onclick="resetFilter2()">Reset</button>
+    <input class="search-input" id="q2" placeholder="Tìm nhanh: username / email / phone / userid" onkeydown="if(event.key==='Enter')applyFilter2()">
+    <span class="muted" id="result-info-2"></span>
+    <span style="flex:1"></span>
+  </div>
+
+  <div class="tbl-wrap" style="max-height:320px;margin-bottom:16px">
+    <table id="tbl-email-students">
+      <thead><tr id="thead-email-students"></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="email-send-info" style="display:none;align-items:center;gap:10px;margin-bottom:16px">
+    <span class="muted">Đã chọn: <b id="email-selected-count">0</b> học sinh</span>
+    <button class="btn" onclick="emailSelectAll()">Chọn tất cả</button>
+    <button class="btn gray" onclick="emailDeselectAll()">Bỏ chọn</button>
+  </div>
+
+  <!-- === Email template selection === -->
+  <div style="border:1px solid var(--bd);border-radius:8px;padding:16px;background:#f9fafb;margin-bottom:16px">
+    <h3 style="margin:0 0 10px;font-size:15px">Chọn mẫu email gửi</h3>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <label style="font-weight:600">Mẫu
+        <select id="emailTemplate2" style="min-width:260px"></select>
+      </label>
+      <button class="btn gray" onclick="previewEmailTemplate2()">Xem mẫu</button>
+    </div>
+    <div id="emailPreview2" style="display:none;margin-top:10px;padding:12px;background:#fff;border:1px solid var(--bd);border-radius:6px;font-size:13px;white-space:pre-wrap;max-height:250px;overflow-y:auto"></div>
+  </div>
+
+  <!-- === Send area === -->
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+    <label style="font-weight:600">Mật khẩu gửi
+      <input type="password" id="email-send-pwd" style="padding:8px;width:220px;border:1px solid var(--bd);border-radius:6px;font-size:13px">
+    </label>
+    <button class="btn" onclick="emailSendSelected()">Gửi email cho <span id="email-send-count">0</span> học sinh đã chọn</button>
+    <span class="muted" style="font-size:12px">(chỉ gửi cho HS có email hợp lệ)</span>
+  </div>
+
+  <pre id="emailSendResult2" style="margin-top:10px;background:#f3f4f6;padding:10px;border-radius:6px;font-size:12px;white-space:pre-wrap;min-height:24px;max-height:300px;overflow-y:auto"></pre>
+
+</div><!-- /tab-email -->
 
 <footer>Báo cáo tự sinh từ Google Sheet · File HTML self-contained, có thể in PDF qua trình duyệt.</footer>
 </main>
@@ -637,12 +637,14 @@ function applyRoleUI(){
   if(tabOv&&!isAdmin()) tabOv.style.display='none';
   if(!isAdmin()) switchTab('lookup');
   if(isDVKH()){
-    ['email-notification','wait-member'].forEach(function(s){
+    ['wait-member'].forEach(function(s){
       var t=document.querySelector('.sub-tab[data-sub="'+s+'"]');
       var p=document.getElementById('sub-'+s);
       if(t) t.style.display='none';
       if(p) p.style.display='none';
     });
+    var emailNav = document.querySelector('#mainNav a[data-tab="email"]');
+    if(emailNav) emailNav.style.display='none';
     var fr=document.querySelector('#sub-filter-group .filter-row');
     if(fr) fr.style.display='none';
     document.querySelectorAll('#sub-filter-group .toolbar .btn').forEach(function(b){b.style.display='none';});
@@ -1362,13 +1364,13 @@ function badgeStatus(v){
 function switchTab(tab){
   document.querySelectorAll('#mainNav a').forEach(a=>a.classList.toggle('active', a.dataset.tab===tab));
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.toggle('active', p.id==='tab-'+tab));
+  if (tab==='email') applyFilter2();
 }
 function switchSub(sub){
   document.querySelectorAll('.sub-tab').forEach(s=>s.classList.toggle('active', s.dataset.sub===sub));
   document.querySelectorAll('.sub-pane').forEach(p=>p.classList.toggle('active', p.id==='sub-'+sub));
   if (sub==='filter-group') applyFilter1();
   else if (sub==='s-group') applyFilterSGroup();
-  else if (sub==='email-notification') applyFilter2();
 }
 
 // ===== 2.1 Lọc theo nhóm lớp =====
@@ -2231,7 +2233,7 @@ function sendEmailSGroup(email, username, btn) {
     });
 }
 
-// ===== 2.4 Học sinh chờ duyệt kết nối =====
+// ===== 2.3 Học sinh chờ duyệt kết nối =====
 let WAIT_DATA = [];
 function initFilters3(){
   // Populate unique exams, GVCN và mã lớp từ WAIT_DATA
@@ -2335,7 +2337,7 @@ async function loadData(){
     initLookupHeaders();
     initFilters1(); initEmailSection(); applyFilter1();
 
-    // Load Wait_member data for tab 2.4 (await để tránh trắng dữ liệu khi user click sớm)
+    // Load Wait_member data for tab 2.3 (await để tránh trắng dữ liệu khi user click sớm)
     await loadWaitMember();
 
     // Load S-group data for tab 2.2
