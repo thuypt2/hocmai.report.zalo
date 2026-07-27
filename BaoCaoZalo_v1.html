@@ -324,6 +324,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 <section id="r1-stats">
   <h2>1.5 · Thống kê số lượng học sinh được duyệt theo từng nhóm lớp 1:30</h2>
   <p class="muted">Chọn kỳ thi bên dưới để xem danh sách các nhóm lớp thuộc kỳ đó, sắp xếp theo tỉ lệ duyệt nhóm 1:30 giảm dần (cao → thấp).</p>
+  <div id="groups-pie-wrap" style="max-width:520px;margin:0 auto 16px"><canvas id="cGroups-pie"></canvas></div>
   <div class="sub-tab-bar" id="tabs-groups"></div>
   <div id="groups-content"></div>
 </section>
@@ -1234,10 +1235,39 @@ function renderGroupsByExam(){
       document.querySelectorAll('#tabs-groups .tab-pill').forEach(p=>p.classList.remove('active'));
       pill.classList.add('active');
       currentEx = ex;
+      renderPie();
       renderTable();
     };
     tabsRoot.appendChild(pill);
   });
+  function renderPie(){
+    if (window._groupsPieChart) { window._groupsPieChart.destroy(); window._groupsPieChart = null; }
+    const rows = groups[currentEx] || [];
+    const buckets = { 'Đủ thành viên':0, 'Từ 25-27':0, 'Từ 20-24':0, 'Từ 15-19':0, 'Từ 10-14':0, 'Từ 9 trở xuống':0 };
+    for (const r of rows) {
+      const n = r.tong_hs || 0;
+      if (n >= 28) buckets['Đủ thành viên']++;
+      else if (n >= 25) buckets['Từ 25-27']++;
+      else if (n >= 20) buckets['Từ 20-24']++;
+      else if (n >= 15) buckets['Từ 15-19']++;
+      else if (n >= 10) buckets['Từ 10-14']++;
+      else buckets['Từ 9 trở xuống']++;
+    }
+    const labels = Object.keys(buckets);
+    const vals = labels.map(k=>buckets[k]);
+    const total = vals.reduce((a,b)=>a+b,0);
+    const palette = ['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#6b7280'];
+    window._groupsPieChart = new Chart(document.getElementById('cGroups-pie'),{
+      type:'doughnut',
+      data:{labels, datasets:[{data:vals,
+        backgroundColor:palette,
+        borderWidth:2, borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'50%',
+        plugins:{legend:{position:'bottom',labels:{padding:12,font:{size:12}}},
+          tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed.toLocaleString('vi-VN')} nhóm (${total?(c.parsed/total*100).toFixed(1):0}%)`}}},
+      }
+    });
+  }
   function renderTable(){
     const rows = groups[currentEx] || [];
     let html = `<div class="muted" style="margin-bottom:6px"><b>Kỳ thi ${currentEx}</b> · ${rows.length} nhóm lớp · sắp xếp theo tỉ lệ duyệt 1:30 giảm dần.</div>`;
@@ -1268,6 +1298,7 @@ function renderGroupsByExam(){
     html += `</tbody></table></div>`;
     cont.innerHTML = html;
   }
+  renderPie();
   renderTable();
 }
 
