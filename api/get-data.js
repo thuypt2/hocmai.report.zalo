@@ -12,6 +12,19 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút cache trong memory (tránh gọi 
 let _cache = null;
 let _cacheTime = 0;
 
+// ── AIM link mapping theo tên nhóm ─────────────────────────────────────────
+const AIM_LINK_MAP = {
+  'hocmai tsa aim 70+':    'https://hocmai.link/TSAaim70plus',
+  'hocmai hsa aim 100+':   'https://hocmai.link/HSAaim100plus',
+  'hocmai v-act 900+':     'https://hocmai.link/VACTaim900plus',
+  'hocmai qda aim 100+':   'https://hocmai.link/QDAaim100plus',
+  'hocmai tn thpt aim 25+':'https://hocmai.link/TNTHPTaim25plus',
+};
+function resolveAimLink(nhomAim) {
+  const key = String(nhomAim || '').trim().toLowerCase();
+  return AIM_LINK_MAP[key] || '';
+}
+
 async function fetchTopuni2Rows() {
   const headers = { 'User-Agent': 'BaocaoduyetZalo/1.0' };
   if (TOPUNI2_DATA_API_SECRET) {
@@ -293,7 +306,7 @@ function buildData(allRows) {
       'SĐT GV': s(r, 'SĐT GV'),
       'Mã bảo mật': s(r, 'Mã bảo mật'),
       'Nhom_AIM': s(r, 'Nhom_AIM'),
-      'Link_AIM': s(r, 'Link_AIM'),
+      'Link_AIM': s(r, 'Link_AIM') || resolveAimLink(s(r, 'Nhom_AIM')),
       'Trạng thái duyệt': s(r, 'Trạng thái duyệt 1:30'),
       'Thời điểm duyệt': s(r, 'Thời gian duyệt'),
       'Trạng thái duyệt AIM': s(r, 'Trạng thái duyệt AIM'),
