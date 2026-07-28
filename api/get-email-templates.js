@@ -1,7 +1,7 @@
 // Vercel API route — proxy sang Apps Script để lấy mẫu email từ sheet Email_Templates
 // Dùng chung Apps Script URL với send-class-group-email
 const EMAIL_TEMPLATES_API_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
-  'https://script.google.com/macros/s/AKfycbyBtnp4vHEIVommWqDXR60AS7Dx_oHogCQY7VZ3cpGkGBlzBMQsy_SkrVf-kpaWEUIwmA/exec';
+  'https://script.google.com/macros/s/AKfycbyl0pjYwfE0IfiAyV952BTUSeV75yTmXjGgImTrskVVLNtOp608ZNRyc97ZZR6kF5_gOg/exec';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút cache
 let _cache = null;
