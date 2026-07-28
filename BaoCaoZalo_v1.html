@@ -656,15 +656,6 @@ function applyRoleUI(){
     var sfFilterRow = document.getElementById('fS-filter-row');
     if(sfFilterRow) sfFilterRow.style.display='none';
   }
-  if(isGVCN()){
-    // GVCN không xem được tab S-group (dữ liệu từ sheet riêng, không có trường phân quyền lớp)
-    ['s-group'].forEach(function(s){
-      var t=document.querySelector('.sub-tab[data-sub="'+s+'"]');
-      var p=document.getElementById('sub-'+s);
-      if(t) t.style.display='none';
-      if(p) p.style.display='none';
-    });
-  }
 }
 (function autoGate(){
   var auth=getStoredAuth();
@@ -2218,6 +2209,11 @@ async function loadSGroupData() {
     console.warn('Không tải được dữ liệu nhóm S:', err.message);
     S_GROUP_DATA = [];
   }
+  // GVCN: lọc S_GROUP_DATA theo mã bảo mật → tra ngược LOOKUP → chỉ giữ HS trong lớp của mình
+  if (isGVCN() && S_GROUP_DATA.length > 0) {
+    const safeSet = new Set(getScopedLookup().map(function(r){ return String(r['Mã bảo mật']||'').trim(); }).filter(Boolean));
+    S_GROUP_DATA = S_GROUP_DATA.filter(function(r){ return safeSet.has(String(r.mabaomat||'').trim()); });
+  }
   initSGroupHeaders();
 
   // Thêm V-ACT S vào mục 1.1 Tổng quan (dữ liệu độc lập, không merge vào DATA)
@@ -2227,9 +2223,6 @@ async function loadSGroupData() {
 }
 
 function renderVActSOverview() {
-  // GVCN không xem được dữ liệu S-group (từ sheet riêng, không có phân quyền lớp)
-  if (isGVCN()) return;
-
   // Lọc bỏ dòng trống (không có username, email lẫn sđt)
   const validRows = S_GROUP_DATA.filter(function(r) {
     return (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim();
