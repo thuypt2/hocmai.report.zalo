@@ -69,18 +69,10 @@ export default async function handler(req, res) {
     let body = {};
     try { body = JSON.parse(rawBody); } catch { body = {}; }
 
-    const { action, adminPassword, templateKey, templateSubject, templateBody, students } = body;
+    const { action, templateKey, templateSubject, templateBody, students } = body;
 
     if (action !== 'send_selected') {
       return res.status(400).json({ ok: false, error: 'action không hợp lệ' });
-    }
-
-    if (!adminPassword) {
-      return res.status(400).json({ ok: false, error: 'Thiếu mật khẩu gửi email' });
-    }
-
-    if (adminPassword !== process.env.HERMES_ADMIN_PASSWORD) {
-      return res.status(401).json({ ok: false, error: 'Mật khẩu không đúng' });
     }
 
     if (!students || !students.length) {

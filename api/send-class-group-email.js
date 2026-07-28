@@ -68,24 +68,20 @@ export default async function handler(req, res) {
     const rawBody = await readBody(req);
     let body = {};
     try { body = JSON.parse(rawBody); } catch { body = {}; }
-    const { adminPassword, limit, email, username, ma_lop, exam, gv, link_group } = body;
+    const { limit, email, username, ma_lop, exam, gv, link_group } = body;
 
-    const isBatch = !!adminPassword;
-    const isIndividual = !!email && !adminPassword;
+    const isBatch = !email;
+    const isIndividual = !!email;
 
     if (!isBatch && !isIndividual) {
       return res.status(400).json({
         ok: false,
-        error: 'Thiếu tham số: cần adminPassword (batch) hoặc email (individual)',
+        error: 'Thiếu tham số',
       });
     }
 
     // ===== Batch send =====
     if (isBatch) {
-      if (adminPassword !== process.env.HERMES_ADMIN_PASSWORD) {
-        return res.status(401).json({ ok: false, error: 'Sai mật khẩu gửi email' });
-      }
-
       const result = await callAppsScript({
         action: 'sendClassGroupEmails',
         secret: APPS_SCRIPT_SECRET,

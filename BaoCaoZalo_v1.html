@@ -538,9 +538,6 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
   <!-- === Send area === -->
   <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-    <label style="font-weight:600">Mật khẩu gửi
-      <input type="password" id="email-send-pwd" style="padding:8px;width:220px;border:1px solid var(--bd);border-radius:6px;font-size:13px">
-    </label>
     <button class="btn" onclick="emailSendSelected()">Gửi email cho <span id="email-send-count">0</span> học sinh đã chọn</button>
     <span class="muted" style="font-size:12px">(chỉ gửi cho HS có email hợp lệ)</span>
   </div>
@@ -882,14 +879,8 @@ function sendEmail(email, username, maLop, exam, gv, linkGroup, sdtGv, maBaoMat,
 
 // ===== Gửi email hàng loạt (quản trị) =====
 async function sendClassGroupEmails() {
-  const adminPassword = document.getElementById('adminPassword').value;
-  const limit = document.getElementById('sendLimit').value;
+  const limit = document.getElementById('sendLimit')?.value;
   const resultBox = document.getElementById('sendEmailResult');
-
-  if (!adminPassword) {
-    alert('Vui lòng nhập mật khẩu gửi email.');
-    return;
-  }
 
   const confirmed = confirm('Bạn chắc chắn muốn gửi email cho các học sinh đang ở trạng thái READY?');
   if (!confirmed) return;
@@ -900,7 +891,7 @@ async function sendClassGroupEmails() {
     const response = await fetch(EMAIL_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ adminPassword, limit })
+      body: JSON.stringify({ limit })
     });
 
     const result = await response.json();
@@ -2078,11 +2069,9 @@ function previewEmailTemplate2() {
 }
 
 async function emailSendSelected() {
-  const pwd = document.getElementById('email-send-pwd')?.value;
   const tplSel = document.getElementById('emailTemplate2');
   const resultBox = document.getElementById('emailSendResult2');
 
-  if (!pwd) { alert('Vui lòng nhập mật khẩu gửi email.'); return; }
   if (EMAIL_SELECTED.size === 0) { alert('Vui lòng chọn ít nhất 1 học sinh để gửi.'); return; }
 
   const key = tplSel?.value;
@@ -2128,7 +2117,6 @@ async function emailSendSelected() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'send_selected',
-        adminPassword: pwd,
         templateKey: key,
         templateSubject: template.subject,
         templateBody: template.html_body,
