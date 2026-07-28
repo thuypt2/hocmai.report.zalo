@@ -576,15 +576,13 @@ function isGVCN(){return CURRENT_USER&&CURRENT_USER.role==='gvcn';}
 function isDVKH(){return CURRENT_USER&&CURRENT_USER.role==='dvkh';}
 function getScopedLookup(){
   if(!CURRENT_USER) return [];
-  if(isAdmin()||isDVKH()) return LOOKUP;
-  var t=String(CURRENT_USER.name||CURRENT_USER.username||'').trim().toLowerCase();
-  return LOOKUP.filter(function(row){return String(row['GV']||'').trim().toLowerCase()===t;});
+  if(isAdmin()||isDVKH()||isGVCN()) return LOOKUP;
+  return [];
 }
 function filterWaitDataByRole(rows){
   rows=rows||[];
-  if(!CURRENT_USER||isAdmin()||isDVKH()) return rows;
-  var ok=new Set(getScopedLookup().map(function(r){return String(r._ma_lop||'').trim();}).filter(Boolean));
-  return rows.filter(function(r){return ok.has(String(r.ma_lop||'').trim());});
+  if(!CURRENT_USER||isAdmin()||isDVKH()||isGVCN()) return rows;
+  return rows;
 }
 function getCols21(){
   if(!isDVKH()) return COLS_21;
@@ -628,9 +626,8 @@ function applyRoleUI(){
     bar.style.display='flex';
     document.getElementById('userBarName').textContent=CURRENT_USER.name||CURRENT_USER.username;
     document.getElementById('userBarRole').textContent='Vai trò: '+roleLabel(CURRENT_USER.role);
-    document.getElementById('userBarScope').textContent=
-      isAdmin()?'Phạm vi: toàn bộ dữ liệu':
-      isGVCN()?('Phạm vi: nhóm lớp GV '+(CURRENT_USER.name||CURRENT_USER.username)):
+    document.getElementById('userBarScope').textContent =
+      isAdmin()||isGVCN()?'Phạm vi: toàn bộ dữ liệu':
       'Phạm vi: chỉ tra cứu nhanh mục 2.1';
     var al=document.getElementById('adminPageLink');
     if(al) al.style.display=isAdmin()?'':'none';
@@ -2209,11 +2206,6 @@ async function loadSGroupData() {
     console.warn('Không tải được dữ liệu nhóm S:', err.message);
     S_GROUP_DATA = [];
   }
-  // GVCN: lọc S_GROUP_DATA theo mã bảo mật → tra ngược LOOKUP → chỉ giữ HS trong lớp của mình
-  if (isGVCN() && S_GROUP_DATA.length > 0) {
-    const safeSet = new Set(getScopedLookup().map(function(r){ return String(r['Mã bảo mật']||'').trim(); }).filter(Boolean));
-    S_GROUP_DATA = S_GROUP_DATA.filter(function(r){ return safeSet.has(String(r.mabaomat||'').trim()); });
-  }
   initSGroupHeaders();
 
   // Thêm V-ACT S vào mục 1.1 Tổng quan (dữ liệu độc lập, không merge vào DATA)
@@ -2519,12 +2511,6 @@ async function loadData(){
 
     DATA   = json;
     LOOKUP = json.lookup || [];
-
-    // GVCN: chỉ hiển thị dữ liệu lớp mình quản lý
-    if (isGVCN()) {
-      LOOKUP = getScopedLookup();
-      recomputeDataFromLookup();
-    }
 
     // Ẩn loading, cập nhật header
     loadBox.style.display = 'none';
