@@ -297,6 +297,7 @@ function handleSendIndividualEmail(body) {
       to: email,
       subject: subject,
       htmlBody: htmlBody,
+      name: 'Giáo viên chủ nhiệm',
     });
 
     // GHI LOG vào Email_Log
@@ -395,6 +396,7 @@ function handleSendSelectedEmails(ss, body) {
         to: email,
         subject: subject,
         htmlBody: htmlBody,
+        name: 'Giáo viên chủ nhiệm',
       });
 
       // Log
@@ -474,7 +476,7 @@ function handleSendFromQueue(ss, body) {
       var subject = renderTemplate(tmpl.subject, data);
       var htmlBody = renderTemplate(tmpl.htmlBody, data);
 
-      MailApp.sendEmail({ to: email, subject: subject, htmlBody: htmlBody });
+      MailApp.sendEmail({ to: email, subject: subject, htmlBody: htmlBody, name: 'Giáo viên chủ nhiệm' });
 
       q.getRange(i + 2, 2).setValue('Da gui');
 
