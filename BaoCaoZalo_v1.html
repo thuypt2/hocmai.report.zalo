@@ -656,6 +656,15 @@ function applyRoleUI(){
     var sfFilterRow = document.getElementById('fS-filter-row');
     if(sfFilterRow) sfFilterRow.style.display='none';
   }
+  if(isGVCN()){
+    // GVCN không xem được tab S-group (dữ liệu từ sheet riêng, không có trường phân quyền lớp)
+    ['s-group'].forEach(function(s){
+      var t=document.querySelector('.sub-tab[data-sub="'+s+'"]');
+      var p=document.getElementById('sub-'+s);
+      if(t) t.style.display='none';
+      if(p) p.style.display='none';
+    });
+  }
 }
 (function autoGate(){
   var auth=getStoredAuth();
@@ -917,6 +926,129 @@ async function sendClassGroupEmails() {
   }
 }
 
+// ===== Recompute DATA from scoped LOOKUP (GVCN role scoping) =====
+function recomputeDataFromLookup(){
+  function paidMonth(v) {
+    if (!v) return null;
+    const str = String(v).trim();
+    let m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) { const yr = parseInt(m[1],10); return yr>=2000 ? m[1]+'-'+m[2] : null; }
+    m = str.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (m) { const yr = parseInt(m[3],10); return yr>=2000 ? m[3]+'-'+m[2] : null; }
+    return null;
+  }
+  function weekLabel(r) {
+    const wp = String(r['weekpaid']||'').trim();
+    if (wp && wp.toUpperCase().startsWith('W')) return wp;
+    const pt = String(r.paid_time||'').trim();
+    const dm = pt.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!dm) return null;
+    const d = new Date(dm[1]+'-'+dm[2]+'-'+dm[3]);
+    if (isNaN(d)) return null;
+    const jan4 = new Date(d.getFullYear(),0,4);
+    const doy = Math.round((d-jan4)/86400000)+jan4.getDay();
+    const wn = Math.ceil(doy/7);
+    return 'W'+String(wn).padStart(2,'0')+' ('+d.getFullYear()+')';
+  }
+  const rows = LOOKUP;
+  DATA.total_rows = rows.length;
+  const examSet = new Set(rows.map(r => r._exam||'').filter(Boolean));
+  const exam_stats = {};
+  for (const ex of examSet) {
+    const sub = rows.filter(r => (r._exam||'') === ex);
+    const total = sub.length;
+    const d130 = sub.filter(r => r['Trạng thái duyệt 1:30']==='Duyệt').length;
+    const daim = sub.filter(r => r['Trạng thái duyệt AIM']==='Duyệt').length;
+    const soNhom = new Set(sub.map(r => r._ma_lop||'').filter(Boolean)).size;
+    exam_stats[ex] = { tong_hs: total, duyet_130: d130, duyet_aim: daim, so_nhom: soNhom,
+      ti_le_130: total ? Math.round(d130/total*10000)/100 : 0,
+      ti_le_aim: total ? Math.round(daim/total*10000)/100 : 0 };
+  }
+  DATA.exam_stats = exam_stats;
+  const monthlyMap = {};
+  for (const r of rows) {
+    const ex = r._exam||'';
+    if (!examSet.has(ex)) continue;
+    const mo = paidMonth(r.paid_time||''); if (!mo) continue;
+    if (!monthlyMap[ex]) monthlyMap[ex] = {};
+    if (!monthlyMap[ex][mo]) monthlyMap[ex][mo] = { total:0, duyet_130:0, duyet_aim:0 };
+    monthlyMap[ex][mo].total++;
+    if (r['Trạng thái duyệt 1:30']==='Duyệt') monthlyMap[ex][mo].duyet_130++;
+    if (r['Trạng thái duyệt AIM']==='Duyệt') monthlyMap[ex][mo].duyet_aim++;
+  }
+  const all_months = [...new Set(Object.values(monthlyMap).flatMap(m=>Object.keys(m)))].sort();
+  DATA.all_months = all_months;
+  const monthly_chart = {};
+  const EXAMS_SORTED = [...examSet].sort();
+  for (const ex of EXAMS_SORTED) {
+    monthly_chart[ex] = all_months.map(mo => {
+      const b = (monthlyMap[ex]||{})[mo] || { total:0, duyet_130:0, duyet_aim:0 };
+      return { month: mo, total: b.total, duyet_130: b.duyet_130, duyet_aim: b.duyet_aim };
+    });
+  }
+  DATA.monthly_chart = monthly_chart;
+  const weeklyMap = {};
+  for (const r of rows) {
+    const ex = r._exam||'';
+    if (!examSet.has(ex)) continue;
+    const w = weekLabel(r); if (!w) continue;
+    if (!weeklyMap[ex]) weeklyMap[ex] = {};
+    if (!weeklyMap[ex][w]) weeklyMap[ex][w] = { total:0, duyet_130:0, duyet_aim:0 };
+    weeklyMap[ex][w].total++;
+    if (r['Trạng thái duyệt 1:30']==='Duyệt') weeklyMap[ex][w].duyet_130++;
+    if (r['Trạng thái duyệt AIM']==='Duyệt') weeklyMap[ex][w].duyet_aim++;
+  }
+  function sortWeek(w) { const m = w.match(/W(\d+)\s*\((\d{4})\)/); return m ? parseInt(m[2])*100+parseInt(m[1]) : 999999; }
+  const all_weeks_per_exam = {};
+  const weekly_chart = {};
+  for (const ex of EXAMS_SORTED) {
+    const ws = Object.keys(weeklyMap[ex]||{}).sort((a,b)=>sortWeek(a)-sortWeek(b));
+    all_weeks_per_exam[ex] = ws;
+    weekly_chart[ex] = ws.map(w => ({ week: w, ...(weeklyMap[ex]||{})[w] }));
+  }
+  DATA.all_weeks_per_exam = all_weeks_per_exam;
+  DATA.weekly_chart = weekly_chart;
+  const hsa_pie = {};
+  for (const r of rows) {
+    if ((r._exam||'') !== 'HSA') continue;
+    const v = r.hsa_type;
+    let label;
+    if (v==null||v===''||v===0||v==='0') label='Không xác định';
+    else {
+      const sv = String(v).trim().toLowerCase();
+      if (sv.includes('tiếng anh')||sv.includes('tieng anh')||sv.includes('english')||sv==='anh') label='Tiếng Anh';
+      else if (sv.includes('khoa học')||sv.includes('khoa hoc')||sv.includes('science')||sv.includes('tự nhiên')) label='Khoa học';
+      else label='Khác ('+sv+')';
+    }
+    hsa_pie[label] = (hsa_pie[label]||0)+1;
+  }
+  DATA.hsa_pie = hsa_pie;
+  const gbxMap = {};
+  for (const r of rows) {
+    const ex = r._exam||''; const ml = r._ma_lop||'';
+    if (!ex||!ml) continue;
+    const k = ex+'|||'+ml;
+    if (!gbxMap[k]) gbxMap[k] = { exam:ex, ma_lop:ml, gv:'', tong_hs:0, duyet_130:0, duyet_aim:0 };
+    gbxMap[k].tong_hs++;
+    if (r['Trạng thái duyệt 1:30']==='Duyệt') gbxMap[k].duyet_130++;
+    if (r['Trạng thái duyệt AIM']==='Duyệt') gbxMap[k].duyet_aim++;
+    if (!gbxMap[k].gv) gbxMap[k].gv = r._gv||'';
+  }
+  const groups_by_exam = {};
+  for (const g of Object.values(gbxMap)) {
+    g.ti_le_130 = g.tong_hs ? Math.round(g.duyet_130/g.tong_hs*10000)/100 : 0;
+    g.ti_le_aim = g.tong_hs ? Math.round(g.duyet_aim/g.tong_hs*10000)/100 : 0;
+    if (!groups_by_exam[g.exam]) groups_by_exam[g.exam] = [];
+    groups_by_exam[g.exam].push(g);
+  }
+  for (const ex of Object.keys(groups_by_exam)) {
+    groups_by_exam[ex].sort((a,b)=>b.ti_le_130-a.ti_le_130||b.duyet_130-a.duyet_130);
+  }
+  DATA.groups_by_exam = groups_by_exam;
+  DATA.exams = EXAMS_SORTED;
+  DATA.rows_no_exam = rows.filter(r => !(r._exam||'')).length;
+}
+
 // ===== Báo cáo 1 =====
 function renderKPI(){
   const root = document.getElementById('kpis');
@@ -969,9 +1101,9 @@ function renderExamTable(){
   let totalN=0, d130N=0, daimN=0, nhomN=0;
   let gvN = 0;
 
-  // Compute per-exam + per-GV stats from LOOKUP
+  // Compute per-exam + per-GV stats from scoped lookup
   const gvMap = {};
-  for (const r of LOOKUP) {
+  for (const r of getScopedLookup()) {
     const ex = r._exam || '(rỗng)';
     const gv = r._gv || '(không có)';
     const key = ex + '|||' + gv;
@@ -2095,6 +2227,9 @@ async function loadSGroupData() {
 }
 
 function renderVActSOverview() {
+  // GVCN không xem được dữ liệu S-group (từ sheet riêng, không có phân quyền lớp)
+  if (isGVCN()) return;
+
   // Lọc bỏ dòng trống (không có username, email lẫn sđt)
   const validRows = S_GROUP_DATA.filter(function(r) {
     return (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim();
@@ -2391,6 +2526,12 @@ async function loadData(){
 
     DATA   = json;
     LOOKUP = json.lookup || [];
+
+    // GVCN: chỉ hiển thị dữ liệu lớp mình quản lý
+    if (isGVCN()) {
+      LOOKUP = getScopedLookup();
+      recomputeDataFromLookup();
+    }
 
     // Ẩn loading, cập nhật header
     loadBox.style.display = 'none';
