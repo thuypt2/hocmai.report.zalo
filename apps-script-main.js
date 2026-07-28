@@ -290,7 +290,7 @@ function handleSendIndividualEmail(body) {
   };
 
   var subject = renderTemplate(tmpl.subject, data);
-  var htmlBody = fixEmptyAimLink(renderTemplate(tmpl.htmlBody, data), link_aim);
+  var htmlBody = renderTemplate(tmpl.htmlBody, data);
 
   try {
     MailApp.sendEmail({
@@ -384,11 +384,11 @@ function handleSendSelectedEmails(ss, body) {
       var subject, htmlBody;
       if (useCustomTemplate) {
         subject = renderTemplate(templateSubject, data);
-        htmlBody = fixEmptyAimLink(renderTemplate(templateBody, data), data['Link_AIM']);
+        htmlBody = renderTemplate(templateBody, data);
       } else {
         var tmpl = getTemplate(templateKey);
         subject = renderTemplate(tmpl.subject, data);
-        htmlBody = fixEmptyAimLink(renderTemplate(tmpl.htmlBody, data), data['Link_AIM']);
+        htmlBody = renderTemplate(tmpl.htmlBody, data);
       }
 
       MailApp.sendEmail({
@@ -472,7 +472,7 @@ function handleSendFromQueue(ss, body) {
       };
 
       var subject = renderTemplate(tmpl.subject, data);
-      var htmlBody = fixEmptyAimLink(renderTemplate(tmpl.htmlBody, data), data['Link_AIM']);
+      var htmlBody = renderTemplate(tmpl.htmlBody, data);
 
       MailApp.sendEmail({ to: email, subject: subject, htmlBody: htmlBody });
 
@@ -612,18 +612,6 @@ function getTemplate(templateKey) {
     subject: String(foundRow[subjectIdx] || ''),
     htmlBody: String(foundRow[bodyIdx] || ''),
   };
-}
-
-// ============================================================
-// FIX: Loai bo link AIM bi hong khi Link_AIM rong
-// ============================================================
-function fixEmptyAimLink(htmlBody, linkAim) {
-  if (linkAim && linkAim.trim()) return htmlBody;
-  // Thay the <a href="">Tham gia ngay</a> (link AIM bi hong) bang text
-  return htmlBody.replace(
-    /<a href="">[\s\S]*?Tham gia ngay[\s\S]*?<\/a>/g,
-    '<span style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#999999;">(Chưa có link nhóm AIM)</span>'
-  );
 }
 
 // ============================================================
