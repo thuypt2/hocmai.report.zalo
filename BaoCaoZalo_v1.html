@@ -1039,7 +1039,8 @@ function recomputeDataFromLookup(){
 function renderKPI(){
   const root = document.getElementById('kpis');
   root.innerHTML = '';
-  function kpiCard(label, total, d130, daim, isTotal){
+  function kpiCard(label, total, d130, daim, isTotal, tangThang){
+    tangThang = tangThang || 0;
     const pct130 = total ? (d130/total*100) : 0;
     const pctAim = total ? (daim/total*100) : 0;
     const cls = 'kpi' + (isTotal ? ' total' : '');
@@ -1047,9 +1048,12 @@ function renderKPI(){
     const wAim = Math.max(0, Math.min(100, pctAim));
     const label130Inside = pct130 >= 8;
     const labelAimInside = pctAim >= 8;
+    const tangHtml = tangThang > 0
+      ? ` <span style="font-size:11px;color:#16a34a;font-weight:600;vertical-align:middle">&#8593;${tangThang.toLocaleString('vi-VN')}</span>`
+      : '';
     return `<div class="${cls}">
       <div class="lbl">${escapeHtml(label)}</div>
-      <div class="val">${total.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span></div>
+      <div class="val">${total.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span>${tangHtml}</div>
       <div class="bar-row">
         <div class="bar-cap"><span>Nhóm 1:30</span><span><b>${d130.toLocaleString('vi-VN')}</b> · ${pct130.toFixed(1).replace('.',',')}%</span></div>
         <div class="bar"><div class="fill fill-130" style="width:${w130}%">${label130Inside ? d130.toLocaleString('vi-VN')+' · '+pct130.toFixed(1).replace('.',',')+'%' : ''}</div></div>
@@ -1060,15 +1064,25 @@ function renderKPI(){
       </div>
     </div>`;
   }
+  // Helper: đếm HS tăng trong tháng hiện tại dựa trên paid_time trong lookup
+  function countNewThisMonth(exam) {
+    const now = new Date();
+    const ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    const lookup = getScopedLookup();
+    if (exam) {
+      return lookup.filter(r => (r._exam || '') === exam && String(r.paid_time || '').startsWith(ym)).length;
+    }
+    return lookup.filter(r => String(r.paid_time || '').startsWith(ym)).length;
+  }
   // KPI tổng = total_rows (sau filter Chuyển đổi), không chỉ tính dòng có exam
   const totalAll = DATA.total_rows || 0;
   const d130All  = DATA.exams.reduce((s,e)=>s+(DATA.exam_stats[e]?.duyet_130||0), 0);
   const daimAll  = DATA.exams.reduce((s,e)=>s+(DATA.exam_stats[e]?.duyet_aim||0), 0);
-  root.insertAdjacentHTML('beforeend', kpiCard('TỔNG (mọi exam)', totalAll, d130All, daimAll, true));
+  root.insertAdjacentHTML('beforeend', kpiCard('TỔNG (mọi exam)', totalAll, d130All, daimAll, true, countNewThisMonth(null)));
   for (const ex of DATA.exams){
     const s = DATA.exam_stats[ex];
     const label = ex || '(rỗng)';
-    root.insertAdjacentHTML('beforeend', kpiCard(label, s.tong_hs, s.duyet_130, s.duyet_aim, false));
+    root.insertAdjacentHTML('beforeend', kpiCard(label, s.tong_hs, s.duyet_130, s.duyet_aim, false, countNewThisMonth(ex)));
   }
   // Card riêng cho dòng chưa có exam/mã lớp
   const noExam = DATA.rows_no_exam || 0;
