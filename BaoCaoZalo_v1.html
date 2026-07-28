@@ -632,6 +632,13 @@ function applyRoleUI(){
     var al=document.getElementById('adminPageLink');
     if(al) al.style.display=isAdmin()?'':'none';
   }
+  // GVCN: muc 1 Tong quan chi xem 1.5, an 1.1->1.4
+  if (isGVCN()) {
+    ['r1','r1-chart','r1-bar','r1-hsa'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) el.style.display='none';
+    });
+  }
   var tabOv=document.querySelector('#mainNav a[data-tab="overview"]');
   if(tabOv&&isDVKH()) tabOv.style.display='none';
   if(isDVKH()) switchTab('lookup');
