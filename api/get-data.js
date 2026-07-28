@@ -113,7 +113,7 @@ function buildData(allRows) {
   for (const ex of EXAMS) {
     const sub = rows.filter(r => s(r, 'exam') === ex);
     const total = sub.length;
-    const d130 = sub.filter(r => s(r, 'Trạng thái duyệt') === 'Duyệt').length;
+    const d130 = sub.filter(r => s(r, 'Trạng thái duyệt 1:30') === 'Duyệt').length;
     const daim = sub.filter(r => s(r, 'Trạng thái duyệt AIM') === 'Duyệt').length;
     const soNhom = new Set(sub.map(r => s(r, 'Mã lớp')).filter(Boolean)).size;
     exam_stats[ex] = {
@@ -136,7 +136,7 @@ function buildData(allRows) {
     if (!m || m.startsWith('1970')) continue;
     if (!monthlyMap[ex][m]) monthlyMap[ex][m] = { total: 0, duyet_130: 0, duyet_aim: 0 };
     monthlyMap[ex][m].total++;
-    if (s(r, 'Trạng thái duyệt') === 'Duyệt') monthlyMap[ex][m].duyet_130++;
+    if (s(r, 'Trạng thái duyệt 1:30') === 'Duyệt') monthlyMap[ex][m].duyet_130++;
     if (s(r, 'Trạng thái duyệt AIM') === 'Duyệt') monthlyMap[ex][m].duyet_aim++;
   }
   const all_months = [...new Set(Object.values(monthlyMap).flatMap(m => Object.keys(m)))].sort();
@@ -158,7 +158,7 @@ function buildData(allRows) {
     if (!w) continue;
     if (!weeklyMap[ex][w]) weeklyMap[ex][w] = { total: 0, duyet_130: 0, duyet_aim: 0 };
     weeklyMap[ex][w].total++;
-    if (s(r, 'Trạng thái duyệt') === 'Duyệt') weeklyMap[ex][w].duyet_130++;
+    if (s(r, 'Trạng thái duyệt 1:30') === 'Duyệt') weeklyMap[ex][w].duyet_130++;
     if (s(r, 'Trạng thái duyệt AIM') === 'Duyệt') weeklyMap[ex][w].duyet_aim++;
   }
   function sortWeek(w) {
@@ -193,7 +193,7 @@ function buildData(allRows) {
   }
   const top20_130 = {}, top20_aim = {};
   for (const ex of EXAMS) {
-    top20_130[ex] = topGroups(ex, 'Trạng thái duyệt');
+    top20_130[ex] = topGroups(ex, 'Trạng thái duyệt 1:30');
     top20_aim[ex] = topGroups(ex, 'Trạng thái duyệt AIM');
   }
 
@@ -244,7 +244,7 @@ function buildData(allRows) {
     const k = `${ex}|||${ml}`;
     if (!gbxMap[k]) gbxMap[k] = { exam: ex, ma_lop: ml, gv: '', tong_hs: 0, duyet_130: 0, duyet_aim: 0 };
     gbxMap[k].tong_hs++;
-    if (s(r, 'Trạng thái duyệt') === 'Duyệt') gbxMap[k].duyet_130++;
+    if (s(r, 'Trạng thái duyệt 1:30') === 'Duyệt') gbxMap[k].duyet_130++;
     if (s(r, 'Trạng thái duyệt AIM') === 'Duyệt') gbxMap[k].duyet_aim++;
     if (!gbxMap[k].gv) gbxMap[k].gv = s(r, 'GV');
   }
@@ -265,7 +265,7 @@ function buildData(allRows) {
     const k = `${s(r, 'exam')}|||${s(r, 'Mã lớp')}|||${s(r, 'GV')}`;
     if (!groupCounter[k]) groupCounter[k] = { total: 0, chua: 0 };
     groupCounter[k].total++;
-    if (s(r, 'Trạng thái duyệt') !== 'Duyệt') groupCounter[k].chua++;
+    if (s(r, 'Trạng thái duyệt 1:30') !== 'Duyệt') groupCounter[k].chua++;
   }
 
   const lookup = rows.map(r => {
@@ -294,8 +294,8 @@ function buildData(allRows) {
       'Mã bảo mật': s(r, 'Mã bảo mật'),
       'Nhom_AIM': s(r, 'Nhom_AIM'),
       'Link_AIM': s(r, 'Link_AIM'),
-      'Trạng thái duyệt': s(r, 'Trạng thái duyệt'),
-      'Thời điểm duyệt': s(r, 'Thời điểm duyệt'),
+      'Trạng thái duyệt': s(r, 'Trạng thái duyệt 1:30'),
+      'Thời điểm duyệt': s(r, 'Thời gian duyệt'),
       'Trạng thái duyệt AIM': s(r, 'Trạng thái duyệt AIM'),
       hsa_type: s(r, 'hsa_type'),
       // ver8: Flow 7 accept-members API fields
@@ -309,7 +309,7 @@ function buildData(allRows) {
       _paid_time_iso: ptStr,
       _paid_time_ms: ptMs,
       _chua_vao_lop:
-        s(r, 'Trạng thái duyệt') !== 'Duyệt' &&
+        s(r, 'Trạng thái duyệt 1:30') !== 'Duyệt' &&
         s(r, 'Trạng thái duyệt AIM') !== 'Duyệt',
       _so_chua_trong_nhom: gc.chua,
       _tong_trong_nhom: gc.total,
