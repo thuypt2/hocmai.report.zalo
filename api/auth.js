@@ -10,7 +10,6 @@
  */
 
 const crypto = require('crypto');
-const https  = require('https');
 
 const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycbyBtnp4vHEIVommWqDXR60AS7Dx_oHogCQY7VZ3cpGkGBlzBMQsy_SkrVf-kpaWEUIwmA/exec';
@@ -57,25 +56,22 @@ function sha256hex(v) {
   return crypto.createHash('sha256').update(String(v||''),'utf8').digest('hex');
 }
 
-// ── HTTP GET follow redirect ─────────────────────────────────────────────────
-function fetchGET(url, depth) {
-  depth = depth||0;
-  if (depth>5) return Promise.reject(new Error('Quá nhiều redirect'));
-  return new Promise((resolve,reject)=>{
-    let buf='';
-    const req = https.get(url, {headers:{'User-Agent':'Vercel/1.0','Accept':'application/json'}}, res=>{
-      if (res.statusCode>=300&&res.statusCode<400&&res.headers.location) {
-        return fetchGET(res.headers.location, depth+1).then(resolve).catch(reject);
-      }
-      res.on('data',d=>{buf+=d});
-      res.on('end',()=>{
-        try { resolve(JSON.parse(buf)); }
-        catch(e) { reject(new Error('Không parse JSON: '+buf.slice(0,200))); }
-      });
+// ── HTTP GET (dùng native fetch, tự động theo redirect) ──────────────────────
+async function fetchGET(url) {
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), 20000);
+  try {
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'Vercel/1.0', 'Accept': 'application/json' },
+      redirect: 'follow',
+      signal: controller.signal,
     });
-    req.setTimeout(20000,()=>{ req.destroy(); reject(new Error('Apps Script timeout')); });
-    req.on('error',reject);
-  });
+    const text = await resp.text();
+    try { return JSON.parse(text); }
+    catch(e) { throw new Error('Không parse JSON: ' + text.slice(0, 200)); }
+  } finally {
+    clearTimeout(tid);
+  }
 }
 
 // ── Gọi Apps Script qua GET params ──────────────────────────────────────────
