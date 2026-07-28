@@ -693,7 +693,7 @@ const COLS_21 = [
   {key:"SĐT GV",label:"SĐT GV", width:"110px"},
   {key:"Mã bảo mật",label:"Mã bảo mật", width:"110px"},
   {key:"hsa_type",label:"HSA_type", width:"110px"},
-  {key:"Trạng thái duyệt 1:30",label:"Trạng thái duyệt 1:30", width:"100px"},
+  {key:"Trạng thái duyệt",label:"Trạng thái duyệt", width:"100px"},
   {key:"_ghi_chu", label:"Ghi chú", isGhiChu:true, width:"180px"},
   {key:"Trạng thái duyệt AIM",label:"Trạng thái duyệt AIM", width:"100px"},
   {key:"_approve_btn", label:"Duyệt 1:30", isApproveBtn:true, width:"110px"},
@@ -715,7 +715,7 @@ const COLS_22 = [
   {key:"SĐT GV",label:"SĐT GV", width:"110px"},
   {key:"Mã bảo mật",label:"Mã bảo mật", width:"110px"},
   {key:"hsa_type",label:"HSA_type", width:"110px"},
-  {key:"Trạng thái duyệt 1:30",label:"Trạng thái duyệt 1:30", width:"100px"},
+  {key:"Trạng thái duyệt",label:"Trạng thái duyệt", width:"100px"},
   {key:"Trạng thái duyệt AIM",label:"Trạng thái duyệt AIM", width:"100px"},
   {key:"_approve_btn", label:"Duyệt 1:30", isApproveBtn:true, width:"110px"},
   {key:"_email_btn", label:"Gửi email", isEmailBtn:true, width:"100px"},
@@ -948,7 +948,7 @@ function recomputeDataFromLookup(){
   for (const ex of examSet) {
     const sub = rows.filter(r => (r._exam||'') === ex);
     const total = sub.length;
-    const d130 = sub.filter(r => r['Trạng thái duyệt 1:30']==='Duyệt').length;
+    const d130 = sub.filter(r => r['Trạng thái duyệt']==='Duyệt').length;
     const daim = sub.filter(r => r['Trạng thái duyệt AIM']==='Duyệt').length;
     const soNhom = new Set(sub.map(r => r._ma_lop||'').filter(Boolean)).size;
     exam_stats[ex] = { tong_hs: total, duyet_130: d130, duyet_aim: daim, so_nhom: soNhom,
@@ -964,7 +964,7 @@ function recomputeDataFromLookup(){
     if (!monthlyMap[ex]) monthlyMap[ex] = {};
     if (!monthlyMap[ex][mo]) monthlyMap[ex][mo] = { total:0, duyet_130:0, duyet_aim:0 };
     monthlyMap[ex][mo].total++;
-    if (r['Trạng thái duyệt 1:30']==='Duyệt') monthlyMap[ex][mo].duyet_130++;
+    if (r['Trạng thái duyệt']==='Duyệt') monthlyMap[ex][mo].duyet_130++;
     if (r['Trạng thái duyệt AIM']==='Duyệt') monthlyMap[ex][mo].duyet_aim++;
   }
   const all_months = [...new Set(Object.values(monthlyMap).flatMap(m=>Object.keys(m)))].sort();
@@ -986,7 +986,7 @@ function recomputeDataFromLookup(){
     if (!weeklyMap[ex]) weeklyMap[ex] = {};
     if (!weeklyMap[ex][w]) weeklyMap[ex][w] = { total:0, duyet_130:0, duyet_aim:0 };
     weeklyMap[ex][w].total++;
-    if (r['Trạng thái duyệt 1:30']==='Duyệt') weeklyMap[ex][w].duyet_130++;
+    if (r['Trạng thái duyệt']==='Duyệt') weeklyMap[ex][w].duyet_130++;
     if (r['Trạng thái duyệt AIM']==='Duyệt') weeklyMap[ex][w].duyet_aim++;
   }
   function sortWeek(w) { const m = w.match(/W(\d+)\s*\((\d{4})\)/); return m ? parseInt(m[2])*100+parseInt(m[1]) : 999999; }
@@ -1021,7 +1021,7 @@ function recomputeDataFromLookup(){
     const k = ex+'|||'+ml;
     if (!gbxMap[k]) gbxMap[k] = { exam:ex, ma_lop:ml, gv:'', tong_hs:0, duyet_130:0, duyet_aim:0 };
     gbxMap[k].tong_hs++;
-    if (r['Trạng thái duyệt 1:30']==='Duyệt') gbxMap[k].duyet_130++;
+    if (r['Trạng thái duyệt']==='Duyệt') gbxMap[k].duyet_130++;
     if (r['Trạng thái duyệt AIM']==='Duyệt') gbxMap[k].duyet_aim++;
     if (!gbxMap[k].gv) gbxMap[k].gv = r._gv||'';
   }
@@ -1104,7 +1104,7 @@ function renderExamTable(){
     const g = gvMap[key];
     g.tong_hs++;
     g.so_nhom.add(r._ma_lop || '');
-    if (r['Trạng thái duyệt 1:30'] === 'Duyệt') g.duyet_130++;
+    if (r['Trạng thái duyệt'] === 'Duyệt') g.duyet_130++;
     if (r['Trạng thái duyệt AIM'] === 'Duyệt') g.duyet_aim++;
   }
   // Sort by exam order (DATA.exams)
@@ -1621,8 +1621,8 @@ function applyFilter1(){
       const target = parseInt(soChua, 10);
       if (isNaN(target) || r._so_chua_trong_nhom !== target) return false;
     }
-    if (f130==='duyet' && String(r['Trạng thái duyệt 1:30']||'')!=='Duyệt') return false;
-    if (f130==='chua' && String(r['Trạng thái duyệt 1:30']||'')==='Duyệt') return false;
+    if (f130==='duyet' && String(r['Trạng thái duyệt']||'')!=='Duyệt') return false;
+    if (f130==='chua' && String(r['Trạng thái duyệt']||'')==='Duyệt') return false;
     if (faim==='duyet' && String(r['Trạng thái duyệt AIM']||'')!=='Duyệt') return false;
     if (faim==='chua' && String(r['Trạng thái duyệt AIM']||'')==='Duyệt') return false;
 
@@ -1697,11 +1697,11 @@ function renderLookup(rows, pane, cols){
           const ghiChu = r['Display Name'] || '';
           return `<td>${escapeHtml(ghiChu)}</td>`;
         }
-        if (c.key==='paid_time' || c.key==='Thời gian duyệt') return `<td>${escapeHtml(fmtDate(r[c.key]))}</td>`;
-        if (c.key==='Trạng thái duyệt 1:30' || c.key==='Trạng thái duyệt AIM') return `<td>${badgeStatus(r[c.key])}</td>`;
+        if (c.key==='paid_time' || c.key==='Thời điểm duyệt') return `<td>${escapeHtml(fmtDate(r[c.key]))}</td>`;
+        if (c.key==='Trạng thái duyệt' || c.key==='Trạng thái duyệt AIM') return `<td>${badgeStatus(r[c.key])}</td>`;
                 if (c.isApproveBtn){
           // Nút Duyệt 1:30 — mở Apps Script popup (tab 2.1 và 2.2)
-          const status = String(r['Trạng thái duyệt 1:30'] || '');
+          const status = String(r['Trạng thái duyệt'] || '');
           if (status === 'Duyệt') return `<td><span class="muted">✓ Đã duyệt</span></td>`;
           const uname = escapeHtml(r.username || '');
           const ml = escapeHtml(r._ma_lop || '');
@@ -1735,7 +1735,7 @@ function renderLookup(rows, pane, cols){
       }).join('') + '</tr>');
   }
   const total = rows.length;
-  const d130 = rows.filter(r=>String(r['Trạng thái duyệt 1:30']||'')==='Duyệt').length;
+  const d130 = rows.filter(r=>String(r['Trạng thái duyệt']||'')==='Duyệt').length;
   const daim = rows.filter(r=>String(r['Trạng thái duyệt AIM']||'')==='Duyệt').length;
   document.getElementById(`summary-${pane}`).innerHTML =
     `<span class="summary-pill">Tổng HS: <b>${total.toLocaleString('vi-VN')}</b></span>
@@ -1903,8 +1903,8 @@ function applyFilter2() {
       const target = parseInt(soChua, 10);
       if (isNaN(target) || r._so_chua_trong_nhom !== target) return false;
     }
-    if (f130 === 'duyet' && String(r['Trạng thái duyệt 1:30'] || '') !== 'Duyệt') return false;
-    if (f130 === 'chua' && String(r['Trạng thái duyệt 1:30'] || '') === 'Duyệt') return false;
+    if (f130 === 'duyet' && String(r['Trạng thái duyệt'] || '') !== 'Duyệt') return false;
+    if (f130 === 'chua' && String(r['Trạng thái duyệt'] || '') === 'Duyệt') return false;
     if (faim === 'duyet' && String(r['Trạng thái duyệt AIM'] || '') !== 'Duyệt') return false;
     if (faim === 'chua' && String(r['Trạng thái duyệt AIM'] || '') === 'Duyệt') return false;
     if (hasDateFilter) {
@@ -1957,8 +1957,8 @@ function renderEmailTable(rows) {
         html += `<td>${escapeHtml(ghiChu)}</td>`;
         continue;
       }
-      if (c.key === 'paid_time' || c.key === 'Thời gian duyệt') { html += `<td>${escapeHtml(fmtDate(r[c.key]))}</td>`; continue; }
-      if (c.key === 'Trạng thái duyệt 1:30' || c.key === 'Trạng thái duyệt AIM') { html += `<td>${badgeStatus(r[c.key])}</td>`; continue; }
+      if (c.key === 'paid_time' || c.key === 'Thời điểm duyệt') { html += `<td>${escapeHtml(fmtDate(r[c.key]))}</td>`; continue; }
+      if (c.key === 'Trạng thái duyệt' || c.key === 'Trạng thái duyệt AIM') { html += `<td>${badgeStatus(r[c.key])}</td>`; continue; }
       if (c.isApproveBtn || c.isEmailBtn || c.isEmailSentTime) {
         // Bỏ nút hành động trong bảng email (dùng checkbox + nút gửi chính)
         if (c.isEmailSentTime) {
