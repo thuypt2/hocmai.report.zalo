@@ -2519,6 +2519,37 @@ async function loadData(){
     DATA   = json;
     LOOKUP = json.lookup || [];
 
+    // GVCN: scope groups_by_exam cho mục 1.5 — chỉ hiện lớp của GV đó
+    if (isGVCN()) {
+      const gvName = String(CURRENT_USER.name || CURRENT_USER.username || '').trim().toLowerCase();
+      const scopedRows = LOOKUP.filter(function(row) {
+        return String(row['GV'] || '').trim().toLowerCase() === gvName;
+      });
+      const gbxMap = {};
+      for (const r of scopedRows) {
+        const ex = String(r._exam || '').trim();
+        const ml = String(r._ma_lop || '').trim();
+        if (!ex || !ml) continue;
+        const k = ex + '|||' + ml;
+        if (!gbxMap[k]) gbxMap[k] = { exam: ex, ma_lop: ml, gv: '', tong_hs: 0, duyet_130: 0, duyet_aim: 0 };
+        gbxMap[k].tong_hs++;
+        if (String(r['Trạng thái duyệt'] || '') === 'Duyệt') gbxMap[k].duyet_130++;
+        if (String(r['Trạng thái duyệt AIM'] || '') === 'Duyệt') gbxMap[k].duyet_aim++;
+        if (!gbxMap[k].gv) gbxMap[k].gv = String(r._gv || '').trim();
+      }
+      const groups_by_exam = {};
+      for (const g of Object.values(gbxMap)) {
+        g.ti_le_130 = g.tong_hs ? Math.round(g.duyet_130 / g.tong_hs * 10000) / 100 : 0;
+        g.ti_le_aim = g.tong_hs ? Math.round(g.duyet_aim / g.tong_hs * 10000) / 100 : 0;
+        if (!groups_by_exam[g.exam]) groups_by_exam[g.exam] = [];
+        groups_by_exam[g.exam].push(g);
+      }
+      for (const ex of Object.keys(groups_by_exam)) {
+        groups_by_exam[ex].sort((a, b) => b.ti_le_130 - a.ti_le_130 || b.duyet_130 - a.duyet_130);
+      }
+      DATA.groups_by_exam = groups_by_exam;
+    }
+
     // Ẩn loading, cập nhật header
     loadBox.style.display = 'none';
     document.getElementById('header-meta').textContent =
