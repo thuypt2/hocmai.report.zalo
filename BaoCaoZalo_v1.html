@@ -2221,6 +2221,9 @@ async function loadSGroupData() {
   if (S_GROUP_DATA.length > 0) {
     renderVActSOverview();
   }
+
+  // Render lại bảng 2.2 khi data về (tránh trống nếu user đã mở tab trước đó)
+  applyFilterSGroup();
 }
 
 function renderVActSOverview() {
@@ -2533,8 +2536,8 @@ async function loadData(){
     // Load Wait_member data for tab 2.3 (await để tránh trắng dữ liệu khi user click sớm)
     await loadWaitMember();
 
-    // Load S-group data for tab 2.2
-    loadSGroupData();
+    // Load S-group data for tab 2.2 (await để tránh trắng dữ liệu khi user click sớm)
+    await loadSGroupData();
 
   } catch(err) {
     loadBox.style.display = 'none';
