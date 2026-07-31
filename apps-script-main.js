@@ -292,12 +292,15 @@ function handleSendIndividualEmail(body) {
   var subject = renderTemplate(tmpl.subject, data);
   var htmlBody = renderTemplate(tmpl.htmlBody, data);
 
+  // Chỉ tab 2.2 (template SSC:HDAIM-S) hiển thị sender HOCMAI; các tab khác giữ nguyên
+  var senderName = (body.templateKey === 'SSC:HDAIM-S') ? 'HOCMAI' : 'Giáo viên chủ nhiệm';
+
   try {
     MailApp.sendEmail({
       to: email,
       subject: subject,
       htmlBody: htmlBody,
-      name: 'Giáo viên chủ nhiệm',
+      name: senderName,
     });
 
     // GHI LOG vào Email_Log
@@ -392,11 +395,13 @@ function handleSendSelectedEmails(ss, body) {
         htmlBody = renderTemplate(tmpl.htmlBody, data);
       }
 
+      // Chỉ tab 2.2 (template SSC:HDAIM-S) hiển thị sender HOCMAI; các tab khác giữ nguyên
+      var senderName = (templateKey === 'SSC:HDAIM-S') ? 'HOCMAI' : 'Giáo viên chủ nhiệm';
       MailApp.sendEmail({
         to: email,
         subject: subject,
         htmlBody: htmlBody,
-        name: 'Giáo viên chủ nhiệm',
+        name: senderName,
       });
 
       // Log

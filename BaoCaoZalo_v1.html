@@ -2395,19 +2395,22 @@ function sendEmailSGroup(btn) {
   btn.textContent = 'Đang gửi...';
 
   // Gọi trực tiếp Apps Script (không qua Vercel proxy) với action=sendIndividualEmail
-  fetch(SGROUP_EMAIL_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({
-      action:       'sendIndividualEmail',
-      secret:       '@Hocmai123',
-      templateKey:  'SSC:HDAIM-S',
-      email:        email,
-      username:     username,
-      linknhom:     linknhom,
-      mabaomats:    mabaomat,
+    // Nhóm S = V-ACT S → AIM link là VACTaim900plus
+    const link_aim = 'https://hocmai.link/VACTaim900plus';
+    fetch(SGROUP_EMAIL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action:       'sendIndividualEmail',
+        secret:       '@Hocmai123',
+        templateKey:  'SSC:HDAIM-S',
+        email:        email,
+        username:     username,
+        linknhom:     linknhom,
+        link_aim:     link_aim,
+        mabaomats:    mabaomat,
+      })
     })
-  })
     .then(r => r.json())
     .then(json => {
       const stamp = nowStamp();
