@@ -355,6 +355,28 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
           <tbody></tbody>
         </table>
       </div>
+      <div id="cross-detail" style="display:none;margin-top:16px;border:1px solid var(--bd);border-radius:8px;padding:14px;background:#f9fafb">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h3 style="margin:0;font-size:15px;color:#1e3a8a" id="cross-detail-title"></h3>
+          <button class="btn gray" onclick="hideCrossStudents()" style="font-size:11px;padding:4px 10px">✕ Đóng</button>
+        </div>
+        <div class="tbl-wrap" style="max-height:360px">
+          <table style="font-size:12px">
+            <thead><tr>
+              <th style="width:40px">STT</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Exam</th>
+              <th>Mã lớp</th>
+              <th>Paid_time</th>
+              <th>GVCN</th>
+              <th>Trạng thái duyệt 1:30</th>
+            </tr></thead>
+            <tbody id="tbl-cross-detail-body"></tbody>
+          </table>
+        </div>
+        <span class="muted" id="cross-detail-count" style="margin-top:6px;display:block"></span>
+      </div>
     </div>
     <div>
       <h3 style="margin:0 0 8px;color:#374151">Top cặp kỳ thi có học sinh trùng</h3>
@@ -2858,7 +2880,11 @@ function renderCrossMatrix(){
         var intensity = overlap > 0 ? Math.min(1, overlap / Math.max(1, CROSS_EXAM.totals[exA] || 1, CROSS_EXAM.totals[exB] || 1) * 3) : 0;
         var bg = overlap > 0 ? 'rgba(37,99,235,' + (0.08 + intensity * 0.3).toFixed(2) + ')' : '';
         var color = overlap > 0 ? '#2563eb' : '#9ca3af';
-        tr += '<td style=\"text-align:right;font-weight:600;color:' + color + ';background:' + bg + '\">' + (overlap > 0 ? overlap.toLocaleString('vi-VN') : '—') + '</td>';
+        if (overlap > 0) {
+          tr += '<td style="text-align:right;font-weight:600;color:' + color + ';background:' + bg + ';cursor:pointer" onclick="showCrossStudents(\x27' + escapeHtml(exA) + '\x27,\x27' + escapeHtml(exB) + '\x27)" title="Click xem danh sách học sinh">' + overlap.toLocaleString('vi-VN') + '</td>';
+        } else {
+          tr += '<td style="text-align:right;font-weight:600;color:' + color + ';background:' + bg + '">—</td>';
+        }
       }
     });
     tr += '</tr>';
@@ -2918,6 +2944,60 @@ function renderCrossPairChart(){
       }
     }
   });
+}
+
+function showCrossStudents(exA, exB){
+  // Tìm email có cả 2 exam
+  var matchedEmails = [];
+  Object.entries(CROSS_EXAM.students).forEach(function(_a){
+    var email = _a[0]; var eset = _a[1];
+    if (eset.has(exA) && eset.has(exB)) matchedEmails.push(email);
+  });
+
+  // Lấy các dòng LOOKUP tương ứng, lọc theo examA hoặc examB
+  var rows = [];
+  var seen = {};
+  LOOKUP.forEach(function(r){
+    var email = (r.final_email || '').trim().toLowerCase();
+    if (!email) email = (r.username || '').trim().toLowerCase();
+    var exam = (r._exam || '').trim();
+    if ((exam === exA || exam === exB) && matchedEmails.indexOf(email) >= 0){
+      var key = email + '|||' + exam + '|||' + (r._ma_lop || '');
+      if (!seen[key]){ seen[key] = true; rows.push(r); }
+    }
+  });
+
+  // Sort: email → exam
+  rows.sort(function(a,b){
+    var ea = (a.final_email || a.username || '').trim().toLowerCase();
+    var eb = (b.final_email || b.username || '').trim().toLowerCase();
+    if (ea !== eb) return ea.localeCompare(eb);
+    return (a._exam || '').localeCompare(b._exam || '');
+  });
+
+  var tbody = document.getElementById('tbl-cross-detail-body');
+  tbody.innerHTML = '';
+  rows.forEach(function(r, i){
+    tbody.insertAdjacentHTML('beforeend',
+      '<tr>' +
+      '<td class="num">' + (i + 1) + '</td>' +
+      '<td>' + escapeHtml(r.username || '') + '</td>' +
+      '<td>' + escapeHtml(r.final_email || '') + '</td>' +
+      '<td>' + escapeHtml(r._exam || '') + '</td>' +
+      '<td>' + escapeHtml(r._ma_lop || '') + '</td>' +
+      '<td>' + escapeHtml(fmtDate(r.paid_time)) + '</td>' +
+      '<td>' + escapeHtml(r._gv || '') + '</td>' +
+      '<td>' + badgeStatus(r['Trạng thái duyệt']) + '</td>' +
+      '</tr>');
+  });
+
+  document.getElementById('cross-detail-title').textContent = exA + ' & ' + exB + ' — ' + matchedEmails.length + ' học sinh';
+  document.getElementById('cross-detail-count').textContent = rows.length + ' dòng (lọc unique email + exam + mã lớp)';
+  document.getElementById('cross-detail').style.display = '';
+}
+
+function hideCrossStudents(){
+  document.getElementById('cross-detail').style.display = 'none';
 }
 
 // ===== Init =====
