@@ -338,6 +338,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
     <span class="sub-tab active" data-sub="filter-group">2.1 · LỌC HỌC SINH THEO NHÓM VIP</span>
     <span class="sub-tab" data-sub="s-group">2.2 · LỌC HỌC SINH THEO NHÓM S</span>
     <span class="sub-tab" data-sub="wait-member">2.3 · HỌC SINH CHỜ DUYỆT KẾT NỐI</span>
+    <span class="sub-tab" data-sub="multi-mabaomat">2.4 · HỌC SINH NHIỀU MÃ BẢO MẬT</span>
   </div>
 
   <!-- ====== 2.1 Lọc theo nhóm lớp ====== -->
@@ -465,6 +466,58 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
             </table>
           </div>
         </div><!-- /sub-wait-member -->
+
+        <!-- ====== 2.4 Học sinh nhiều mã bảo mật ====== -->
+        <div class="sub-pane" id="sub-multi-mabaomat">
+          <p class="muted" style="margin-top:0">
+            Học sinh có từ 2 mã bảo mật trở lên trong nhóm 1:30. Dữ liệu được nhóm theo email/username từ danh sách <strong>LOOKUP</strong>.
+          </p>
+
+          <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)">
+            <label>Exam
+              <select id="f4-exam"><option value="">-- Tất cả --</option></select>
+            </label>
+            <label>Mã nhóm 1:30
+              <select id="f4-malop"><option value="">-- Tất cả --</option></select>
+            </label>
+            <label>Từ ngày (paid_time)
+              <input type="date" id="f4-from">
+            </label>
+            <label>Đến ngày
+              <input type="date" id="f4-to">
+            </label>
+            <label>Trạng thái duyệt 1:30
+              <select id="f4-130">
+                <option value="">-- Tất cả --</option>
+                <option value="duyet">Đã duyệt</option>
+                <option value="chua">Chưa duyệt</option>
+              </select>
+            </label>
+            <label>Trạng thái duyệt AIM
+              <select id="f4-aim">
+                <option value="">-- Tất cả --</option>
+                <option value="duyet">Đã duyệt</option>
+                <option value="chua">Chưa duyệt</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="toolbar">
+            <button class="btn" onclick="applyFilter4()">Lọc</button>
+            <button class="btn gray" onclick="resetFilter4()">Reset</button>
+            <input class="search-input" id="q4" placeholder="Tìm nhanh: username / email / phone / userid" onkeydown="if(event.key==='Enter')applyFilter4()">
+            <span class="muted" id="result-info-4"></span>
+            <span style="flex:1"></span>
+          </div>
+
+          <div id="summary-4" style="margin-bottom:10px"></div>
+          <div class="tbl-wrap" style="max-height:calc(100vh - 280px)">
+            <table id="tbl-lookup-4">
+              <thead><tr id="thead-lookup-4"></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div><!-- /sub-multi-mabaomat -->
 
   </div><!-- /tab-lookup -->
 
@@ -640,7 +693,7 @@ function applyRoleUI(){
   if(tabOv&&isDVKH()) tabOv.style.display='none';
   if(isDVKH()) switchTab('lookup');
   if(isDVKH()){
-    ['wait-member'].forEach(function(s){
+    ['wait-member','multi-mabaomat'].forEach(function(s){
       var t=document.querySelector('.sub-tab[data-sub="'+s+'"]');
       var p=document.getElementById('sub-'+s);
       if(t) t.style.display='none';
@@ -1535,6 +1588,7 @@ function switchSub(sub){
   document.querySelectorAll('.sub-pane').forEach(p=>p.classList.toggle('active', p.id==='sub-'+sub));
   if (sub==='filter-group') applyFilter1();
   else if (sub==='s-group') applyFilterSGroup();
+  else if (sub==='multi-mabaomat') applyFilter4();
 }
 
 // ===== 2.1 Lọc theo nhóm lớp =====
@@ -2506,6 +2560,137 @@ function resetFilter3(){
   applyFilter3();
 }
 
+// ===== 2.4 Học sinh nhiều mã bảo mật =====
+let MULTI_MABAOMAT = [];
+
+function initMultiMabaomat(){
+  // Nhóm các dòng LOOKUP theo email (fallback: username) — tìm nhóm có >= 2 mã bảo mật khác nhau
+  var groups = {};
+  LOOKUP.forEach(function(r){
+    var key = (r.final_email || '').trim().toLowerCase();
+    if (!key) key = (r.username || '').trim().toLowerCase();
+    if (!key) return;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+
+  MULTI_MABAOMAT = [];
+  Object.values(groups).forEach(function(rows){
+    var distinctMa = new Set(rows.map(function(r){ return r['Mã bảo mật'] || ''; }).filter(Boolean));
+    if (distinctMa.size >= 2) {
+      // Thêm tất cả các dòng của học sinh này
+      MULTI_MABAOMAT.push.apply(MULTI_MABAOMAT, rows);
+    }
+  });
+
+  // Setup headers giống 2.1
+  var tr4 = document.getElementById('thead-lookup-4');
+  if (tr4) {
+    var cols = getCols21();
+    tr4.innerHTML = cols.map(function(c){
+      var w = c.width ? ' style="width:' + c.width + ';min-width:' + c.width + '"' : '';
+      var p = [];
+      if (c.isSTT || /^(userid|SĐT|email|product_id|Duyệt|TG|Gửi)/.test(c.label)) p.push('num');
+      if (c.stickyCol) p.push('sticky-col', c.stickyCol);
+      var cls = p.length ? ' class="' + p.join(' ') + '"' : '';
+      return '<th' + w + cls + '>' + c.label + '</th>';
+    }).join('');
+  }
+
+  initFilters4();
+}
+
+function initFilters4(){
+  var exSel = document.getElementById('f4-exam');
+  uniq(MULTI_MABAOMAT.map(function(r){ return r._exam; })).forEach(function(v){
+    exSel.insertAdjacentHTML('beforeend', '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>');
+  });
+  exSel.addEventListener('change', refreshCascades4);
+  refreshCascades4();
+}
+
+function refreshCascades4(){
+  var pool = MULTI_MABAOMAT;
+
+  var exSel = document.getElementById('f4-exam');
+  var prevEx = exSel.value;
+  exSel.innerHTML = '<option value="">-- Tất cả --</option>';
+  uniq(pool.map(function(r){ return r._exam; })).forEach(function(v){
+    if (!v) return;
+    var sel = (v === prevEx) ? 'selected' : '';
+    exSel.insertAdjacentHTML('beforeend', '<option value="' + escapeHtml(v) + '" ' + sel + '>' + escapeHtml(v) + '</option>');
+  });
+  var curEx = exSel.value;
+  if (prevEx && prevEx !== curEx) exSel.value = '';
+
+  var pool2 = pool;
+  var finalEx = exSel.value;
+  if (finalEx) pool2 = pool2.filter(function(r){ return String(r._exam || '') === finalEx; });
+
+  var malopSel = document.getElementById('f4-malop');
+  var prevMalop = malopSel.value;
+  malopSel.innerHTML = '<option value="">-- Tất cả --</option>';
+  uniq(pool2.map(function(r){ return r._ma_lop; })).forEach(function(v){
+    if (!v) return;
+    var sel = (v === prevMalop) ? 'selected' : '';
+    malopSel.insertAdjacentHTML('beforeend', '<option value="' + escapeHtml(v) + '" ' + sel + '>' + escapeHtml(v) + '</option>');
+  });
+  if (prevMalop && !Array.from(malopSel.options).some(function(o){ return o.value === prevMalop; })) malopSel.value = '';
+}
+
+function applyFilter4(){
+  var ex = document.getElementById('f4-exam').value;
+  var malop = document.getElementById('f4-malop').value;
+  var f130 = document.getElementById('f4-130').value;
+  var faim = document.getElementById('f4-aim').value;
+  var from = document.getElementById('f4-from').value;
+  var to = document.getElementById('f4-to').value;
+  var q = document.getElementById('q4').value.trim().toLowerCase();
+
+  var hasFilter = !!(ex || malop || f130 || faim || from || to || q);
+  if (!hasFilter){
+    renderLookup([], 4, getCols21());
+    document.getElementById('result-info-4').textContent = 'Vui lòng chọn ít nhất một trường lọc hoặc nhập từ khóa tìm kiếm để hiển thị danh sách.';
+    return;
+  }
+
+  var fromTs = from ? new Date(from).getTime() : -Infinity;
+  var toTs = to ? new Date(to).getTime() + 86399999 : Infinity;
+  var hasDateFilter = !!from || !!to;
+
+  var filtered = MULTI_MABAOMAT.filter(function(r){
+    if (ex && String(r._exam || '') !== ex) return false;
+    if (malop && String(r._ma_lop || '') !== malop) return false;
+    if (f130 === 'duyet' && String(r['Trạng thái duyệt'] || '') !== 'Duyệt') return false;
+    if (f130 === 'chua' && String(r['Trạng thái duyệt'] || '') === 'Duyệt') return false;
+    if (faim === 'duyet' && String(r['Trạng thái duyệt AIM'] || '') !== 'Duyệt') return false;
+    if (faim === 'chua' && String(r['Trạng thái duyệt AIM'] || '') === 'Duyệt') return false;
+    if (hasDateFilter){
+      if (!r._paid_time_ms) return false;
+      if (r._paid_time_ms < fromTs || r._paid_time_ms > toTs) return false;
+    }
+    if (q){
+      var blob = [r.username, r.final_email, r.final_phone, r.userid, r._gv, r._ma_lop, r._exam].map(function(x){ return String(x || '').toLowerCase(); }).join('|');
+      if (blob.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+
+  renderLookup(filtered, 4, getCols21());
+}
+
+function resetFilter4(){
+  document.getElementById('f4-exam').value = '';
+  document.getElementById('f4-malop').value = '';
+  document.getElementById('f4-130').value = '';
+  document.getElementById('f4-aim').value = '';
+  document.getElementById('f4-from').value = '';
+  document.getElementById('f4-to').value = '';
+  document.getElementById('q4').value = '';
+  refreshCascades4();
+  applyFilter4();
+}
+
 // ===== Init =====
 document.querySelectorAll('#mainNav a').forEach(a=>{
   a.addEventListener('click', e=>{ e.preventDefault(); switchTab(a.dataset.tab); });
@@ -2535,6 +2720,9 @@ async function loadData(){
     renderKPI(); renderExamTable(); initChartFilters(); applyCharts(); renderBarTable(); renderExamPie(); renderHSA(); renderGroupsByExam();
     initLookupHeaders();
     initFilters1(); initEmailSection(); applyFilter1();
+
+    // Init 2.4 (học sinh nhiều mã bảo mật) — tính từ LOOKUP
+    initMultiMabaomat();
 
     // Load Wait_member data for tab 2.3 (await để tránh trắng dữ liệu khi user click sớm)
     await loadWaitMember();
