@@ -1634,7 +1634,7 @@ function switchTab(tab){
   if (tab==='email') applyFilter2();
 }
 function switchSub(sub){
-  document.querySelectorAll('.sub-tab').forEach(s=>s.classList.toggle('active', s.dataset.sub===sub));
+  document.querySelectorAll('#tab-lookup .sub-tab').forEach(s=>s.classList.toggle('active', s.dataset.sub===sub));
   document.querySelectorAll('.sub-pane').forEach(p=>p.classList.toggle('active', p.id==='sub-'+sub));
   if (sub==='filter-group') applyFilter1();
   else if (sub==='s-group') applyFilterSGroup();
@@ -2927,7 +2927,7 @@ document.querySelectorAll('#mainNav a').forEach(a=>{
 document.querySelectorAll('#tab-overview .sub-tab').forEach(s=>{
   s.addEventListener('click', ()=>switchOvTab(s.dataset.ov));
 });
-document.querySelectorAll('.sub-tab').forEach(s=>{
+document.querySelectorAll('#tab-lookup .sub-tab').forEach(s=>{
   s.addEventListener('click', ()=>switchSub(s.dataset.sub));
 });
 
