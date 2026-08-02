@@ -361,15 +361,15 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
           <button class="btn gray" onclick="hideCrossStudents()" style="font-size:11px;padding:4px 10px">✕ Đóng</button>
         </div>
         <div class="tbl-wrap" style="max-height:360px">
-          <table style="font-size:12px">
+          <table style="font-size:12px;table-layout:fixed;width:100%">
             <thead><tr>
               <th style="width:40px">STT</th>
-              <th style="min-width:180px">Username</th>
-              <th style="width:60px">Exam</th>
-              <th style="min-width:200px">Mã lớp</th>
-              <th style="width:85px;white-space:nowrap">Paid_time</th>
-              <th>GVCN</th>
-              <th style="width:95px;white-space:nowrap">Duyệt 1:30</th>
+              <th style="width:40%;word-break:break-all">Username</th>
+              <th style="width:55px">Exam</th>
+              <th style="width:25%;word-break:break-all">Mã lớp</th>
+              <th style="width:80px;white-space:nowrap">Paid_time</th>
+              <th style="width:90px">GVCN</th>
+              <th style="width:80px;white-space:nowrap">Duyệt 1:30</th>
             </tr></thead>
             <tbody id="tbl-cross-detail-body"></tbody>
           </table>
@@ -2980,9 +2980,9 @@ function showCrossStudents(exA, exB){
     tbody.insertAdjacentHTML('beforeend',
       '<tr>' +
       '<td class="num">' + (i + 1) + '</td>' +
-      '<td>' + escapeHtml(r.username || '') + '</td>' +
+      '<td style="word-break:break-all">' + escapeHtml(r.username || '') + '</td>' +
       '<td>' + escapeHtml(r._exam || '') + '</td>' +
-      '<td>' + escapeHtml(r._ma_lop || '') + '</td>' +
+      '<td style="word-break:break-all">' + escapeHtml(r._ma_lop || '') + '</td>' +
       '<td>' + escapeHtml(fmtDate(r.paid_time)) + '</td>' +
       '<td>' + escapeHtml(r._gv || '') + '</td>' +
       '<td>' + badgeStatus(r['Trạng thái duyệt']) + '</td>' +
