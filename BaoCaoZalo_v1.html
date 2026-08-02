@@ -364,13 +364,12 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
           <table style="font-size:12px">
             <thead><tr>
               <th style="width:40px">STT</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Exam</th>
-              <th>Mã lớp</th>
-              <th>Paid_time</th>
+              <th style="min-width:180px">Username</th>
+              <th style="width:60px">Exam</th>
+              <th style="min-width:200px">Mã lớp</th>
+              <th style="width:85px;white-space:nowrap">Paid_time</th>
               <th>GVCN</th>
-              <th>Trạng thái duyệt 1:30</th>
+              <th style="width:95px;white-space:nowrap">Duyệt 1:30</th>
             </tr></thead>
             <tbody id="tbl-cross-detail-body"></tbody>
           </table>
@@ -2982,7 +2981,6 @@ function showCrossStudents(exA, exB){
       '<tr>' +
       '<td class="num">' + (i + 1) + '</td>' +
       '<td>' + escapeHtml(r.username || '') + '</td>' +
-      '<td>' + escapeHtml(r.final_email || '') + '</td>' +
       '<td>' + escapeHtml(r._exam || '') + '</td>' +
       '<td>' + escapeHtml(r._ma_lop || '') + '</td>' +
       '<td>' + escapeHtml(fmtDate(r.paid_time)) + '</td>' +
@@ -2992,7 +2990,7 @@ function showCrossStudents(exA, exB){
   });
 
   document.getElementById('cross-detail-title').textContent = exA + ' & ' + exB + ' — ' + matchedEmails.length + ' học sinh';
-  document.getElementById('cross-detail-count').textContent = rows.length + ' dòng (lọc unique email + exam + mã lớp)';
+  document.getElementById('cross-detail-count').textContent = rows.length + ' dòng (lọc unique username + exam + mã lớp)';
   document.getElementById('cross-detail').style.display = '';
 }
 
