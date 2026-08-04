@@ -406,22 +406,32 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
   </div>
 
   <div class="tbl-wrap" style="max-height:calc(100vh - 280px)">
-    <table id="tbl-not-joined">
-      <thead><tr>
-        <th>TT</th>
-        <th class="num">Tổng HS đã đăng ký</th>
-        <th class="num">Tổng HS đã vào 1:30</th>
-        <th class="num">Số HS đăng ký mới</th>
-        <th class="num">7 ngày chưa vào</th>
-        <th class="num">14 ngày chưa vào</th>
-        <th class="num">21 ngày chưa vào</th>
-        <th class="num">30 ngày chưa vào</th>
-      </tr></thead>
-      <tbody></tbody>
-      <tfoot></tfoot>
-    </table>
-  </div>
-</section>
+      <table id="tbl-not-joined">
+        <thead><tr>
+          <th>TT</th>
+          <th class="num">Tổng HS đã đăng ký</th>
+          <th class="num">Tổng HS đã vào 1:30</th>
+          <th class="num">Số HS đăng ký mới</th>
+          <th class="num">7 ngày chưa vào</th>
+          <th class="num">14 ngày chưa vào</th>
+          <th class="num">21 ngày chưa vào</th>
+          <th class="num">30 ngày chưa vào</th>
+        </tr></thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+
+    <h3 style="margin:24px 0 12px">Ma trận học sinh vào nhóm theo tháng</h3>
+    <p class="muted" style="margin-bottom:8px">Hàng: tháng paid_time. Cột: tháng được duyệt 1:30. Ô: số HS đã trả tiền trong tháng và được duyệt vào tháng tương ứng. Cột cuối: % tổng duyệt / tổng paid trong tháng.</p>
+
+    <div style="overflow-x:auto;max-width:100%">
+      <table id="tbl-join-matrix" class="bar-tbl" style="font-size:12px;white-space:nowrap">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
 
 </div><!-- /tab-overview -->
 
@@ -3122,6 +3132,7 @@ function applyNotJoined(){
         <td class="num">${grandChua[3].toLocaleString('vi-VN')}</td>
       </tr>`);
   }
+  applyNotJoinedMatrix();
 }
 
 function resetNotJoined(){
@@ -3129,6 +3140,70 @@ function resetNotJoined(){
   document.getElementById('nj-to').value = '';
   document.getElementById('nj-exam').value = '';
   applyNotJoined();
+  applyNotJoinedMatrix();
+}
+
+function applyNotJoinedMatrix(){
+  const examVal = document.getElementById('nj-exam').value;
+  const rows = examVal ? LOOKUP.filter(r => (r._exam || '') === examVal) : LOOKUP;
+
+  // Build month maps: paid_month → { total, duyet_by_month: { duyet_month: count } }
+  const monthMap = {}; // key: YYYY-MM
+  const allDuyetMonths = new Set();
+
+  rows.forEach(r => {
+    const paid = r.paid_time || '';
+    const pm = paid.slice(0, 7); // YYYY-MM
+    if (!pm || pm.startsWith('1970')) return;
+
+    if (!monthMap[pm]) monthMap[pm] = { total: 0, duyetByMonth: {} };
+    monthMap[pm].total++;
+
+    const duyet = r['Thời điểm duyệt'] || '';
+    const dm = duyet.slice(0, 7);
+    if (dm && !dm.startsWith('1970') && r['Trạng thái duyệt'] === 'Duyệt') {
+      monthMap[pm].duyetByMonth[dm] = (monthMap[pm].duyetByMonth[dm] || 0) + 1;
+      allDuyetMonths.add(dm);
+    }
+  });
+
+  const paidMonths = Object.keys(monthMap).sort();
+  const duyetMonths = [...allDuyetMonths].sort();
+  if (paidMonths.length === 0 || duyetMonths.length === 0) {
+    document.querySelector('#tbl-join-matrix thead').innerHTML = '';
+    document.querySelector('#tbl-join-matrix tbody').innerHTML = '';
+    return;
+  }
+
+  // Build thead: Tháng paid | duyet month 1 | duyet month 2 | ... | Tổng duyệt | % Duyệt
+  let theadHTML = '<tr><th>Tháng paid</th>';
+  duyetMonths.forEach(dm => { theadHTML += `<th class="num">Vào ${dm}</th>`; });
+  theadHTML += '<th class="num">Tổng duyệt</th><th class="num">% Duyệt</th></tr>';
+  document.querySelector('#tbl-join-matrix thead').innerHTML = theadHTML;
+
+  // Build tbody
+  let tbodyHTML = '';
+  paidMonths.forEach(pm => {
+    const m = monthMap[pm];
+    const totalPaid = m.total;
+    let rowTotalDuyet = 0;
+    let cellsHTML = '';
+
+    duyetMonths.forEach(dm => {
+      const count = m.duyetByMonth[dm] || 0;
+      rowTotalDuyet += count;
+      cellsHTML += `<td class="num">${count > 0 ? count.toLocaleString('vi-VN') : ''}</td>`;
+    });
+
+    const pct = totalPaid > 0 ? (rowTotalDuyet / totalPaid * 100).toFixed(1) : '0.0';
+    tbodyHTML += `<tr>
+      <td><b>${pm}</b> <span class="muted" style="font-size:11px">(${totalPaid.toLocaleString('vi-VN')} HS)</span></td>
+      ${cellsHTML}
+      <td class="num"><b>${rowTotalDuyet.toLocaleString('vi-VN')}</b></td>
+      <td class="num"><b>${pct}%</b></td>
+    </tr>`;
+  });
+  document.querySelector('#tbl-join-matrix tbody').innerHTML = tbodyHTML;
 }
 
 // ===== Init =====
@@ -3161,7 +3236,7 @@ async function loadData(){
       `Báo cáo nội bộ dành cho cán bộ quản lí · Cập nhật lúc ${json.generated_at}`;
 
     renderKPI(); renderExamTable(); initChartFilters(); applyCharts(); renderBarTable(); renderExamPie(); renderHSA(); renderGroupsByExam(); renderCrossExam();
-    initNotJoinedFilters(); applyNotJoined();
+    initNotJoinedFilters(); applyNotJoined(); applyNotJoinedMatrix();
     initLookupHeaders();
     initFilters1(); initEmailSection(); applyFilter1();
 
