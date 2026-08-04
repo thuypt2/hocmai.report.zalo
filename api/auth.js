@@ -59,7 +59,7 @@ function sha256hex(v) {
 // ── HTTP GET (dùng native fetch, tự động theo redirect) ──────────────────────
 async function fetchGET(url) {
   const controller = new AbortController();
-  const tid = setTimeout(() => controller.abort(), 20000);
+  const tid = setTimeout(() => controller.abort(), 60000);
   try {
     const resp = await fetch(url, {
       headers: { 'User-Agent': 'Vercel/1.0', 'Accept': 'application/json' },

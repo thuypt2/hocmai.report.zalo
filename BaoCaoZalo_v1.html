@@ -680,9 +680,9 @@ function isAdmin(){return CURRENT_USER&&CURRENT_USER.role==='admin';}
 function isGVCN(){return CURRENT_USER&&CURRENT_USER.role==='gvcn';}
 function isDVKH(){return CURRENT_USER&&CURRENT_USER.role==='dvkh';}
 function getScopedLookup(){
-  if(!CURRENT_USER) return [];
+  // Login gate overlay handles access control — return data regardless of login state
   if(isAdmin()||isDVKH()||isGVCN()) return LOOKUP;
-  return [];
+  return LOOKUP;
 }
 function filterWaitDataByRole(rows){
   rows=rows||[];
@@ -737,20 +737,20 @@ function applyRoleUI(){
     var al=document.getElementById('adminPageLink');
     if(al) al.style.display=isAdmin()?'':'none';
   }
-  // GVCN: muc 1 Tong quan chi xem 1.5, an 1.1->1.4 + 1.6
-  if (isGVCN()) {
-    ['r1','r1-chart','r1-bar','r1-hsa','r1-cross-exam'].forEach(function(id){
-      var el=document.getElementById(id);
-      if(el) el.style.display='none';
-    });
-    // Ẩn sub-tab buttons tương ứng
-    document.querySelectorAll('#tab-overview .sub-tab[data-ov]').forEach(function(s){
-      var ov = s.dataset.ov;
-      if (ov !== 'r1-stats') s.style.display = 'none';
-    });
-    // Auto-switch sang 1.5
-    switchOvTab('r1-stats');
-  }
+  // GVCN: muc 1 Tong quan chi xem 1.3, 1.5, 1.6; an 1.1, 1.2, 1.4
+    if (isGVCN()) {
+      ['r1','r1-chart','r1-hsa'].forEach(function(id){
+        var el=document.getElementById(id);
+        if(el) el.style.display='none';
+      });
+      // Ẩn sub-tab buttons tương ứng
+      document.querySelectorAll('#tab-overview .sub-tab[data-ov]').forEach(function(s){
+        var ov = s.dataset.ov;
+        if (ov === 'r1' || ov === 'r1-chart' || ov === 'r1-hsa') s.style.display = 'none';
+      });
+      // Auto-switch sang 1.3
+      switchOvTab('r1-bar');
+    }
   var tabOv=document.querySelector('#mainNav a[data-tab="overview"]');
   if(tabOv&&isDVKH()) tabOv.style.display='none';
   if(isDVKH()) switchTab('lookup');
