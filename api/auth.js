@@ -56,36 +56,33 @@ function sha256hex(v) {
   return crypto.createHash('sha256').update(String(v||''),'utf8').digest('hex');
 }
 
-// ── HTTP GET (manual redirect: Vercel fetch không theo được cross-domain redirect) ──
-async function fetchGET(url) {
-  const controller = new AbortController();
-  const tid = setTimeout(() => controller.abort(), 60000);
-  try {
-    // Google Apps Script trả về 302 → script.googleusercontent.com.
-    // Vercel fetch với redirect:'follow' thất bại khi redirect cross-domain
-    // (script.google.com → script.googleusercontent.com) → trả về HTML 302 thay vì JSON.
-    // Dùng redirect:'manual' + tự follow 1 redirect.
-    let resp = await fetch(url, {
+// ── HTTP GET (dùng Node https module — Vercel fetch không theo được cross-domain redirect) ──
+const https = require('https');
+const http = require('http');
+
+function fetchGET(url) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const mod = parsed.protocol === 'https:' ? https : http;
+    const req = mod.get(url, {
       headers: { 'User-Agent': 'Vercel/1.0', 'Accept': 'application/json' },
-      redirect: 'manual',
-      signal: controller.signal,
-    });
-    // Follow the 302 redirect once
-    if (resp.status >= 300 && resp.status < 400 && resp.headers.get('location')) {
-      const loc = resp.headers.get('location');
-      const redirectUrl = new URL(loc, url).toString();
-      resp = await fetch(redirectUrl, {
-        headers: { 'User-Agent': 'Vercel/1.0', 'Accept': 'application/json' },
-        redirect: 'manual',
-        signal: controller.signal,
+      timeout: 60000,
+    }, (res) => {
+      // Follow redirect (Google Apps Script: 302 script.google.com → script.googleusercontent.com)
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        fetchGET(res.headers.location).then(resolve).catch(reject);
+        return;
+      }
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch(e) { reject(new Error('Không parse JSON: ' + data.slice(0, 200))); }
       });
-    }
-    const text = await resp.text();
-    try { return JSON.parse(text); }
-    catch(e) { throw new Error('Không parse JSON: ' + text.slice(0, 200)); }
-  } finally {
-    clearTimeout(tid);
-  }
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Timeout kết nối Apps Script')); });
+  });
 }
 
 // ── Gọi Apps Script qua GET params ──────────────────────────────────────────
