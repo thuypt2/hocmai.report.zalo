@@ -250,11 +250,12 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
   <div style="margin-bottom:14px">
       <span class="sub-tab active" data-ov="r1">1.1 · Tổng quan duyệt nhóm</span>
-      <span class="sub-tab" data-ov="r1-chart">1.2 · Biểu đồ xu hướng</span>
-      <span class="sub-tab" data-ov="r1-hsa">1.3 · Pie chart</span>
-      <span class="sub-tab" data-ov="r1-stats">1.4 · Thống kê tỉ trọng duyệt 1:30</span>
-      <span class="sub-tab" data-ov="r1-cross-exam">1.5 · Học sinh đăng ký nhiều kì thi</span>
-    </div>
+            <span class="sub-tab" data-ov="r1-chart">1.2 · Biểu đồ xu hướng</span>
+            <span class="sub-tab" data-ov="r1-hsa">1.3 · Pie chart</span>
+            <span class="sub-tab" data-ov="r1-stats">1.4 · Thống kê tỉ trọng duyệt 1:30</span>
+            <span class="sub-tab" data-ov="r1-cross-exam">1.5 · Học sinh đăng ký nhiều kì thi</span>
+            <span class="sub-tab" data-ov="r1-not-joined">1.6 · Học sinh chưa vào nhóm</span>
+          </div>
 
 <section id="r1" class="ov-pane active">
   <h2>1.1 · Tổng quan duyệt nhóm</h2>
@@ -378,6 +379,47 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
       <h3 style="margin:0 0 8px;color:#374151">Top cặp kỳ thi có học sinh trùng</h3>
       <div class="chart-wrap" style="height:380px"><canvas id="cCrossPair"></canvas></div>
     </div>
+  </div>
+</section>
+
+<section id="r1-not-joined" class="ov-pane">
+  <h2>1.6 · Học sinh chưa vào nhóm</h2>
+
+  <div class="filter-row" style="margin-bottom:12px">
+    <label>Từ ngày
+      <input type="date" id="nj-from">
+    </label>
+    <label>Đến ngày
+      <input type="date" id="nj-to">
+    </label>
+    <label>Kỳ thi
+      <select id="nj-exam">
+        <option value="">-- Tất cả --</option>
+      </select>
+    </label>
+    <label style="justify-content:flex-end">
+      <span style="display:flex;gap:6px;margin-top:auto">
+        <button class="btn" onclick="applyNotJoined()">Lọc</button>
+        <button class="btn gray" onclick="resetNotJoined()">Xóa</button>
+      </span>
+    </label>
+  </div>
+
+  <div class="tbl-wrap" style="max-height:calc(100vh - 280px)">
+    <table id="tbl-not-joined">
+      <thead><tr>
+        <th>TT</th>
+        <th class="num">Tổng HS đã đăng ký</th>
+        <th class="num">Tổng HS đã vào 1:30</th>
+        <th class="num">Số HS đăng ký mới</th>
+        <th class="num">7 ngày chưa vào</th>
+        <th class="num">14 ngày chưa vào</th>
+        <th class="num">21 ngày chưa vào</th>
+        <th class="num">30 ngày chưa vào</th>
+      </tr></thead>
+      <tbody></tbody>
+      <tfoot></tfoot>
+    </table>
   </div>
 </section>
 
@@ -734,7 +776,7 @@ function applyRoleUI(){
     var al=document.getElementById('adminPageLink');
     if(al) al.style.display=isAdmin()?'':'none';
   }
-  // GVCN: muc 1 Tong quan chi xem 1.1 (da gop bar), 1.4, 1.5; an 1.2, 1.3
+  // GVCN: muc 1 Tong quan chi xem 1.1 (da gop bar), 1.4, 1.5, 1.6; an 1.2, 1.3
       if (isGVCN()) {
         ['r1-chart','r1-hsa'].forEach(function(id){
           var el=document.getElementById(id);
@@ -2995,6 +3037,100 @@ function hideCrossStudents(){
   document.getElementById('cross-detail').style.display = 'none';
 }
 
+// ===== 1.6 Học sinh chưa vào nhóm =====
+function initNotJoinedFilters(){
+  const sel = document.getElementById('nj-exam');
+  sel.innerHTML = '<option value="">-- Tất cả --</option>';
+  (DATA.exams || []).forEach(ex => {
+    sel.insertAdjacentHTML('beforeend', `<option value="${ex}">${ex}</option>`);
+  });
+}
+
+function applyNotJoined(){
+  const examVal = document.getElementById('nj-exam').value;
+  const fromVal = document.getElementById('nj-from').value; // YYYY-MM-DD
+  const toVal   = document.getElementById('nj-to').value;
+
+  const exams = examVal ? [examVal] : (DATA.exams || []).slice();
+  const now = new Date(); now.setHours(0,0,0,0);
+  const todayMs = now.getTime();
+  const fromMs = fromVal ? new Date(fromVal + 'T00:00:00').getTime() : 0;
+  const toMs   = toVal   ? new Date(toVal   + 'T23:59:59').getTime() : Infinity;
+
+  const DAY_MS = 86400000;
+  const thresholds = [
+    { label: '7 ngày',  days: 7 },
+    { label: '14 ngày', days: 14 },
+    { label: '21 ngày', days: 21 },
+    { label: '30 ngày', days: 30 },
+  ];
+
+  const tb = document.querySelector('#tbl-not-joined tbody');
+  const tf = document.querySelector('#tbl-not-joined tfoot');
+  tb.innerHTML = ''; tf.innerHTML = '';
+
+  let grandTotal = 0, grand130 = 0, grandNew = 0;
+  const grandChua = [0,0,0,0];
+
+  exams.forEach((ex, idx) => {
+    const rows = LOOKUP.filter(r => (r._exam || '') === ex);
+
+    // Cột 2: Tổng HS đã đăng ký (không phụ thuộc thời gian)
+    const totalHS = rows.length;
+    // Cột 3: Tổng HS đã vào 1:30 (không phụ thuộc thời gian)
+    const daVao130 = rows.filter(r => r['Trạng thái duyệt'] === 'Duyệt').length;
+    // Cột 4: Số HS đăng ký mới (theo date filter)
+    const hsMoi = rows.filter(r => {
+      const ms = r._paid_time_ms || 0;
+      return ms > 0 && ms >= fromMs && ms <= toMs;
+    }).length;
+    // Cột 5-8: N ngày chưa vào
+    const chuaVao = thresholds.map(t => {
+      const cutoffMs = todayMs - t.days * DAY_MS;
+      return rows.filter(r => {
+        const ms = r._paid_time_ms || 0;
+        return ms > 0 && ms <= cutoffMs && r['Trạng thái duyệt'] !== 'Duyệt';
+      }).length;
+    });
+
+    tb.insertAdjacentHTML('beforeend',
+      `<tr>
+        <td>${idx + 1}</td>
+        <td class="num">${totalHS.toLocaleString('vi-VN')}</td>
+        <td class="num">${daVao130.toLocaleString('vi-VN')}</td>
+        <td class="num">${hsMoi.toLocaleString('vi-VN')}</td>
+        <td class="num">${chuaVao[0].toLocaleString('vi-VN')}</td>
+        <td class="num">${chuaVao[1].toLocaleString('vi-VN')}</td>
+        <td class="num">${chuaVao[2].toLocaleString('vi-VN')}</td>
+        <td class="num">${chuaVao[3].toLocaleString('vi-VN')}</td>
+      </tr>`);
+
+    grandTotal += totalHS; grand130 += daVao130; grandNew += hsMoi;
+    chuaVao.forEach((v,i) => { grandChua[i] += v; });
+  });
+
+  if (exams.length > 1) {
+    tf.insertAdjacentHTML('beforeend',
+      `<tr style="background:#eef2ff;font-weight:700">
+        <td>TỔNG</td>
+        <td class="num">${grandTotal.toLocaleString('vi-VN')}</td>
+        <td class="num">${grand130.toLocaleString('vi-VN')}</td>
+        <td class="num">${grandNew.toLocaleString('vi-VN')}</td>
+        <td class="num">${grandChua[0].toLocaleString('vi-VN')}</td>
+        <td class="num">${grandChua[1].toLocaleString('vi-VN')}</td>
+        <td class="num">${grandChua[2].toLocaleString('vi-VN')}</td>
+        <td class="num">${grandChua[3].toLocaleString('vi-VN')}</td>
+      </tr>`);
+  }
+}
+
+function resetNotJoined(){
+  document.getElementById('nj-from').value = '';
+  document.getElementById('nj-to').value = '';
+  document.getElementById('nj-exam').value = '';
+  applyNotJoined();
+}
+
 // ===== Init =====
 document.querySelectorAll('#mainNav a').forEach(a=>{
   a.addEventListener('click', e=>{ e.preventDefault(); switchTab(a.dataset.tab); });
@@ -3025,6 +3161,7 @@ async function loadData(){
       `Báo cáo nội bộ dành cho cán bộ quản lí · Cập nhật lúc ${json.generated_at}`;
 
     renderKPI(); renderExamTable(); initChartFilters(); applyCharts(); renderBarTable(); renderExamPie(); renderHSA(); renderGroupsByExam(); renderCrossExam();
+    initNotJoinedFilters(); applyNotJoined();
     initLookupHeaders();
     initFilters1(); initEmailSection(); applyFilter1();
 
