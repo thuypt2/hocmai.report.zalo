@@ -61,14 +61,26 @@ async function fetchGET(url) {
   const controller = new AbortController();
   const tid = setTimeout(() => controller.abort(), 60000);
   try {
-    const resp = await fetch(url, {
-      headers: { 'User-Agent': 'Vercel/1.0', 'Accept': 'application/json' },
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    const text = await resp.text();
-    try { return JSON.parse(text); }
-    catch(e) { throw new Error('Không parse JSON: ' + text.slice(0, 200)); }
+    // Google Apps Script returns 302 → script.googleusercontent.com.
+    // Vercel fetch with redirect:'follow' sometimes fails on the redirect chain,
+    // so handle redirects manually (up to 3 hops).
+    let currentUrl = url;
+    for (let hop = 0; hop < 3; hop++) {
+      const resp = await fetch(currentUrl, {
+        headers: { 'User-Agent': 'Vercel/1.0', 'Accept': 'application/json' },
+        redirect: 'manual',
+        signal: controller.signal,
+      });
+      if (resp.status >= 300 && resp.status < 400 && resp.headers.get('location')) {
+        const loc = resp.headers.get('location');
+        currentUrl = new URL(loc, currentUrl).toString();
+        continue;
+      }
+      const text = await resp.text();
+      try { return JSON.parse(text); }
+      catch(e) { throw new Error('Không parse JSON: ' + text.slice(0, 200)); }
+    }
+    throw new Error('Quá nhiều redirect (3 hops)');
   } finally {
     clearTimeout(tid);
   }
