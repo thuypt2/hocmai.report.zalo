@@ -249,35 +249,44 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 <div class="tab-pane active" id="tab-overview">
 
   <div style="margin-bottom:14px">
-    <span class="sub-tab active" data-ov="r1">1.1 · Tổng quan duyệt nhóm</span>
-    <span class="sub-tab" data-ov="r1-chart">1.2 · Biểu đồ xu hướng</span>
-    <span class="sub-tab" data-ov="r1-bar">1.3 · Biểu đồ bar vào nhóm</span>
-    <span class="sub-tab" data-ov="r1-hsa">1.4 · Pie chart</span>
-    <span class="sub-tab" data-ov="r1-stats">1.5 · Thống kê tỉ trọng duyệt 1:30</span>
-    <span class="sub-tab" data-ov="r1-cross-exam">1.6 · Học sinh đăng ký nhiều kì thi</span>
-  </div>
+      <span class="sub-tab active" data-ov="r1">1.1 · Tổng quan duyệt nhóm</span>
+      <span class="sub-tab" data-ov="r1-chart">1.2 · Biểu đồ xu hướng</span>
+      <span class="sub-tab" data-ov="r1-hsa">1.3 · Pie chart</span>
+      <span class="sub-tab" data-ov="r1-stats">1.4 · Thống kê tỉ trọng duyệt 1:30</span>
+      <span class="sub-tab" data-ov="r1-cross-exam">1.5 · Học sinh đăng ký nhiều kì thi</span>
+    </div>
 
 <section id="r1" class="ov-pane active">
   <h2>1.1 · Tổng quan duyệt nhóm</h2>
 
   <div class="kpis" id="kpis"></div>
   <table id="tbl-exam">
-    <thead><tr>
-      <th>Kỳ thi (Exam)</th>
-      <th>GV</th>
-      <th class="num">Số nhóm (Mã lớp)</th>
-      <th class="num">Tổng HS</th>
-      <th class="num">Duyệt 1:30</th>
-      <th class="num">% Duyệt 1:30</th>
-      <th class="num">Duyệt AIM</th>
-      <th class="num">% Duyệt AIM</th>
-    </tr></thead>
-    <tbody></tbody>
-    <tfoot></tfoot>
-  </table>
-</section>
+      <thead><tr>
+        <th>Kỳ thi (Exam)</th>
+        <th>GV</th>
+        <th class="num">Số nhóm (Mã lớp)</th>
+        <th class="num">Tổng HS</th>
+        <th class="num">Duyệt 1:30</th>
+        <th class="num">% Duyệt 1:30</th>
+        <th class="num">Duyệt AIM</th>
+        <th class="num">% Duyệt AIM</th>
+      </tr></thead>
+      <tbody></tbody>
+      <tfoot></tfoot>
+    </table>
 
-<section id="r1-chart" class="ov-pane">
+    <h3 style="margin:24px 0 12px">Biểu đồ bar vào nhóm</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span class="muted" style="margin:0">Tỉ lệ duyệt nhóm 1:30 & AIM theo từng tháng, phân theo kỳ thi.</span>
+      <div style="display:flex;gap:16px;font-size:12px;color:var(--mut);align-items:center">
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb;margin-right:4px;vertical-align:middle"></span> Duyệt nhóm 1:30</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#f59e0b;margin-right:4px;vertical-align:middle"></span> Duyệt nhóm AIM</span>
+      </div>
+    </div>
+    <div class="tbl-wrap bar-tbl-wrap" id="bar-tbl-wrap"></div>
+  </section>
+
+  <section id="r1-chart" class="ov-pane">
   <h2>1.2 · Biểu đồ xu hướng</h2>
   <div class="filter-row" style="margin-bottom:12px">
     <label>Kỳ thi
@@ -305,20 +314,8 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
   <div class="chart-grid" id="chart-grid"></div>
 </section>
 
-<section id="r1-bar" class="ov-pane">
-  <h2>1.3 · Biểu đồ bar vào nhóm</h2>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-    <span class="muted" style="margin:0">Tỉ lệ duyệt nhóm 1:30 & AIM theo từng tháng, phân theo kỳ thi.</span>
-    <div style="display:flex;gap:16px;font-size:12px;color:var(--mut);align-items:center">
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb;margin-right:4px;vertical-align:middle"></span> Duyệt nhóm 1:30</span>
-      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#f59e0b;margin-right:4px;vertical-align:middle"></span> Duyệt nhóm AIM</span>
-    </div>
-  </div>
-  <div class="tbl-wrap bar-tbl-wrap" id="bar-tbl-wrap"></div>
-</section>
-
 <section id="r1-hsa" class="ov-pane">
-  <h2>1.4 · Pie chart</h2>
+  <h2>1.3 · Pie chart</h2>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:24px;margin-top:8px">
     <div>
       <h3 style="text-align:center">Tổng học sinh theo từng kỳ thi</h3>
@@ -333,7 +330,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 </section>
 
 <section id="r1-stats" class="ov-pane">
-  <h2>1.5 · Thống kê tỉ trọng duyệt 1:30</h2>
+  <h2>1.4 · Thống kê tỉ trọng duyệt 1:30</h2>
   <p class="muted">Chọn kỳ thi bên dưới để xem danh sách các nhóm lớp thuộc kỳ đó, sắp xếp theo tỉ lệ duyệt nhóm 1:30 giảm dần (cao → thấp).</p>
   <div id="groups-pie-wrap" style="max-width:520px;margin:0 auto 16px"><canvas id="cGroups-pie"></canvas></div>
   <div class="sub-tab-bar" id="tabs-groups"></div>
@@ -341,7 +338,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 </section>
 
 <section id="r1-cross-exam" class="ov-pane">
-  <h2>1.6 · Học sinh đăng ký nhiều kì thi</h2>
+  <h2>1.5 · Học sinh đăng ký nhiều kì thi</h2>
   <p class="muted">Phân tích số lượng học sinh đăng ký từ 2 kỳ thi trở lên tại HOCMAI (nhóm theo email). Mỗi ô là số học sinh xuất hiện ở cả 2 kỳ thi (giao thoa).</p>
 
   <div class="kpis" id="kpis-cross-exam"></div>
@@ -737,20 +734,20 @@ function applyRoleUI(){
     var al=document.getElementById('adminPageLink');
     if(al) al.style.display=isAdmin()?'':'none';
   }
-  // GVCN: muc 1 Tong quan chi xem 1.3, 1.5, 1.6; an 1.1, 1.2, 1.4
-    if (isGVCN()) {
-      ['r1','r1-chart','r1-hsa'].forEach(function(id){
-        var el=document.getElementById(id);
-        if(el) el.style.display='none';
-      });
-      // Ẩn sub-tab buttons tương ứng
-      document.querySelectorAll('#tab-overview .sub-tab[data-ov]').forEach(function(s){
-        var ov = s.dataset.ov;
-        if (ov === 'r1' || ov === 'r1-chart' || ov === 'r1-hsa') s.style.display = 'none';
-      });
-      // Auto-switch sang 1.3
-      switchOvTab('r1-bar');
-    }
+  // GVCN: muc 1 Tong quan chi xem 1.1 (da gop bar), 1.4, 1.5; an 1.2, 1.3
+      if (isGVCN()) {
+        ['r1-chart','r1-hsa'].forEach(function(id){
+          var el=document.getElementById(id);
+          if(el) el.style.display='none';
+        });
+        // Ẩn sub-tab buttons tương ứng
+        document.querySelectorAll('#tab-overview .sub-tab[data-ov]').forEach(function(s){
+          var ov = s.dataset.ov;
+          if (ov === 'r1-chart' || ov === 'r1-hsa') s.style.display = 'none';
+        });
+        // Auto-switch sang 1.1
+        switchOvTab('r1');
+      }
   var tabOv=document.querySelector('#mainNav a[data-tab="overview"]');
   if(tabOv&&isDVKH()) tabOv.style.display='none';
   if(isDVKH()) switchTab('lookup');
