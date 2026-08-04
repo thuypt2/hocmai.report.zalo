@@ -3161,7 +3161,9 @@ function applyNotJoinedMatrix(){
 
     const duyet = r['Thời điểm duyệt'] || '';
     const dm = duyet.slice(0, 7);
-    if (dm && !dm.startsWith('1970') && r['Trạng thái duyệt'] === 'Duyệt') {
+    // Lọc bỏ tháng tương lai (lỗi nhập liệu: 2026-12-06 thay vì 2026-06-06)
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    if (dm && dm <= currentMonth && !dm.startsWith('1970') && r['Trạng thái duyệt'] === 'Duyệt') {
       monthMap[pm].duyetByMonth[dm] = (monthMap[pm].duyetByMonth[dm] || 0) + 1;
       allDuyetMonths.add(dm);
     }
