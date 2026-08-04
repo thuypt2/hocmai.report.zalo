@@ -63,9 +63,9 @@ async function fetchGET(url) {
   try {
     // Google Apps Script returns 302 → script.googleusercontent.com.
     // Vercel fetch with redirect:'follow' sometimes fails on the redirect chain,
-    // so handle redirects manually (up to 3 hops).
+    // so handle redirects manually (up to 5 hops).
     let currentUrl = url;
-    for (let hop = 0; hop < 3; hop++) {
+    for (let hop = 0; hop < 5; hop++) {
       const resp = await fetch(currentUrl, {
         headers: { 'User-Agent': 'Vercel/1.0', 'Accept': 'application/json' },
         redirect: 'manual',
@@ -73,6 +73,7 @@ async function fetchGET(url) {
       });
       if (resp.status >= 300 && resp.status < 400 && resp.headers.get('location')) {
         const loc = resp.headers.get('location');
+        // Resolve relative URLs against currentUrl
         currentUrl = new URL(loc, currentUrl).toString();
         continue;
       }
@@ -80,7 +81,7 @@ async function fetchGET(url) {
       try { return JSON.parse(text); }
       catch(e) { throw new Error('Không parse JSON: ' + text.slice(0, 200)); }
     }
-    throw new Error('Quá nhiều redirect (3 hops)');
+    throw new Error('Quá nhiều redirect (5 hops)');
   } finally {
     clearTimeout(tid);
   }
