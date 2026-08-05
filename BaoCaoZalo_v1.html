@@ -431,6 +431,13 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
         <tbody></tbody>
       </table>
     </div>
+
+    <h3 style="margin:24px 0 12px">Cohort Analysis — Tỉ lệ % vào nhóm theo thời gian</h3>
+    <p class="muted" style="margin-bottom:8px">Mỗi đường là một cohort (tháng đăng ký). Trục X: tháng duyệt. Trục Y: % tích lũy HS đã vào nhóm 1:30.</p>
+    <div id="cohort-msg" class="muted" style="text-align:center;padding:40px;display:none"></div>
+    <div class="chart-wrap" style="height:420px" id="cohort-chart-wrap">
+      <canvas id="c-cohort"></canvas>
+    </div>
   </section>
 
 </div><!-- /tab-overview -->
@@ -3174,6 +3181,11 @@ function applyNotJoinedMatrix(){
   if (paidMonths.length === 0 || duyetMonths.length === 0) {
     document.querySelector('#tbl-join-matrix thead').innerHTML = '';
     document.querySelector('#tbl-join-matrix tbody').innerHTML = '';
+    if (window._cohortChart) { window._cohortChart.destroy(); window._cohortChart = null; }
+    const msgDiv = document.getElementById('cohort-msg');
+    const chartWrap = document.getElementById('cohort-chart-wrap');
+    if (msgDiv) { msgDiv.textContent = 'Không đủ dữ liệu để vẽ cohort chart.'; msgDiv.style.display = 'block'; }
+    if (chartWrap) chartWrap.style.display = 'none';
     return;
   }
 
@@ -3206,6 +3218,106 @@ function applyNotJoinedMatrix(){
     </tr>`;
   });
   document.querySelector('#tbl-join-matrix tbody').innerHTML = tbodyHTML;
+  applyCohortChart(monthMap, paidMonths, duyetMonths);
+}
+
+function applyCohortChart(monthMap, paidMonths, duyetMonths) {
+  const canvas = document.getElementById('c-cohort');
+  const msgDiv = document.getElementById('cohort-msg');
+  const chartWrap = document.getElementById('cohort-chart-wrap');
+  if (!canvas) return;
+
+  if (window._cohortChart) { window._cohortChart.destroy(); window._cohortChart = null; }
+
+  function showMsg(text) {
+    if (msgDiv) { msgDiv.textContent = text; msgDiv.style.display = 'block'; }
+    if (chartWrap) chartWrap.style.display = 'none';
+  }
+  function showChart() {
+    if (msgDiv) msgDiv.style.display = 'none';
+    if (chartWrap) chartWrap.style.display = 'block';
+  }
+
+  if (paidMonths.length < 2) {
+    showMsg('Cần ít nhất 2 tháng dữ liệu để vẽ cohort chart.');
+    return;
+  }
+
+  // Build cohort data: for each paid month, cumulative % joined by month
+  const cohortData = [];
+
+  paidMonths.forEach(pm => {
+    const m = monthMap[pm];
+    const totalPaid = m.total;
+    if (totalPaid === 0) return;
+
+    let cumulative = 0;
+    const data = duyetMonths.map(dm => {
+      if (dm < pm) return null; // can't join before paying
+      cumulative += (m.duyetByMonth[dm] || 0);
+      return parseFloat((cumulative / totalPaid * 100).toFixed(1));
+    });
+
+    cohortData.push({ label: pm, data });
+  });
+
+  if (cohortData.length < 2) {
+    showMsg('Cần ít nhất 2 cohort có dữ liệu để vẽ biểu đồ.');
+    return;
+  }
+
+  showChart();
+
+  const labels = duyetMonths.map(dm => dm);
+  const colors = [
+    '#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2','#ea580c','#059669',
+    '#d946ef','#0284c7','#be123c','#a21caf','#0369a1','#b45309','#4f46e5','#0d9488'
+  ];
+
+  const datasets = cohortData.map((cohort, i) => ({
+    label: cohort.label,
+    data: cohort.data,
+    borderColor: colors[i % colors.length],
+    backgroundColor: colors[i % colors.length] + '22',
+    tension: 0.2,
+    fill: false,
+    borderWidth: 2,
+    pointRadius: 3,
+    spanGaps: false,
+  }));
+
+  window._cohortChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { callback: v => v + '%', stepSize: 10 },
+          title: { display: true, text: '% tích lũy đã vào nhóm' }
+        },
+        x: {
+          title: { display: true, text: 'Tháng duyệt' }
+        }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const val = ctx.parsed.y;
+              if (val == null) return '';
+              return `${ctx.dataset.label}: ${val}% đã vào nhóm`;
+            }
+          }
+        }
+      }
+    }
+  });
 }
 
 // ===== Init =====
