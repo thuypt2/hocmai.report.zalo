@@ -433,10 +433,13 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
     </div>
 
     <h3 style="margin:24px 0 12px">Cohort Analysis — Tỉ lệ % vào nhóm theo thời gian</h3>
-    <p class="muted" style="margin-bottom:8px">Mỗi đường là một cohort (tháng đăng ký). Trục X: tháng duyệt. Trục Y: % tích lũy HS đã vào nhóm 1:30.</p>
+    <p class="muted" style="margin-bottom:8px">Hàng: tháng đăng ký (cohort). Cột: tháng thứ N sau đăng ký (T+0 = cùng tháng). Ô: % tích lũy HS đã vào nhóm 1:30. Màu càng đậm = tỉ lệ càng cao.</p>
     <div id="cohort-msg" class="muted" style="text-align:center;padding:40px;display:none"></div>
-    <div class="chart-wrap" style="height:420px" id="cohort-chart-wrap">
-      <canvas id="c-cohort"></canvas>
+    <div style="overflow-x:auto;max-width:100%" id="cohort-heatmap-wrap">
+      <table id="tbl-cohort-heatmap" class="bar-tbl" style="font-size:12px;white-space:nowrap">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
     </div>
   </section>
 
@@ -3183,9 +3186,9 @@ function applyNotJoinedMatrix(){
     document.querySelector('#tbl-join-matrix tbody').innerHTML = '';
     if (window._cohortChart) { window._cohortChart.destroy(); window._cohortChart = null; }
     const msgDiv = document.getElementById('cohort-msg');
-    const chartWrap = document.getElementById('cohort-chart-wrap');
-    if (msgDiv) { msgDiv.textContent = 'Không đủ dữ liệu để vẽ cohort chart.'; msgDiv.style.display = 'block'; }
-    if (chartWrap) chartWrap.style.display = 'none';
+    const wrap = document.getElementById('cohort-heatmap-wrap');
+    if (msgDiv) { msgDiv.textContent = 'Không đủ dữ liệu để vẽ cohort heatmap.'; msgDiv.style.display = 'block'; }
+    if (wrap) wrap.style.display = 'none';
     return;
   }
 
@@ -3222,102 +3225,131 @@ function applyNotJoinedMatrix(){
 }
 
 function applyCohortChart(monthMap, paidMonths, duyetMonths) {
-  const canvas = document.getElementById('c-cohort');
   const msgDiv = document.getElementById('cohort-msg');
-  const chartWrap = document.getElementById('cohort-chart-wrap');
-  if (!canvas) return;
+  const wrap = document.getElementById('cohort-heatmap-wrap');
+  if (!wrap) return;
 
   if (window._cohortChart) { window._cohortChart.destroy(); window._cohortChart = null; }
 
   function showMsg(text) {
     if (msgDiv) { msgDiv.textContent = text; msgDiv.style.display = 'block'; }
-    if (chartWrap) chartWrap.style.display = 'none';
-  }
-  function showChart() {
-    if (msgDiv) msgDiv.style.display = 'none';
-    if (chartWrap) chartWrap.style.display = 'block';
+    if (wrap) wrap.style.display = 'none';
   }
 
   if (paidMonths.length < 2) {
-    showMsg('Cần ít nhất 2 tháng dữ liệu để vẽ cohort chart.');
+    showMsg('Cần ít nhất 2 tháng dữ liệu để vẽ cohort heatmap.');
     return;
   }
 
-  // Build cohort data: for each paid month, cumulative % joined by month
-  const cohortData = [];
+  // Build cohort cumulative data: for each paid month, cumulative % at each duyet month
+  // Then pivot to offset-based: T+0 = same month, T+1 = next month, etc.
+  const cohortCumulative = {}; // { paidMonth: { duyetMonth: cumulativePct } }
+  let maxOffset = 0;
 
   paidMonths.forEach(pm => {
     const m = monthMap[pm];
     const totalPaid = m.total;
     if (totalPaid === 0) return;
+    cohortCumulative[pm] = {};
 
     let cumulative = 0;
-    const data = duyetMonths.map(dm => {
-      if (dm < pm) return null; // can't join before paying
+    duyetMonths.forEach((dm, idx) => {
+      if (dm < pm) return; // skip months before paid
       cumulative += (m.duyetByMonth[dm] || 0);
-      return parseFloat((cumulative / totalPaid * 100).toFixed(1));
-    });
+      const pct = parseFloat((cumulative / totalPaid * 100).toFixed(1));
+      cohortCumulative[pm][dm] = pct;
 
-    cohortData.push({ label: pm, data });
+      // Calculate offset: difference in months
+      const offset = monthDiff(pm, dm);
+      if (offset > maxOffset) maxOffset = offset;
+    });
   });
 
-  if (cohortData.length < 2) {
-    showMsg('Cần ít nhất 2 cohort có dữ liệu để vẽ biểu đồ.');
+  // Filter to cohorts with actual data
+  const activeCohorts = paidMonths.filter(pm => {
+    const data = cohortCumulative[pm];
+    return data && Object.keys(data).length > 0;
+  });
+
+  if (activeCohorts.length < 2) {
+    showMsg('Cần ít nhất 2 cohort có dữ liệu để vẽ heatmap.');
     return;
   }
 
-  showChart();
+  if (msgDiv) msgDiv.style.display = 'none';
+  if (wrap) wrap.style.display = 'block';
 
-  const labels = duyetMonths.map(dm => dm);
-  const colors = [
-    '#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2','#ea580c','#059669',
-    '#d946ef','#0284c7','#be123c','#a21caf','#0369a1','#b45309','#4f46e5','#0d9488'
-  ];
+  // Build offsets: T+0, T+1, ..., T+N
+  const offsets = [];
+  for (let i = 0; i <= maxOffset; i++) offsets.push(i);
 
-  const datasets = cohortData.map((cohort, i) => ({
-    label: cohort.label,
-    data: cohort.data,
-    borderColor: colors[i % colors.length],
-    backgroundColor: colors[i % colors.length] + '22',
-    tension: 0.2,
-    fill: false,
-    borderWidth: 2,
-    pointRadius: 3,
-    spanGaps: false,
-  }));
+  // Helper: get cohort cumulative pct at a given offset
+  function getPct(pm, offset) {
+    const targetMonth = addMonths(pm, offset);
+    const data = cohortCumulative[pm];
+    if (!data) return null;
+    return data[targetMonth] !== undefined ? data[targetMonth] : null;
+  }
 
-  window._cohortChart = new Chart(canvas, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 100,
-          ticks: { callback: v => v + '%', stepSize: 10 },
-          title: { display: true, text: '% tích lũy đã vào nhóm' }
-        },
-        x: {
-          title: { display: true, text: 'Tháng duyệt' }
-        }
-      },
-      plugins: {
-        legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 } } },
-        tooltip: {
-          callbacks: {
-            label: ctx => {
-              const val = ctx.parsed.y;
-              if (val == null) return '';
-              return `${ctx.dataset.label}: ${val}% đã vào nhóm`;
-            }
-          }
-        }
-      }
-    }
+  // Build thead: Cohort | T+0 | T+1 | T+2 | ... | Tổng HS
+  let theadHTML = '<tr><th>Cohort</th><th class="num">Tổng HS</th>';
+  offsets.forEach(o => {
+    theadHTML += `<th class="num">${o === 0 ? 'T+0' : 'T+'+o}</th>`;
   });
+  theadHTML += '</tr>';
+  document.querySelector('#tbl-cohort-heatmap thead').innerHTML = theadHTML;
+
+  // Build tbody with color gradient
+  // Green gradient: lighter = low %, darker = high %
+  let tbodyHTML = '';
+  activeCohorts.forEach(pm => {
+    const m = monthMap[pm];
+    const totalPaid = m.total;
+    tbodyHTML += `<tr><td><b>${pm}</b></td><td class="num">${totalPaid.toLocaleString('vi-VN')}</td>`;
+
+    offsets.forEach(offset => {
+      const pct = getPct(pm, offset);
+      if (pct === null) {
+        // Not yet reached (future offset beyond available data)
+        tbodyHTML += '<td class="num" style="color:#cbd5e1;background:#f8fafc">—</td>';
+      } else {
+        const bg = heatColor(pct);
+        const textColor = pct > 50 ? '#fff' : '#1f2937';
+        tbodyHTML += `<td class="num" style="background:${bg};color:${textColor};font-weight:600">${pct}%</td>`;
+      }
+    });
+
+    tbodyHTML += '</tr>';
+  });
+  document.querySelector('#tbl-cohort-heatmap tbody').innerHTML = tbodyHTML;
+}
+
+// Helper: month difference (2026-04 to 2026-06 = 2)
+function monthDiff(a, b) {
+  const [ay, am] = a.split('-').map(Number);
+  const [by, bm] = b.split('-').map(Number);
+  return (by - ay) * 12 + (bm - am);
+}
+
+// Helper: add N months to a YYYY-MM string
+function addMonths(ym, n) {
+  const [y, m] = ym.split('-').map(Number);
+  const total = y * 12 + (m - 1) + n;
+  const ny = Math.floor(total / 12);
+  const nm = (total % 12) + 1;
+  return `${ny}-${String(nm).padStart(2, '0')}`;
+}
+
+// Heatmap color: 0% → very light green, 100% → deep green
+function heatColor(pct) {
+  // Green gradient from light to dark
+  const r1 = 220, g1 = 252, b1 = 231; // #dcfce7 (0%)
+  const r2 = 22,  g2 = 101, b2 = 52;  // #166534 (100%)
+  const t = Math.min(100, Math.max(0, pct)) / 100;
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  return `rgb(${r},${g},${b})`;
 }
 
 // ===== Init =====
