@@ -276,6 +276,7 @@ function handleSendIndividualEmail(body) {
   var data = {
     'Mã lớp':     ma_lop,
     'GV':         gv,
+    'exam':       exam,
     'link group': link_group,
     'Link_AIM':   link_aim,
     'SĐT GV':     sdt_gv,
@@ -372,6 +373,7 @@ function handleSendSelectedEmails(ss, body) {
       var data = {
         'Mã lớp':     student.ma_lop   || '',
         'GV':         student.gv       || '',
+        'exam':       student.exam     || '',
         'link group': student.link_group || '',  // sẽ được enrich từ DB nếu có
         'Link_AIM':   student.link_aim   || '',
         'SĐT GV':     student.sdt_gv     || '',

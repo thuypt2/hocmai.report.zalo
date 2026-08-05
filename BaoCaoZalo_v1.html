@@ -809,19 +809,19 @@ function applyRoleUI(){
     var al=document.getElementById('adminPageLink');
     if(al) al.style.display=isAdmin()?'':'none';
   }
-  // GVCN: muc 1 Tong quan chi xem 1.1 (da gop bar), 1.4, 1.5, 1.6; an 1.2, 1.3
+  // GVCN: muc 1 Tong quan chi xem 1.4, 1.6; an 1.1, 1.2, 1.3, 1.5
       if (isGVCN()) {
-        ['r1-chart','r1-hsa'].forEach(function(id){
+        ['r1','r1-chart','r1-hsa','r1-cross-exam'].forEach(function(id){
           var el=document.getElementById(id);
           if(el) el.style.display='none';
         });
         // Ẩn sub-tab buttons tương ứng
         document.querySelectorAll('#tab-overview .sub-tab[data-ov]').forEach(function(s){
           var ov = s.dataset.ov;
-          if (ov === 'r1-chart' || ov === 'r1-hsa') s.style.display = 'none';
+          if (ov === 'r1' || ov === 'r1-chart' || ov === 'r1-hsa' || ov === 'r1-cross-exam') s.style.display = 'none';
         });
-        // Auto-switch sang 1.1
-        switchOvTab('r1');
+        // Auto-switch sang 1.4
+        switchOvTab('r1-stats');
       }
   var tabOv=document.querySelector('#mainNav a[data-tab="overview"]');
   if(tabOv&&isDVKH()) tabOv.style.display='none';
@@ -912,15 +912,44 @@ const COLS_22 = [
 
 // ===== Templates email fallback (khi API không khả dụng) =====
 const EMAIL_TEMPLATES_FALLBACK = {
+  'SSC:HD130': {
+    name: 'SSC:HD130 — Thông tin nhóm 1:30',
+    subject: '[HOCMAI] Thông tin nhóm Zalo lớp {{Mã lớp}}',
+    body: `<p>Kính gửi quý phụ huynh / học sinh <b>{{username}}</b>,</p>
+<p>Cảm ơn bạn đã đăng ký khoá học tại HOCMAI. Dưới đây là thông tin nhóm Zalo của lớp học:</p>
+<ul>
+  <li><b>Mã lớp:</b> {{Mã lớp}}</li>
+  <li><b>Giáo viên chủ nhiệm:</b> {{GV}}</li>
+  <li><b>SĐT GV:</b> {{SĐT GV}}</li>
+  <li><b>Link nhóm Zalo 1:30:</b> <a href="{{link group}}">{{link group}}</a></li>
+  <li><b>Mã bảo mật:</b> {{Mã bảo mật}}</li>
+</ul>
+<p>Vui lòng tham gia nhóm Zalo để nhận thông báo và tài liệu học tập quan trọng.</p>
+<p>Trân trọng,<br>HOCMAI</p>`,
+  },
+  'SSC:HDAIM-S': {
+    name: 'SSC:HDAIM-S — Thông tin nhóm AIM',
+    subject: '[HOCMAI] Thông tin nhóm AIM — {{tencongdong}}',
+    body: `<p>Kính gửi quý phụ huynh / học sinh <b>{{username}}</b>,</p>
+<p>Chúc mừng bạn đã tham gia cộng đồng học tập <b>{{tencongdong}}</b> tại HOCMAI!</p>
+<ul>
+  <li><b>Cộng đồng:</b> {{tencongdong}}</li>
+  <li><b>Link nhóm:</b> <a href="{{linknhom}}">{{linknhom}}</a></li>
+  <li><b>Mã bảo mật:</b> {{mabaomatS}}</li>
+  <li><b>Nhóm AIM:</b> {{Nhom_AIM}}</li>
+</ul>
+<p>Vui lòng tham gia nhóm để nhận thông báo và tài liệu học tập quan trọng.</p>
+<p>Trân trọng,<br>HOCMAI</p>`,
+  },
   default: {
     name: 'Mẫu mặc định',
     subject: '[HOCMAI] Thông tin nhóm Zalo lớp học của bạn',
     body: `<p>Kính gửi quý phụ huynh / học sinh,</p>
 <p>Cảm ơn bạn đã đăng ký khoá học tại HOCMAI. Dưới đây là thông tin nhóm Zalo của lớp học:</p>
 <ul>
-  <li>Mã lớp: {{ma_lop}}</li>
-  <li>Link nhóm Zalo: {{link_group}}</li>
-  <li>Giáo viên chủ nhiệm: {{gv}}</li>
+  <li><b>Mã lớp:</b> {{Mã lớp}}</li>
+  <li><b>Link nhóm Zalo:</b> {{link group}}</li>
+  <li><b>Giáo viên chủ nhiệm:</b> {{GV}}</li>
 </ul>
 <p>Vui lòng tham gia nhóm Zalo để nhận thông báo và tài liệu học tập quan trọng.</p>
 <p>Trân trọng,<br>HOCMAI</p>`,
