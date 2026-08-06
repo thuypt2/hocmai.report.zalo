@@ -1,14 +1,15 @@
 // Vercel API route — proxy sang Apps Script gửi email nhóm S (tab 2.2 sub-s-group)
-// Dùng GET với query params vì Apps Script POST luôn bị redirect 302 → mất body
+// Fetch ảnh hướng dẫn → base64 → nhúng thẳng vào HTML body
+// Apps Script không cần UrlFetchApp — chỉ nhận HTML đã có sẵn ảnh inline
 
 const SGROUP_APPS_SCRIPT_URL = process.env.SGROUP_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycby98YdJmFXMa6KuWVovVrGm6QzGe72XOLMs59DBrYndz_mZtDqcslnBTopQP9Hcki0z/exec';
-const APPS_SCRIPT_TIMEOUT = 240000; // 4 phút timeout
+const IMAGE_PUBLIC_URL = 'https://hocmai-report-zalo.vercel.app/huong-dan-vao-aim.png';
+const APPS_SCRIPT_TIMEOUT = 240000;
 
-// Config Vercel serverless
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: { sizeLimit: '5mb' },
   },
 };
 
@@ -21,8 +22,23 @@ function readBody(req) {
   });
 }
 
+let cachedImageBase64 = null;
+
+async function getImageBase64() {
+  if (cachedImageBase64) return cachedImageBase64;
+  try {
+    const resp = await fetch(IMAGE_PUBLIC_URL);
+    if (!resp.ok) return null;
+    const buf = Buffer.from(await resp.arrayBuffer());
+    cachedImageBase64 = 'data:image/png;base64,' + buf.toString('base64');
+    return cachedImageBase64;
+  } catch (e) {
+    console.warn('Không fetch được ảnh hướng dẫn:', e.message);
+    return null;
+  }
+}
+
 export default async function handler(req, res) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -46,7 +62,18 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: 'Thiếu email' });
     }
 
-    // Build GET URL với query params (Apps Script doGet hỗ trợ sendIndividualEmail)
+    // Fetch ảnh → base64 (Vercel tự fetch ảnh của chính nó, không cần Apps Script)
+    const imgBase64 = await getImageBase64();
+    const imageBlock = imgBase64
+      ? '<br><br><div style="text-align:center;margin-top:16px">' +
+          '<p style="font-family:Arial,Helvetica,sans-serif;color:#374151;font-size:14px">' +
+            '<b>Hướng dẫn vào nhóm AIM:</b>' +
+          '</p>' +
+          '<img src="' + imgBase64 + '" alt="Hướng dẫn vào AIM"' +
+          ' style="max-width:600px;width:100%;border-radius:8px;border:1px solid #e5e7eb">' +
+        '</div>'
+      : '';
+
     const params = new URLSearchParams({
       action: 'sendIndividualEmail',
       secret: '@Hocmai123',
@@ -56,6 +83,7 @@ export default async function handler(req, res) {
       linknhom: linknhom || '',
       link_aim: link_aim || '',
       mabaomats: mabaomats || '',
+      imageBlock: imageBlock,
     });
     const url = SGROUP_APPS_SCRIPT_URL + '?' + params.toString();
 

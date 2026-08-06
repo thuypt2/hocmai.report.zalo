@@ -91,6 +91,7 @@ function handleGetData() {
 // ===== sendEmail / sendIndividualEmail: Gửi email 1 học sinh =====
 // Hỗ trợ cả GET (qua query params) và POST (qua JSON body)
 // Dùng template từ sheet Email_templates cột C (html_body)
+// Ảnh hướng dẫn được Vercel proxy chuyển thành base64 truyền qua param imageBlock
 function handleSendEmail(e) {
   var body = {};
 
@@ -98,7 +99,7 @@ function handleSendEmail(e) {
   if (e && e.postData && e.postData.contents) {
     try { body = JSON.parse(e.postData.contents); } catch (parseErr) {}
   }
-  // GET fallback: đọc từ query params (tránh lỗi 302 redirect mất POST body)
+  // GET fallback: đọc từ query params
   if (!body.email && e && e.parameter) {
     body.email       = e.parameter.email       || '';
     body.username    = e.parameter.username    || '';
@@ -107,6 +108,7 @@ function handleSendEmail(e) {
     body.link_aim    = e.parameter.link_aim    || '';
     body.templateKey = e.parameter.templateKey || '';
     body.secret      = e.parameter.secret      || '';
+    body.imageBlock  = e.parameter.imageBlock  || ''; // Vercel proxy truyền ảnh base64
   }
 
   var email       = (body.email       || '').trim();
@@ -115,6 +117,7 @@ function handleSendEmail(e) {
   var mabaomats   = (body.mabaomats   || '').trim();
   var link_aim    = (body.link_aim    || '').trim();
   var templateKey = (body.templateKey || 'SSC:HDAIM-S').trim();
+  var imageBlock  = (body.imageBlock  || '');
 
   if (!email || email.indexOf('@') === -1) {
     return json({ ok: false, error: 'Email không hợp lệ hoặc trống' });
@@ -138,50 +141,37 @@ function handleSendEmail(e) {
   var subject  = renderTemplateText(tmpl.subject, data);
   var htmlBody = renderTemplateText(tmpl.htmlBody, data);
 
-  // ── Đính kèm file ảnh hướng dẫn vào AIM ──
-  var HUONG_DAN_IMAGE_URL = 'https://hocmai-report-zalo.vercel.app/huong-dan-vao-aim.png';
-  var attachments = [];
-  var imgError = null;
-  try {
-    var imgResp = UrlFetchApp.fetch(HUONG_DAN_IMAGE_URL, {
-      muteHttpExceptions: true,
-      followRedirects: true
-    });
-    var imgCode = imgResp.getResponseCode();
-    if (imgCode === 200) {
-      var imageBlob = imgResp.getBlob().setName('Huong dan vao AIM.png');
-      attachments.push(imageBlob);
+  // ── Chèn ảnh hướng dẫn (base64 inline) vào trước </body> ──
+  // Vercel proxy đã fetch ảnh → base64 → truyền qua query param imageBlock
+  // Apps Script không cần UrlFetchApp — chỉ việc chèn block vào HTML
+  if (imageBlock) {
+    var bodyCloseIdx = htmlBody.lastIndexOf('</body>');
+    if (bodyCloseIdx >= 0) {
+      htmlBody = htmlBody.slice(0, bodyCloseIdx) + imageBlock + htmlBody.slice(bodyCloseIdx);
     } else {
-      imgError = 'HTTP ' + imgCode;
+      htmlBody += imageBlock;
     }
-  } catch (imgErr) {
-    imgError = imgErr.message;
   }
 
   try {
-    var mailOptions = {
+    MailApp.sendEmail({
       to: email,
       subject: subject,
       htmlBody: htmlBody,
       name: 'HOCMAI',
-    };
-    if (attachments.length) {
-      mailOptions.attachments = attachments;
-    }
-    MailApp.sendEmail(mailOptions);
+    });
 
-    // Log vào Email_log nếu có sheet đó
+    // Log vào Email_log
     logEmail(email, username, 'Đã gửi');
 
     return json({
       ok: true,
       sent: 1,
       message: 'Đã gửi email cho ' + email,
-      attachment: attachments.length ? 'ok' : (imgError || 'khong co')
+      image: imageBlock ? 'ok' : 'khong co'
     });
 
   } catch (mailErr) {
-    // Log lỗi
     logEmail(email, username, 'Lỗi: ' + mailErr.message);
 
     return json({
@@ -215,7 +205,6 @@ function logEmail(email, username, status) {
 function getTemplateFromSheet(templateKey) {
   var ss = SpreadsheetApp.openById(MAIN_SPREADSHEET_ID);
 
-  // Tìm sheet Email_templates (case-insensitive)
   var sheet = ss.getSheetByName(EMAIL_TEMPLATE_SHEET);
   if (!sheet) {
     var allSheets = ss.getSheets();
@@ -239,7 +228,6 @@ function getTemplateFromSheet(templateKey) {
   var headers = values[0];
   var rows = values.slice(1);
 
-  // Tìm chỉ số cột: template_key (A), subject (B), html_body (C)
   function findCol(names) {
     for (var h = 0; h < headers.length; h++) {
       var hn = String(headers[h] || '').trim().toLowerCase().replace(/[\s_]+/g, '');
@@ -258,7 +246,6 @@ function getTemplateFromSheet(templateKey) {
     throw new Error('Sheet thiếu cột. Hiện có: ' + headers.join(', ') + '. Cần: template_key, subject, html_body');
   }
 
-  // Tìm template khớp key
   var foundRow = null;
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i];
