@@ -2,7 +2,7 @@
 // Dùng GET với query params vì Apps Script POST luôn bị redirect 302 → mất body
 
 const SGROUP_APPS_SCRIPT_URL = process.env.SGROUP_APPS_SCRIPT_URL ||
-  'https://script.google.com/macros/s/AKfycbw7d20Bs7BJ5Hka9sM5ElI1IcnmBoq_sBtAqu9BtA9na0oatxpeGkUpLeAS1D8_iGVt/exec';
+  'https://script.google.com/macros/s/AKfycbzfEdruJFRSrsitjWxRr9dkD5EDPXQIZ2277gVN6ivMgkk19mRttTOjzMPZQpZiC97R/exec';
 const APPS_SCRIPT_TIMEOUT = 240000; // 4 phút timeout
 
 // Config Vercel serverless
