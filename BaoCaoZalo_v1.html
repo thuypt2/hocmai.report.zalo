@@ -741,8 +741,8 @@ const AUTH_API_URL='/api/auth';
 const AUTH_SESS_KEY='hocmai_zalo_auth_v7';
 const EMAIL_API_URL = '/api/send-class-group-email';
 const SGROUP_API_URL = '/api/get-sgroup-data';
-const SGROUP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzkwC5lA02-SgFFuSBPoaueEaRHPnsqZ9ecbmzxBmxnJGVVR_kieL2N3YUdOoiNriTP/exec';
-const SGROUP_EMAIL_URL = 'https://script.google.com/macros/s/AKfycbzkwC5lA02-SgFFuSBPoaueEaRHPnsqZ9ecbmzxBmxnJGVVR_kieL2N3YUdOoiNriTP/exec';
+const SGROUP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyC5tmWwPZwFIDFjAQv9os8eHC0HbYEpoxB2wKp57h0-4hNhckMGJNtjrumh-AxNFq/exec';
+const SGROUP_EMAIL_URL = 'https://script.google.com/macros/s/AKfycbzyC5tmWwPZwFIDFjAQv9os8eHC0HbYEpoxB2wKp57h0-4hNhckMGJNtjrumh-AxNFq/exec';
 let CURRENT_USER = null;
 function getStoredAuth(){try{var r=sessionStorage.getItem(AUTH_SESS_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
 function setStoredAuth(a){try{sessionStorage.setItem(AUTH_SESS_KEY,JSON.stringify(a));}catch(e){}}
