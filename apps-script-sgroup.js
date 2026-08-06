@@ -1,14 +1,7 @@
 // ============================================================
 // Google Apps Script — Topuni S Group Data API
 // Copy TOÀN BỘ file này vào Apps Script editor → Deploy as Web App
-//
-// Cách deploy:
-//   1. Vào script.google.com (hoặc Extensions → Apps Script từ Sheet)
-//   2. Dán toàn bộ code này vào
-//   3. Deploy → New Deployment → Type: Web app
-//      Execute as: Me
-//      Who has access: Anyone
-//   4. Copy URL deploy đưa cho team
+// Hỗ trợ: ?sheet=users (mặc định), ?sheet=tc_thpt, ?sheet=all (tất cả sheet)
 // ============================================================
 
 var SPREADSHEET_ID = '1PaJhe3XUUPoS6miiq9XbJKv9_2kGPdx2KqrdIiGnCHA';
@@ -26,10 +19,12 @@ function doPost(e) { return handleRequest(e); }
 function handleRequest(e) {
   try {
     var action = (e && e.parameter && e.parameter.action) || '';
+    var sheetParam = (e && e.parameter && e.parameter.sheet) || '';
+
     if (action === 'sendEmail' || action === 'sendIndividualEmail') {
       return handleSendEmail(e);
     }
-    return handleGetData();
+    return handleGetData(sheetParam);
   } catch (err) {
     return json({ success: false, error: err.message });
   }
@@ -39,13 +34,49 @@ function json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
-// ===== GET data =====
-function handleGetData() {
+// ===== GET data — hỗ trợ ?sheet=users | ?sheet=tc_thpt | ?sheet=all =====
+function handleGetData(sheetParam) {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) return json({ success: false, error: 'Không tìm thấy sheet ' + SHEET_NAME });
+
+  // ── ?sheet=all: trả về tất cả các sheet ──
+  if (sheetParam === 'all') {
+    var allSheets = ss.getSheets();
+    var result = [];
+    for (var i = 0; i < allSheets.length; i++) {
+      var s = allSheets[i];
+      var raw = s.getDataRange().getValues();
+      result.push({
+        sheetName: s.getName(),
+        sheetId: s.getSheetId(),
+        rows: raw.length,
+        columns: raw[0] ? raw[0].length : 0,
+        data: raw
+      });
+    }
+    return json({ success: true, spreadsheetId: ss.getId(), spreadsheetName: ss.getName(), totalSheets: result.length, generatedAt: new Date().toISOString(), sheets: result });
+  }
+
+  // ── sheet cụ thể hoặc mặc định users ──
+  var targetName = sheetParam || SHEET_NAME;
+  var sheet = ss.getSheetByName(targetName);
+  if (!sheet) {
+    // fallback: tìm case-insensitive
+    var allS = ss.getSheets();
+    for (var i = 0; i < allS.length; i++) {
+      if (allS[i].getName().toLowerCase() === targetName.toLowerCase()) { sheet = allS[i]; break; }
+    }
+  }
+  if (!sheet) return json({ success: false, error: 'Không tìm thấy sheet: ' + targetName });
+
   var rawData = sheet.getDataRange().getValues();
-  return json({ success: true, spreadsheetId: ss.getId(), spreadsheetName: ss.getName(), totalSheets: ss.getSheets().length, generatedAt: new Date().toISOString(), sheets: [{ sheetName: SHEET_NAME, sheetId: sheet.getSheetId(), rows: rawData.length, columns: rawData[0] ? rawData[0].length : 0, data: rawData }] });
+  return json({
+    success: true,
+    spreadsheetId: ss.getId(),
+    spreadsheetName: ss.getName(),
+    totalSheets: ss.getSheets().length,
+    generatedAt: new Date().toISOString(),
+    sheets: [{ sheetName: sheet.getName(), sheetId: sheet.getSheetId(), rows: rawData.length, columns: rawData[0] ? rawData[0].length : 0, data: rawData }]
+  });
 }
 
 // ===== Gửi email =====
@@ -77,7 +108,6 @@ function handleSendEmail(e) {
     return json({ ok: false, error: 'Email không hợp lệ hoặc trống' });
   }
 
-  // ── Đọc template từ spreadsheet chính, cột C (html_body) ──
   var tmpl;
   try { tmpl = getTemplateFromSheet(templateKey); }
   catch (tmplErr) { return json({ ok: false, error: 'Lỗi template: ' + tmplErr.message }); }
@@ -89,7 +119,6 @@ function handleSendEmail(e) {
   var subject  = renderTemplateText(tmpl.subject, data);
   var htmlBody = renderTemplateText(tmpl.htmlBody, data);
 
-  // ── Chèn ảnh hướng dẫn vào trước </body> (dùng URL, không cần UrlFetchApp) ──
   if (imageUrl) {
     var imageBlock = '<br><br><div style="text-align:center;margin-top:16px">' +
       '<p style="font-family:Arial,Helvetica,sans-serif;color:#374151;font-size:14px"><b>Hướng dẫn vào nhóm AIM:</b></p>' +
