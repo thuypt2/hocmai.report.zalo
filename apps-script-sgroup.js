@@ -138,20 +138,33 @@ function handleSendEmail(e) {
   var subject  = renderTemplateText(tmpl.subject, data);
   var htmlBody = renderTemplateText(tmpl.htmlBody, data);
 
-  // ── Đính kèm ảnh hướng dẫn (inline, nhúng trực tiếp vào email) ──
+  // ── Đính kèm ảnh hướng dẫn vào AIM (inline trong email) ──
+  // Ảnh được chèn vào TRƯỚC thẻ </body> — giữ nguyên cấu trúc HTML document từ template
   var HUONG_DAN_IMAGE_URL = 'https://hocmai-report-zalo.vercel.app/huong-dan-vao-aim.png';
+  var imageBlock = '' +
+    '<br><br>' +
+    '<div style="text-align:center;margin-top:16px">' +
+      '<p style="font-family:Arial,Helvetica,sans-serif;color:#374151;font-size:14px">' +
+        '<b>Hướng dẫn vào nhóm AIM:</b>' +
+      '</p>' +
+      '<img src="cid:huongdan" alt="Hướng dẫn vào AIM"' +
+      ' style="max-width:600px;width:100%;border-radius:8px;border:1px solid #e5e7eb">' +
+    '</div>';
+
   var inlineImages = {};
   try {
     var imageBlob = UrlFetchApp.fetch(HUONG_DAN_IMAGE_URL).getBlob().setName('huong-dan-aim');
     inlineImages['huongdan'] = imageBlob;
-    // Thêm ảnh vào cuối email body (dùng Content-ID để tham chiếu)
-    htmlBody += '<br><br><div style="text-align:center;margin-top:16px">' +
-      '<p style="font-family:Arial,Helvetica,sans-serif;color:#374151;font-size:14px"><b>Hướng dẫn vào nhóm AIM:</b></p>' +
-      '<img src="cid:huongdan" alt="Hướng dẫn vào AIM" ' +
-      'style="max-width:600px;width:100%;border-radius:8px;border:1px solid #e5e7eb">' +
-      '</div>';
+    // Chèn imageBlock vào trước </body> (không append sau </html>)
+    var bodyCloseIdx = htmlBody.lastIndexOf('</body>');
+    if (bodyCloseIdx >= 0) {
+      htmlBody = htmlBody.slice(0, bodyCloseIdx) + imageBlock + htmlBody.slice(bodyCloseIdx);
+    } else {
+      // Fallback: template không có </body> → append cuối
+      htmlBody += imageBlock;
+    }
   } catch (imgErr) {
-    // Nếu không fetch được ảnh, vẫn gửi email bình thường
+    // Nếu không fetch được ảnh, vẫn gửi email bình thường (thiếu ảnh)
     console.warn('Không tải được ảnh hướng dẫn: ' + imgErr.message);
   }
 
