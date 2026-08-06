@@ -2620,42 +2620,45 @@ function sendEmailSGroup(btn) {
   btn.disabled = true;
   btn.textContent = 'Đang gửi...';
 
-  // Gọi trực tiếp Apps Script (không qua Vercel proxy) với action=sendIndividualEmail
-    // Nhóm S = V-ACT S → AIM link là VACTaim900plus
-    const link_aim = 'https://hocmai.link/VACTaim900plus';
-    fetch(SGROUP_EMAIL_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action:       'sendIndividualEmail',
-        secret:       '@Hocmai123',
-        templateKey:  'SSC:HDAIM-S',
-        email:        email,
-        username:     username,
-        linknhom:     linknhom,
-        link_aim:     link_aim,
-        mabaomats:    mabaomat,
-      })
+  // Gọi qua Vercel proxy để tránh lỗi cross-origin POST redirect
+  const link_aim = 'https://hocmai.link/VACTaim900plus';
+  fetch('/api/send-sgroup-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email:        email,
+      username:     username,
+      linknhom:     linknhom,
+      link_aim:     link_aim,
+      mabaomats:    mabaomat,
+      templateKey:  'SSC:HDAIM-S',
     })
-    .then(r => r.json())
-    .then(json => {
-      const stamp = nowStamp();
-      const row = S_GROUP_DATA.find(r => String(r.email || '').toLowerCase() === email.toLowerCase());
-      if (row) row._email_sent_time = stamp;
-      const td = btn.closest('td');
-      if (td) {
-        const tr = td.closest('tr');
-        const timeCell = tr?.querySelector('.email-sent-cell');
-        if (timeCell) timeCell.textContent = stamp;
-      }
-      btn.textContent = '✓ Đã gửi';
-      setTimeout(() => { btn.textContent = 'Gửi email'; btn.disabled = false; }, 3000);
-    })
-    .catch(err => {
+  })
+  .then(r => r.json())
+  .then(json => {
+    const stamp = nowStamp();
+    if (!json.ok) {
+      alert('Lỗi gửi email: ' + (json.error || 'Không xác định'));
       btn.disabled = false;
       btn.textContent = 'Gửi email';
-      alert('Lỗi: ' + err.message);
-    });
+      return;
+    }
+    const row = S_GROUP_DATA.find(r => String(r.email || '').toLowerCase() === email.toLowerCase());
+    if (row) row._email_sent_time = stamp;
+    const td = btn.closest('td');
+    if (td) {
+      const tr = td.closest('tr');
+      const timeCell = tr?.querySelector('.email-sent-cell');
+      if (timeCell) timeCell.textContent = stamp;
+    }
+    btn.textContent = '✓ Đã gửi';
+    setTimeout(() => { btn.textContent = 'Gửi email'; btn.disabled = false; }, 3000);
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.textContent = 'Gửi email';
+    alert('Lỗi: ' + err.message);
+  });
 }
 
 // ===== 2.3 Học sinh chờ duyệt kết nối =====
