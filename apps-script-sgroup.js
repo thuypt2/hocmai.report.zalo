@@ -141,11 +141,21 @@ function handleSendEmail(e) {
   // ── Đính kèm file ảnh hướng dẫn vào AIM ──
   var HUONG_DAN_IMAGE_URL = 'https://hocmai-report-zalo.vercel.app/huong-dan-vao-aim.png';
   var attachments = [];
+  var imgError = null;
   try {
-    var imageBlob = UrlFetchApp.fetch(HUONG_DAN_IMAGE_URL).getBlob().setName('Huong dan vao AIM.png');
-    attachments.push(imageBlob);
+    var imgResp = UrlFetchApp.fetch(HUONG_DAN_IMAGE_URL, {
+      muteHttpExceptions: true,
+      followRedirects: true
+    });
+    var imgCode = imgResp.getResponseCode();
+    if (imgCode === 200) {
+      var imageBlob = imgResp.getBlob().setName('Huong dan vao AIM.png');
+      attachments.push(imageBlob);
+    } else {
+      imgError = 'HTTP ' + imgCode;
+    }
   } catch (imgErr) {
-    console.warn('Không tải được ảnh hướng dẫn: ' + imgErr.message);
+    imgError = imgErr.message;
   }
 
   try {
@@ -166,7 +176,8 @@ function handleSendEmail(e) {
     return json({
       ok: true,
       sent: 1,
-      message: 'Đã gửi email cho ' + email
+      message: 'Đã gửi email cho ' + email,
+      attachment: attachments.length ? 'ok' : (imgError || 'khong co')
     });
 
   } catch (mailErr) {
