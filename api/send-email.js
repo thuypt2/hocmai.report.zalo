@@ -22,32 +22,49 @@ function readBody(req) {
   });
 }
 
-async function callAppsScript(payload) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), APPS_SCRIPT_TIMEOUT);
-
-  try {
-    const resp = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    const text = await resp.text();
+// Follow redirects manually, preserving POST method & body
+async function postWithRedirect(url, bodyStr, maxHops = 5) {
+  let currentUrl = url;
+  for (let hop = 0; hop < maxHops; hop++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), APPS_SCRIPT_TIMEOUT);
     try {
-      return JSON.parse(text);
-    } catch {
-      return { ok: false, error: 'Apps Script trả về không phải JSON', raw: text.slice(0, 500) };
+      const resp = await fetch(currentUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: bodyStr,
+        redirect: 'manual',
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      const status = resp.status;
+      if (status === 301 || status === 302 || status === 307 || status === 308) {
+        const loc = resp.headers.get('location');
+        if (!loc) throw new Error('Redirect without Location header');
+        currentUrl = new URL(loc, currentUrl).href;
+        continue;
+      }
+
+      const text = await resp.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { ok: false, error: 'Apps Script trả về không phải JSON', raw: text.slice(0, 500) };
+      }
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e.name === 'AbortError') {
+        return { ok: false, error: 'Apps Script timeout (>4 phút)' };
+      }
+      throw e;
     }
-  } catch (e) {
-    clearTimeout(timeoutId);
-    if (e.name === 'AbortError') {
-      return { ok: false, error: 'Apps Script timeout (>4 phút)' };
-    }
-    return { ok: false, error: e.message };
   }
+  return { ok: false, error: 'Quá nhiều redirect (max ' + maxHops + ')' };
+}
+
+async function callAppsScript(payload) {
+  return postWithRedirect(APPS_SCRIPT_URL, JSON.stringify(payload));
 }
 
 export default async function handler(req, res) {

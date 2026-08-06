@@ -1,9 +1,9 @@
-// Vercel API route — proxy sang Apps Script gửi email nhóm S (tab 2.2)
+// Vercel API route — proxy sang Apps Script gửi email nhóm S (tab 2.2 sub-s-group)
 // Tránh lỗi cross-origin POST redirect của browser → Apps Script
+// Dùng postWithRedirect để giữ POST method qua 302 redirect
 
 const SGROUP_APPS_SCRIPT_URL = process.env.SGROUP_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycbzcPffmv3R6VxI_TSnv3-05TcmvASc9T7LxL3jbD3uJ15D7BNou0lPwAbfnL4v0PYJf/exec';
-const APPS_SCRIPT_SECRET = process.env.GOOGLE_APPS_SCRIPT_SECRET || '@Hocmai123';
 const APPS_SCRIPT_TIMEOUT = 240000; // 4 phút timeout
 
 // Config Vercel serverless
@@ -22,32 +22,45 @@ function readBody(req) {
   });
 }
 
-async function callAppsScript(payload) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), APPS_SCRIPT_TIMEOUT);
-
-  try {
-    const resp = await fetch(SGROUP_APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    const text = await resp.text();
+// Follow redirects manually, preserving POST method & body (Node.js fetch redirect:'follow' changes POST→GET on 302)
+async function postWithRedirect(url, bodyStr, maxHops = 5) {
+  let currentUrl = url;
+  for (let hop = 0; hop < maxHops; hop++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), APPS_SCRIPT_TIMEOUT);
     try {
-      return JSON.parse(text);
-    } catch {
-      return { ok: false, error: 'Apps Script trả về không phải JSON', raw: text.slice(0, 500) };
+      const resp = await fetch(currentUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: bodyStr,
+        redirect: 'manual',
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      const status = resp.status;
+      if (status === 301 || status === 302 || status === 307 || status === 308) {
+        const loc = resp.headers.get('location');
+        if (!loc) throw new Error('Redirect without Location header');
+        currentUrl = new URL(loc, currentUrl).href;
+        continue;
+      }
+
+      const text = await resp.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { ok: false, error: 'Apps Script trả về không phải JSON', raw: text.slice(0, 500) };
+      }
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e.name === 'AbortError') {
+        return { ok: false, error: 'Apps Script timeout (>4 phút)' };
+      }
+      return { ok: false, error: e.message };
     }
-  } catch (e) {
-    clearTimeout(timeoutId);
-    if (e.name === 'AbortError') {
-      return { ok: false, error: 'Apps Script timeout (>4 phút)' };
-    }
-    return { ok: false, error: e.message };
   }
+  return { ok: false, error: 'Quá nhiều redirect (max ' + maxHops + ')' };
 }
 
 export default async function handler(req, res) {
@@ -76,16 +89,16 @@ export default async function handler(req, res) {
     }
 
     // Gọi Apps Script: sendIndividualEmail với đầy đủ params
-    const result = await callAppsScript({
+    const result = await postWithRedirect(SGROUP_APPS_SCRIPT_URL, JSON.stringify({
       action: 'sendIndividualEmail',
-      secret: APPS_SCRIPT_SECRET,
+      secret: '@Hocmai123',
       templateKey: templateKey || 'SSC:HDAIM-S',
       email,
       username: username || '',
       linknhom: linknhom || '',
       link_aim: link_aim || '',
       mabaomats: mabaomats || '',
-    });
+    }));
 
     return res.status(200).json(result);
 
