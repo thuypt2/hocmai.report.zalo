@@ -9,97 +9,52 @@
 //      Execute as: Me
 //      Who has access: Anyone
 //   4. Copy URL deploy đưa cho team
-//
-// Sheet "users" cần các cột:
-//   A: username    B: student_hmid (UserID)
-//   C: phone       D: email
-//   F: product_id  J: mabaomatS
-//   L: linknhom    M: maillan1
-//   S: Trạng thái bắn noti   X: Trạng thái duyệt
 // ============================================================
 
 var SPREADSHEET_ID = '1PaJhe3XUUPoS6miiq9XbJKv9_2kGPdx2KqrdIiGnCHA';
 var SHEET_NAME = 'users';
 var LOG_SHEET_NAME = 'Email_log';
 
-// ── Đọc template từ sheet Email_templates của spreadsheet CHÍNH ──
 var MAIN_SPREADSHEET_ID = '199t40ZaH-dHHD8H4toCs8Ze8CoRK8K2B161jbXZNtF4';
 var EMAIL_TEMPLATE_SHEET = 'Email_templates';
 
 // ===== Entry points =====
-function doGet(e) {
-  return handleRequest(e);
-}
-
-function doPost(e) {
-  return handleRequest(e);
-}
+function doGet(e) { return handleRequest(e); }
+function doPost(e) { return handleRequest(e); }
 
 // ===== Router =====
 function handleRequest(e) {
   try {
     var action = (e && e.parameter && e.parameter.action) || '';
-
     if (action === 'sendEmail' || action === 'sendIndividualEmail') {
       return handleSendEmail(e);
     }
-
-    // Mặc định: trả về toàn bộ dữ liệu sheet users
     return handleGetData();
   } catch (err) {
     return json({ success: false, error: err.message });
   }
 }
 
-// ===== JSON response helper =====
 function json(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
-// ===== GET: Lấy dữ liệu từ sheet users =====
+// ===== GET data =====
 function handleGetData() {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = ss.getSheetByName(SHEET_NAME);
-
-  if (!sheet) {
-    return json({
-      success: false,
-      error: 'Không tìm thấy sheet "' + SHEET_NAME + '" trong spreadsheet ' + SPREADSHEET_ID
-    });
-  }
-
+  if (!sheet) return json({ success: false, error: 'Không tìm thấy sheet ' + SHEET_NAME });
   var rawData = sheet.getDataRange().getValues();
-
-  return json({
-    success: true,
-    spreadsheetId: ss.getId(),
-    spreadsheetName: ss.getName(),
-    totalSheets: ss.getSheets().length,
-    generatedAt: new Date().toISOString(),
-    sheets: [{
-      sheetName: SHEET_NAME,
-      sheetId: sheet.getSheetId(),
-      rows: rawData.length,
-      columns: rawData[0] ? rawData[0].length : 0,
-      data: rawData
-    }]
-  });
+  return json({ success: true, spreadsheetId: ss.getId(), spreadsheetName: ss.getName(), totalSheets: ss.getSheets().length, generatedAt: new Date().toISOString(), sheets: [{ sheetName: SHEET_NAME, sheetId: sheet.getSheetId(), rows: rawData.length, columns: rawData[0] ? rawData[0].length : 0, data: rawData }] });
 }
 
-// ===== sendEmail / sendIndividualEmail: Gửi email 1 học sinh =====
-// Hỗ trợ cả GET (qua query params) và POST (qua JSON body)
-// Dùng template từ sheet Email_templates cột C (html_body)
-// Ảnh hướng dẫn được Vercel proxy chuyển thành base64 truyền qua param imageBlock
+// ===== Gửi email =====
 function handleSendEmail(e) {
   var body = {};
 
-  // ── Parse params: ưu tiên POST body, fallback GET query params ──
   if (e && e.postData && e.postData.contents) {
     try { body = JSON.parse(e.postData.contents); } catch (parseErr) {}
   }
-  // GET fallback: đọc từ query params
   if (!body.email && e && e.parameter) {
     body.email       = e.parameter.email       || '';
     body.username    = e.parameter.username    || '';
@@ -107,8 +62,7 @@ function handleSendEmail(e) {
     body.mabaomats   = e.parameter.mabaomats   || '';
     body.link_aim    = e.parameter.link_aim    || '';
     body.templateKey = e.parameter.templateKey || '';
-    body.secret      = e.parameter.secret      || '';
-    body.imageBlock  = e.parameter.imageBlock  || ''; // Vercel proxy truyền ảnh base64
+    body.imageUrl    = e.parameter.imageUrl    || '';
   }
 
   var email       = (body.email       || '').trim();
@@ -117,34 +71,30 @@ function handleSendEmail(e) {
   var mabaomats   = (body.mabaomats   || '').trim();
   var link_aim    = (body.link_aim    || '').trim();
   var templateKey = (body.templateKey || 'SSC:HDAIM-S').trim();
-  var imageBlock  = (body.imageBlock  || '');
+  var imageUrl    = (body.imageUrl    || '');
 
   if (!email || email.indexOf('@') === -1) {
     return json({ ok: false, error: 'Email không hợp lệ hoặc trống' });
   }
 
-  // ── Đọc template từ sheet Email_templates của spreadsheet chính ──
+  // ── Đọc template từ spreadsheet chính, cột C (html_body) ──
   var tmpl;
-  try {
-    tmpl = getTemplateFromSheet(templateKey);
-  } catch (tmplErr) {
-    return json({ ok: false, error: 'Lỗi template: ' + tmplErr.message });
-  }
+  try { tmpl = getTemplateFromSheet(templateKey); }
+  catch (tmplErr) { return json({ ok: false, error: 'Lỗi template: ' + tmplErr.message }); }
 
-  // Thay thế placeholder trong subject và html_body (cột C)
   var data = {
-    'username':   username,
-    'linknhom':   linknhom,
-    'mabaomatS':  mabaomats,
-    'Link_AIM':   link_aim,
+    'username': username, 'linknhom': linknhom,
+    'mabaomatS': mabaomats, 'Link_AIM': link_aim
   };
   var subject  = renderTemplateText(tmpl.subject, data);
   var htmlBody = renderTemplateText(tmpl.htmlBody, data);
 
-  // ── Chèn ảnh hướng dẫn (base64 inline) vào trước </body> ──
-  // Vercel proxy đã fetch ảnh → base64 → truyền qua query param imageBlock
-  // Apps Script không cần UrlFetchApp — chỉ việc chèn block vào HTML
-  if (imageBlock) {
+  // ── Chèn ảnh hướng dẫn vào trước </body> (dùng URL, không cần UrlFetchApp) ──
+  if (imageUrl) {
+    var imageBlock = '<br><br><div style="text-align:center;margin-top:16px">' +
+      '<p style="font-family:Arial,Helvetica,sans-serif;color:#374151;font-size:14px"><b>Hướng dẫn vào nhóm AIM:</b></p>' +
+      '<img src="' + imageUrl + '" alt="Hướng dẫn vào AIM" style="max-width:600px;width:100%;border-radius:8px;border:1px solid #e5e7eb">' +
+      '</div>';
     var bodyCloseIdx = htmlBody.lastIndexOf('</body>');
     if (bodyCloseIdx >= 0) {
       htmlBody = htmlBody.slice(0, bodyCloseIdx) + imageBlock + htmlBody.slice(bodyCloseIdx);
@@ -154,76 +104,40 @@ function handleSendEmail(e) {
   }
 
   try {
-    MailApp.sendEmail({
-      to: email,
-      subject: subject,
-      htmlBody: htmlBody,
-      name: 'HOCMAI',
-    });
-
-    // Log vào Email_log
+    MailApp.sendEmail({ to: email, subject: subject, htmlBody: htmlBody, name: 'HOCMAI' });
     logEmail(email, username, 'Đã gửi');
-
-    return json({
-      ok: true,
-      sent: 1,
-      message: 'Đã gửi email cho ' + email,
-      image: imageBlock ? 'ok' : 'khong co'
-    });
-
+    return json({ ok: true, sent: 1, message: 'Đã gửi email cho ' + email, image: imageUrl ? 'ok' : 'khong co' });
   } catch (mailErr) {
     logEmail(email, username, 'Lỗi: ' + mailErr.message);
-
-    return json({
-      ok: false,
-      error: 'Lỗi gửi email: ' + mailErr.message
-    });
+    return json({ ok: false, error: 'Lỗi gửi email: ' + mailErr.message });
   }
 }
 
-// ===== Ghi log vào sheet Email_log =====
+// ===== Log =====
 function logEmail(email, username, status) {
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var logSheet = ss.getSheetByName(LOG_SHEET_NAME);
     if (logSheet) {
-      logSheet.appendRow([
-        new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
-        email,
-        username,
-        status,
-        'S-group'
-      ]);
+      logSheet.appendRow([new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }), email, username, status, 'S-group']);
     }
-  } catch (e) {
-    // Không có sheet log cũng không sao, bỏ qua
-  }
+  } catch (e) {}
 }
 
-// ===== Đọc template từ sheet Email_templates (spreadsheet chính) =====
-// Column A: template_key, Column B: subject, Column C: html_body
+// ===== Đọc template từ Email_templates =====
 function getTemplateFromSheet(templateKey) {
   var ss = SpreadsheetApp.openById(MAIN_SPREADSHEET_ID);
-
   var sheet = ss.getSheetByName(EMAIL_TEMPLATE_SHEET);
   if (!sheet) {
     var allSheets = ss.getSheets();
     for (var i = 0; i < allSheets.length; i++) {
-      if (allSheets[i].getName().toLowerCase() === EMAIL_TEMPLATE_SHEET.toLowerCase()) {
-        sheet = allSheets[i];
-        break;
-      }
+      if (allSheets[i].getName().toLowerCase() === EMAIL_TEMPLATE_SHEET.toLowerCase()) { sheet = allSheets[i]; break; }
     }
   }
-
-  if (!sheet) {
-    throw new Error('Không tìm thấy sheet "' + EMAIL_TEMPLATE_SHEET + '" trong spreadsheet chính');
-  }
+  if (!sheet) throw new Error('Không tìm thấy sheet ' + EMAIL_TEMPLATE_SHEET);
 
   var values = sheet.getDataRange().getDisplayValues();
-  if (values.length < 2) {
-    throw new Error('Sheet "' + EMAIL_TEMPLATE_SHEET + '" chưa có dữ liệu');
-  }
+  if (values.length < 2) throw new Error('Sheet ' + EMAIL_TEMPLATE_SHEET + ' chưa có dữ liệu');
 
   var headers = values[0];
   var rows = values.slice(1);
@@ -238,39 +152,24 @@ function getTemplateFromSheet(templateKey) {
     return -1;
   }
 
-  var keyIdx     = findCol(['template_key', 'templatekey', 'TemplateKey', 'key', 'ma_mau']);
-  var subjectIdx = findCol(['subject', 'Subject', 'chu_de', 'Chu de', 'ten_mau']);
-  var bodyIdx    = findCol(['html_body', 'Html_body', 'HTML_body', 'htmlBody', 'noi_dung_html']);
+  var keyIdx = findCol(['template_key', 'templatekey', 'key', 'ma_mau']);
+  var subjectIdx = findCol(['subject', 'chu_de', 'ten_mau']);
+  var bodyIdx = findCol(['html_body', 'htmlbody', 'noi_dung_html']);
 
   if (keyIdx === -1 || subjectIdx === -1 || bodyIdx === -1) {
-    throw new Error('Sheet thiếu cột. Hiện có: ' + headers.join(', ') + '. Cần: template_key, subject, html_body');
+    throw new Error('Sheet thiếu cột. Cần: template_key, subject, html_body');
   }
 
   var foundRow = null;
   for (var i = 0; i < rows.length; i++) {
-    var r = rows[i];
-    var rowKey = String(r[keyIdx] || '').trim();
-    if (rowKey !== templateKey) continue;
-    foundRow = r;
-    break;
+    if (String(rows[i][keyIdx] || '').trim() === templateKey) { foundRow = rows[i]; break; }
   }
+  if (!foundRow) throw new Error('Không tìm thấy template key="' + templateKey + '"');
 
-  if (!foundRow) {
-    var available = [];
-    for (var j = 0; j < rows.length; j++) {
-      var rk = String(rows[j][keyIdx] || '').trim();
-      if (rk) available.push(rk);
-    }
-    throw new Error('Không tìm thấy template key="' + templateKey + '". Các template: ' + available.join(', '));
-  }
-
-  return {
-    subject:  String(foundRow[subjectIdx] || ''),
-    htmlBody: String(foundRow[bodyIdx] || ''),
-  };
+  return { subject: String(foundRow[subjectIdx] || ''), htmlBody: String(foundRow[bodyIdx] || '') };
 }
 
-// ===== Render template: thay {{key}} bằng giá trị thực =====
+// ===== Render template =====
 function renderTemplateText(text, data) {
   var result = text || '';
   var keys = Object.keys(data);
