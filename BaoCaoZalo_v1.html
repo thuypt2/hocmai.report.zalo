@@ -466,6 +466,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
     <span class="sub-tab" data-sub="s-group">2.2 · LỌC HỌC SINH THEO NHÓM S</span>
     <span class="sub-tab" data-sub="wait-member">2.3 · HỌC SINH CHỜ DUYỆT KẾT NỐI</span>
     <span class="sub-tab" data-sub="multi-mabaomat">2.4 · HỌC SINH NHIỀU MÃ BẢO MẬT</span>
+    <span class="sub-tab" data-sub="tc-thpt">2.6 · LỌC HS AIM TIÊU CHUẨN</span>
   </div>
 
   <!-- ====== 2.1 Lọc theo nhóm lớp ====== -->
@@ -645,6 +646,37 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
             </table>
           </div>
         </div><!-- /sub-multi-mabaomat -->
+
+      <!-- ====== 2.6 Lọc HS AIM Tiêu chuẩn (tc_thpt) ====== -->
+      <div class="sub-pane" id="sub-tc-thpt">
+
+        <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)" id="fTC-filter-row">
+          <label id="fTC-aim-label">Trạng thái duyệt AIM
+            <select id="fTC-aim">
+              <option value="">-- Tất cả --</option>
+              <option value="duyet">Đã duyệt</option>
+              <option value="chua">Chưa duyệt</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="toolbar">
+          <input class="search-input" id="qTC" placeholder="Tìm nhanh: username / SĐT / email" onkeydown="if(event.key==='Enter')applyFilterTC()">
+          <button class="btn" onclick="applyFilterTC()">Lọc</button>
+          <button class="btn gray" onclick="resetFilterTC()">Reset</button>
+          <span class="muted" id="result-info-tc"></span>
+          <span style="flex:1"></span>
+        </div>
+
+        <div id="summary-tc" style="margin-bottom:10px"></div>
+        <div class="tbl-wrap" style="max-height:calc(100vh - 280px)">
+          <table id="tbl-tc-thpt">
+            <thead><tr id="thead-tc-thpt"></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+      </div><!-- /sub-tc-thpt -->
 
   </div><!-- /tab-lookup -->
 
@@ -1760,6 +1792,7 @@ function switchSub(sub){
   document.querySelectorAll('.sub-pane').forEach(p=>p.classList.toggle('active', p.id==='sub-'+sub));
   if (sub==='filter-group') applyFilter1();
   else if (sub==='s-group') applyFilterSGroup();
+  else if (sub==='tc-thpt') applyFilterTC();
   else if (sub==='multi-mabaomat') applyFilter4();
 }
 
@@ -2661,6 +2694,192 @@ function sendEmailSGroup(btn) {
   });
 }
 
+// ===== 2.6 Lọc HS AIM Tiêu chuẩn (tc_thpt) =====
+let TC_THPT_DATA = [];
+const TC_COLS = [
+  {key:"_stt", label:"STT", isSTT:true, width:"50px"},
+  {key:"username", label:"Username", width:"280px", wordBreak:true},
+  {key:"userid", label:"UserID", width:"90px"},
+  {key:"sdt", label:"SĐT", width:"110px"},
+  {key:"email", label:"Email", width:"220px"},
+  {key:"product", label:"product", width:"100px"},
+  {key:"mabaomat", label:"mabaomat", width:"110px"},
+  {key:"link_nhom", label:"link nhóm", isLinkTC:true, width:"130px"},
+  {key:"maillan1", label:"maillan1", width:"100px"},
+  {key:"noti", label:"noti", width:"80px"},
+  {key:"trang_thai_duyet", label:"Trạng thái duyệt", width:"100px"},
+  {key:"_email_btn", label:"Gửi email", isEmailBtnTC:true, width:"100px"},
+  {key:"_email_sent_time", label:"TG gửi email", width:"140px"},
+];
+
+function initTCHeaders() {
+  const tr = document.getElementById('thead-tc-thpt');
+  tr.innerHTML = TC_COLS.map(c => {
+    const w = c.width ? ` style="width:${c.width};min-width:${c.width}"` : '';
+    const p = [];
+    if (c.isSTT || /^(userid|SĐT|email|noti)/.test(c.label)) p.push('num');
+    const cls = p.length ? ` class="${p.join(' ')}"` : '';
+    return `<th${w}${cls}>${c.label}</th>`;
+  }).join('');
+}
+
+async function loadTCThptData() {
+  try {
+    const resp = await fetch('/api/get-tcthpt-data');
+    const json = await resp.json();
+    if (json.ok && json.data) {
+      TC_THPT_DATA = json.data;
+    } else {
+      TC_THPT_DATA = [];
+    }
+  } catch (err) {
+    console.warn('Không tải được dữ liệu tc_thpt:', err.message);
+    TC_THPT_DATA = [];
+  }
+  initTCHeaders();
+  applyFilterTC();
+}
+
+function applyFilterTC() {
+  const q = document.getElementById('qTC').value.trim().toLowerCase();
+  const fAim = document.getElementById('fTC-aim').value;
+
+  let pool = TC_THPT_DATA.filter(r => (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim());
+
+  if (q) {
+    pool = pool.filter(r => {
+      const blob = [r.username, r.sdt, r.email, r.userid, r.mabaomat, r.product]
+        .map(x => String(x || '').toLowerCase()).join('|');
+      return blob.includes(q);
+    });
+  }
+
+  if (fAim === 'duyet') {
+    pool = pool.filter(r => {
+      const v = (r.trang_thai_duyet || '').trim().toLowerCase();
+      return v === 'duyệt' || v === 'duyet';
+    });
+  } else if (fAim === 'chua') {
+    pool = pool.filter(r => {
+      const v = (r.trang_thai_duyet || '').trim().toLowerCase();
+      return v !== 'duyệt' && v !== 'duyet';
+    });
+  }
+
+  renderTCTable(pool);
+}
+
+function resetFilterTC() {
+  document.getElementById('qTC').value = '';
+  const aimSel = document.getElementById('fTC-aim');
+  if (aimSel) aimSel.value = '';
+  applyFilterTC();
+}
+
+function renderTCTable(rows) {
+  const tb = document.querySelector('#tbl-tc-thpt tbody');
+  tb.innerHTML = '';
+  const MAX = 500;
+  const slice = rows.slice(0, MAX);
+  for (let i = 0; i < slice.length; i++) {
+    const r = slice[i];
+    const tr = document.createElement('tr');
+    let html = '';
+    for (const c of TC_COLS) {
+      if (c.isSTT) { html += `<td class="num">${i + 1}</td>`; continue; }
+      if (c.isLinkTC) {
+        const url = escapeHtml(r.link_nhom || '');
+        if (url) {
+          const safeUrl = url.replace(/"/g, '&quot;');
+          html += `<td><a href="${safeUrl}" target="_blank" rel="noopener" class="link-zalo">zalo ↗</a><button class="copy-btn" onclick="copyLink(this, '${safeUrl}')">Copy</button></td>`;
+        } else {
+          html += '<td><span class="muted">—</span></td>';
+        }
+        continue;
+      }
+      if (c.key === 'trang_thai_duyet') {
+        html += `<td>${badgeStatus(r.trang_thai_duyet)}</td>`;
+        continue;
+      }
+      if (c.isEmailBtnTC) {
+        const em = escapeHtml(r.email || '');
+        const un = escapeHtml(r.username || '');
+        if (!em) { html += '<td><span class="muted">(trống)</span></td>'; continue; }
+        const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        html += `<td><button class="btn-email"
+          data-email="${esc(r.email||'')}"
+          data-username="${esc(r.username||'')}"
+          data-linknhom="${esc(r.link_nhom||'')}"
+          data-mabaomat="${esc(r.mabaomat||'')}"
+          data-userid="${esc(r.userid||'')}"
+          onclick="sendEmailTC(this)">Gửi email</button></td>`;
+        continue;
+      }
+      if (c.key === '_email_sent_time') {
+        const t = r._email_sent_time || '';
+        html += `<td class="email-sent-cell">${t ? escapeHtml(t) : '<span class="muted">—</span>'}</td>`;
+        continue;
+      }
+      html += `<td${c.wordBreak ? ' style="word-break:break-all;white-space:normal"' : ''}>${escapeHtml(r[c.key] || '')}</td>`;
+    }
+    tr.innerHTML = html;
+    tb.appendChild(tr);
+  }
+  const total = rows.length;
+  document.getElementById('result-info-tc').textContent =
+    total > MAX ? `Hiển thị ${MAX} / ${total} dòng` : `Hiển thị ${total} dòng`;
+}
+
+function sendEmailTC(btn) {
+  const email    = btn.getAttribute('data-email')    || '';
+  const username = btn.getAttribute('data-username') || '';
+  const linknhom = btn.getAttribute('data-linknhom') || '';
+  const mabaomat = btn.getAttribute('data-mabaomat') || '';
+
+  if (!email) return;
+  btn.disabled = true;
+  btn.textContent = 'Đang gửi...';
+
+  const link_aim = 'https://hocmai.link/TNTHPTaim25plus';
+  fetch('/api/send-sgroup-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email:        email,
+      username:     username,
+      linknhom:     linknhom,
+      link_aim:     link_aim,
+      mabaomats:    mabaomat,
+      templateKey:  'SSC:HDAIM-S',
+    })
+  })
+  .then(r => r.json())
+  .then(json => {
+    const stamp = nowStamp();
+    if (!json.ok) {
+      alert('Lỗi gửi email: ' + (json.error || 'Không xác định'));
+      btn.disabled = false;
+      btn.textContent = 'Gửi email';
+      return;
+    }
+    const row = TC_THPT_DATA.find(r => String(r.email || '').toLowerCase() === email.toLowerCase());
+    if (row) row._email_sent_time = stamp;
+    const td = btn.closest('td');
+    if (td) {
+      const tr = td.closest('tr');
+      const timeCell = tr?.querySelector('.email-sent-cell');
+      if (timeCell) timeCell.textContent = stamp;
+    }
+    btn.textContent = '✓ Đã gửi';
+    setTimeout(() => { btn.textContent = 'Gửi email'; btn.disabled = false; }, 3000);
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.textContent = 'Gửi email';
+    alert('Lỗi: ' + err.message);
+  });
+}
+
 // ===== 2.3 Học sinh chờ duyệt kết nối =====
 let WAIT_DATA = [];
 function initFilters3(){
@@ -3454,6 +3673,9 @@ async function loadData(){
 
     // Load S-group data for tab 2.2 (await để tránh trắng dữ liệu khi user click sớm)
     await loadSGroupData();
+
+    // Load tc_thpt data for tab 2.6
+    await loadTCThptData();
 
   } catch(err) {
     loadBox.style.display = 'none';
