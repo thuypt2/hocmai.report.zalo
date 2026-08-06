@@ -88,16 +88,25 @@ function handleGetData() {
   });
 }
 
-// ===== POST action=sendEmail / sendIndividualEmail: Gửi email 1 học sinh =====
+// ===== sendEmail / sendIndividualEmail: Gửi email 1 học sinh =====
+// Hỗ trợ cả GET (qua query params) và POST (qua JSON body)
 // Dùng template từ sheet Email_templates cột C (html_body)
 function handleSendEmail(e) {
   var body = {};
-  try {
-    if (e && e.postData && e.postData.contents) {
-      body = JSON.parse(e.postData.contents);
-    }
-  } catch (parseErr) {
-    return json({ ok: false, error: 'Body không phải JSON hợp lệ' });
+
+  // ── Parse params: ưu tiên POST body, fallback GET query params ──
+  if (e && e.postData && e.postData.contents) {
+    try { body = JSON.parse(e.postData.contents); } catch (parseErr) {}
+  }
+  // GET fallback: đọc từ query params (tránh lỗi 302 redirect mất POST body)
+  if (!body.email && e && e.parameter) {
+    body.email       = e.parameter.email       || '';
+    body.username    = e.parameter.username    || '';
+    body.linknhom    = e.parameter.linknhom    || '';
+    body.mabaomats   = e.parameter.mabaomats   || '';
+    body.link_aim    = e.parameter.link_aim    || '';
+    body.templateKey = e.parameter.templateKey || '';
+    body.secret      = e.parameter.secret      || '';
   }
 
   var email       = (body.email       || '').trim();
