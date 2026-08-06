@@ -138,13 +138,35 @@ function handleSendEmail(e) {
   var subject  = renderTemplateText(tmpl.subject, data);
   var htmlBody = renderTemplateText(tmpl.htmlBody, data);
 
+  // ── Đính kèm ảnh hướng dẫn (inline, nhúng trực tiếp vào email) ──
+  var HUONG_DAN_IMAGE_URL = 'https://hocmai-report-zalo.vercel.app/huong-dan-vao-aim.png';
+  var inlineImages = {};
   try {
-    MailApp.sendEmail({
+    var imageBlob = UrlFetchApp.fetch(HUONG_DAN_IMAGE_URL).getBlob().setName('huong-dan-aim');
+    inlineImages['huongdan'] = imageBlob;
+    // Thêm ảnh vào cuối email body (dùng Content-ID để tham chiếu)
+    htmlBody += '<br><br><div style="text-align:center;margin-top:16px">' +
+      '<p style="font-family:Arial,Helvetica,sans-serif;color:#374151;font-size:14px"><b>Hướng dẫn vào nhóm AIM:</b></p>' +
+      '<img src="cid:huongdan" alt="Hướng dẫn vào AIM" ' +
+      'style="max-width:600px;width:100%;border-radius:8px;border:1px solid #e5e7eb">' +
+      '</div>';
+  } catch (imgErr) {
+    // Nếu không fetch được ảnh, vẫn gửi email bình thường
+    console.warn('Không tải được ảnh hướng dẫn: ' + imgErr.message);
+  }
+
+  try {
+    var mailOptions = {
       to: email,
       subject: subject,
       htmlBody: htmlBody,
       name: 'HOCMAI',
-    });
+    };
+    // Chỉ thêm inlineImages nếu fetch thành công
+    if (inlineImages['huongdan']) {
+      mailOptions.inlineImages = inlineImages;
+    }
+    MailApp.sendEmail(mailOptions);
 
     // Log vào Email_log nếu có sheet đó
     logEmail(email, username, 'Đã gửi');
