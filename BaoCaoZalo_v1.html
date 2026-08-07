@@ -2647,7 +2647,8 @@ function renderSGroupTable(rows) {
 function sendEmailSGroup(btn) {
   const email    = btn.getAttribute('data-email')    || '';
   const username = btn.getAttribute('data-username') || '';
-  const linknhom = btn.getAttribute('data-linknhom') || '';
+  const ten_group = btn.getAttribute('data-ten-group') || '';
+  const link_group = btn.getAttribute('data-link-group') || '';
   const mabaomat = btn.getAttribute('data-mabaomat') || '';
   const userid   = btn.getAttribute('data-userid')   || '';
 
@@ -2663,7 +2664,8 @@ function sendEmailSGroup(btn) {
     body: JSON.stringify({
       email:        email,
       username:     username,
-      linknhom:     linknhom,
+      ten_group:    ten_group,
+      link_group:   link_group,
       link_aim:     link_aim,
       mabaomats:    mabaomat,
       templateKey:  'SSC:HDAIM-S',
@@ -2707,6 +2709,8 @@ const TC_COLS = [
   {key:"type", label:"Type", width:"60px"},
   {key:"exam", label:"Exam", width:"100px"},
   {key:"mabaomat", label:"Mã bảo mật", width:"110px"},
+  {key:"ten_group", label:"Tên group", width:"220px"},
+  {key:"link_group", label:"Link group", width:"200px"},
   {key:"trang_thai_duyet", label:"Trạng thái duyệt", width:"110px"},
   {key:"tg_duyet", label:"TG duyệt", width:"130px"},
   {key:"nguoi_duyet", label:"Người duyệt", width:"130px"},
@@ -2750,7 +2754,7 @@ function applyFilterTC() {
 
   if (q) {
     pool = pool.filter(r => {
-      const blob = [r.username, r.sdt, r.email, r.final_name, r.mabaomat, r.exam]
+      const blob = [r.username, r.sdt, r.email, r.final_name, r.mabaomat, r.exam, r.ten_group, r.link_group]
         .map(x => String(x || '').toLowerCase()).join('|');
       return blob.includes(q);
     });
@@ -2801,6 +2805,8 @@ function renderTCTable(rows) {
               data-email="${esc(r.email||'')}"
               data-username="${esc(r.username||'')}"
               data-mabaomat="${esc(r.mabaomat||'')}"
+              data-ten-group="${esc(r.ten_group||'')}"
+              data-link-group="${esc(r.link_group||'')}"
               onclick="sendEmailTC(this)">Gửi email</button></td>`;
             continue;
           }
@@ -2822,7 +2828,8 @@ function renderTCTable(rows) {
 function sendEmailTC(btn) {
   const email    = btn.getAttribute('data-email')    || '';
   const username = btn.getAttribute('data-username') || '';
-  const linknhom = btn.getAttribute('data-linknhom') || '';
+  const ten_group = btn.getAttribute('data-ten-group') || '';
+  const link_group = btn.getAttribute('data-link-group') || '';
   const mabaomat = btn.getAttribute('data-mabaomat') || '';
 
   if (!email) return;
@@ -2836,7 +2843,8 @@ function sendEmailTC(btn) {
     body: JSON.stringify({
       email:        email,
       username:     username,
-      linknhom:     linknhom,
+      ten_group:    ten_group,
+      link_group:   link_group,
       link_aim:     link_aim,
       mabaomats:    mabaomat,
       templateKey:  'SSC:HDAIM-S',

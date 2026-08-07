@@ -68,7 +68,7 @@ module.exports = async function handler(req, res) {
 
     function get(row, idx) { return idx >= 0 ? String(row[idx] || '').trim() : ''; }
 
-    // Sheet tc_thpt columns: username | final_name | final_phone | final_email | type | exam | Mã bảo mật | Trạng thái duyệt AIM | Thời gian duyệt AIM | Người duyệt AIM
+    // Sheet tc_thpt columns: username | final_name | final_phone | final_email | paid_time | type | exam | Mã bảo mật | Tên group cộng đồng (I) | Link group cộng đồng (J) | Trạng thái duyệt AIM | Thời gian duyệt AIM | Người duyệt AIM
     const idxUsername   = colIdx(['username', 'user']);
     const idxFinalName  = colIdx(['final_name', 'tên', 'ten']);
     const idxSdt        = colIdx(['final_phone', 'phone', 'sđt', 'sdt']);
@@ -76,6 +76,8 @@ module.exports = async function handler(req, res) {
     const idxType       = colIdx(['type', 'loai']);
     const idxExam       = colIdx(['exam', 'kỳ thi', 'ky_thi']);
     const idxMabaomat   = colIdx(['mã bảo mật', 'ma_bao_mat', 'mabaomat', 'mabaomats']);
+    const idxTenGroup   = colIdx(['tên group cộng đồng', 'tên group', 'ten_group', 'group name']);
+    const idxLinkGroup  = colIdx(['link group cộng đồng', 'link group', 'link_group', 'group link']);
     const idxDuyet      = colIdx(['trạng thái duyệt aim', 'trạng thái duyệt', 'trang_thai_duyet', 'status']);
     const idxTGDuyet    = colIdx(['thời gian duyệt aim', 'thời gian duyệt', 'thoi_gian_duyet', 'tg_duyet']);
     const idxNguoiDuyet = colIdx(['người duyệt aim', 'người duyệt', 'nguoi_duyet']);
@@ -88,6 +90,8 @@ module.exports = async function handler(req, res) {
       type:            get(row, idxType),
       exam:            get(row, idxExam),
       mabaomat:        get(row, idxMabaomat),
+      ten_group:       get(row, idxTenGroup),
+      link_group:      get(row, idxLinkGroup),
       trang_thai_duyet: get(row, idxDuyet),
       tg_duyet:        get(row, idxTGDuyet),
       nguoi_duyet:     get(row, idxNguoiDuyet),
