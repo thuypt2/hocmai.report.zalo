@@ -505,9 +505,9 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
         </div>
 
         <div class="toolbar">
+          <input class="search-input" id="q1" placeholder="Tìm nhanh: username / email / phone / userid" onkeydown="if(event.key==='Enter')applyFilter1()">
           <button class="btn" onclick="applyFilter1()">Lọc</button>
           <button class="btn gray" onclick="resetFilter1()">Reset</button>
-          <input class="search-input" id="q1" placeholder="Tìm nhanh: username / email / phone / userid" onkeydown="if(event.key==='Enter')applyFilter1()">
           <span class="muted" id="result-info-1"></span>
           <span style="flex:1"></span>
         </div>
