@@ -869,16 +869,14 @@ function applyRoleUI(){
     if(emailNav) emailNav.style.display='none';
     var fr=document.querySelector('#sub-filter-group .filter-row');
     if(fr) fr.style.display='none';
-    document.querySelectorAll('#sub-filter-group .toolbar .btn').forEach(function(b){b.style.display='none';});
     // Ẩn filter AIM trong 2.2
     var sfAimLabel = document.getElementById('fS-aim-label');
     if(sfAimLabel) sfAimLabel.style.display='none';
     var sfFilterRow = document.getElementById('fS-filter-row');
     if(sfFilterRow) sfFilterRow.style.display='none';
-    // 2.3 TC THPT: DVKH chỉ có quyền search, ẩn filter row và toolbar
+    // 2.3 TC THPT: DVKH chỉ có quyền search, ẩn filter row (giữ nút Lọc/Reset)
     var tcFilterRow = document.getElementById('fTC-filter-row');
     if(tcFilterRow) tcFilterRow.style.display='none';
-    document.querySelectorAll('#sub-tc-thpt .toolbar .btn').forEach(function(b){b.style.display='none';});
   }
 }
 (function autoGate(){
