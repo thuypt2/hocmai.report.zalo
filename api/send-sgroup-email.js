@@ -2,7 +2,7 @@
 // Truyền URL ảnh hướng dẫn qua query param, Apps Script chèn thẻ <img> vào HTML
 
 const SGROUP_APPS_SCRIPT_URL = process.env.SGROUP_APPS_SCRIPT_URL ||
-  'https://script.google.com/macros/s/AKfycbyw6hvgxsa0dhVzpmbvZyVVpzD2mmA-MCfQE-kPGnksWUZUoGzlHX4AvDTzEpLzrRso/exec';
+  'https://script.google.com/macros/s/AKfycbzPKLZo7b6JG34OIyzQABIObStR8r6QJgnuQekE-SopoHKPHEwSSo06ZfLZx5qnv5Zz/exec';
 const IMAGE_URL = 'https://hocmai-report-zalo.vercel.app/huong-dan-vao-aim.png';
 const APPS_SCRIPT_TIMEOUT = 240000;
 
