@@ -2,7 +2,7 @@
 const TCTHPT_APPS_SCRIPT_URL =
   'https://script.google.com/macros/s/AKfycbzPKLZo7b6JG34OIyzQABIObStR8r6QJgnuQekE-SopoHKPHEwSSo06ZfLZx5qnv5Zz/exec';
 
-const CACHE_TTL_MS = 2 * 60 * 1000; // 2 phút cache
+const CACHE_TTL_MS = 2 * 60 * 1000;
 let _cache = null;
 let _cacheTime = 0;
 
@@ -37,7 +37,6 @@ module.exports = async function handler(req, res) {
 
     const json = await response.json();
 
-    // Parse format: { success, sheets: [{ sheetName, data: [[headers],[row1],...] }] }
     let rawRows = [];
     let headers = [];
 
@@ -55,7 +54,6 @@ module.exports = async function handler(req, res) {
       return res.status(200).json(_cache);
     }
 
-    // Map rows thành object dùng header làm key
     function colIdx(names) {
       for (const n of names) {
         const idx = headers.findIndex(h => {
@@ -70,28 +68,29 @@ module.exports = async function handler(req, res) {
 
     function get(row, idx) { return idx >= 0 ? String(row[idx] || '').trim() : ''; }
 
-    const idxUsername = colIdx(['username', 'user']);
-    const idxUserid   = colIdx(['student_hmid', 'userid', 'user_id']);
-    const idxSdt      = colIdx(['phone', 'sđt', 'sdt']);
-    const idxEmail    = colIdx(['email', 'mail']);
-    const idxProduct  = colIdx(['product_id', 'product']);
-    const idxMabaomat = colIdx(['mabaomats', 'mabaomat', 'ma_bao_mat']);
-    const idxLinknhom = colIdx(['linknhom', 'link_nhom', 'link nhóm', 'link group']);
-    const idxMaillan1 = colIdx(['maillan1', 'mail_lan1']);
-    const idxNoti     = colIdx(['trạng thái bắn noti', 'noti']);
-    const idxDuyet    = colIdx(['trạng thái duyệt', 'trang_thai_duyet', 'status']);
+    // Sheet tc_thpt columns: username | final_name | final_phone | final_email | type | exam | Mã bảo mật | Trạng thái duyệt AIM | Thời gian duyệt AIM | Người duyệt AIM
+    const idxUsername   = colIdx(['username', 'user']);
+    const idxFinalName  = colIdx(['final_name', 'tên', 'ten']);
+    const idxSdt        = colIdx(['final_phone', 'phone', 'sđt', 'sdt']);
+    const idxEmail      = colIdx(['final_email', 'email', 'mail']);
+    const idxType       = colIdx(['type', 'loai']);
+    const idxExam       = colIdx(['exam', 'kỳ thi', 'ky_thi']);
+    const idxMabaomat   = colIdx(['mã bảo mật', 'ma_bao_mat', 'mabaomat', 'mabaomats']);
+    const idxDuyet      = colIdx(['trạng thái duyệt aim', 'trạng thái duyệt', 'trang_thai_duyet', 'status']);
+    const idxTGDuyet    = colIdx(['thời gian duyệt aim', 'thời gian duyệt', 'thoi_gian_duyet', 'tg_duyet']);
+    const idxNguoiDuyet = colIdx(['người duyệt aim', 'người duyệt', 'nguoi_duyet']);
 
     const data = rawRows.map(row => ({
-      username: get(row, idxUsername),
-      userid: get(row, idxUserid),
-      sdt: get(row, idxSdt),
-      email: get(row, idxEmail),
-      product: get(row, idxProduct),
-      mabaomat: get(row, idxMabaomat),
-      link_nhom: get(row, idxLinknhom),
-      maillan1: get(row, idxMaillan1),
-      noti: get(row, idxNoti),
+      username:        get(row, idxUsername),
+      final_name:      get(row, idxFinalName),
+      sdt:             get(row, idxSdt),
+      email:           get(row, idxEmail),
+      type:            get(row, idxType),
+      exam:            get(row, idxExam),
+      mabaomat:        get(row, idxMabaomat),
       trang_thai_duyet: get(row, idxDuyet),
+      tg_duyet:        get(row, idxTGDuyet),
+      nguoi_duyet:     get(row, idxNguoiDuyet),
     }));
 
     _cache = {

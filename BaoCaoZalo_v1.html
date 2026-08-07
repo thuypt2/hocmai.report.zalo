@@ -2698,16 +2698,16 @@ function sendEmailSGroup(btn) {
 let TC_THPT_DATA = [];
 const TC_COLS = [
   {key:"_stt", label:"STT", isSTT:true, width:"50px"},
-  {key:"username", label:"Username", width:"280px", wordBreak:true},
-  {key:"userid", label:"UserID", width:"90px"},
+  {key:"username", label:"Username", width:"220px", wordBreak:true},
+  {key:"final_name", label:"Tên Zalo", width:"180px"},
   {key:"sdt", label:"SĐT", width:"110px"},
   {key:"email", label:"Email", width:"220px"},
-  {key:"product", label:"product", width:"100px"},
-  {key:"mabaomat", label:"mabaomat", width:"110px"},
-  {key:"link_nhom", label:"link nhóm", isLinkTC:true, width:"130px"},
-  {key:"maillan1", label:"maillan1", width:"100px"},
-  {key:"noti", label:"noti", width:"80px"},
-  {key:"trang_thai_duyet", label:"Trạng thái duyệt", width:"100px"},
+  {key:"type", label:"Type", width:"60px"},
+  {key:"exam", label:"Exam", width:"100px"},
+  {key:"mabaomat", label:"Mã bảo mật", width:"110px"},
+  {key:"trang_thai_duyet", label:"Trạng thái duyệt", width:"110px"},
+  {key:"tg_duyet", label:"TG duyệt", width:"130px"},
+  {key:"nguoi_duyet", label:"Người duyệt", width:"130px"},
   {key:"_email_btn", label:"Gửi email", isEmailBtnTC:true, width:"100px"},
   {key:"_email_sent_time", label:"TG gửi email", width:"140px"},
 ];
@@ -2748,7 +2748,7 @@ function applyFilterTC() {
 
   if (q) {
     pool = pool.filter(r => {
-      const blob = [r.username, r.sdt, r.email, r.userid, r.mabaomat, r.product]
+      const blob = [r.username, r.sdt, r.email, r.final_name, r.mabaomat, r.exam]
         .map(x => String(x || '').toLowerCase()).join('|');
       return blob.includes(q);
     });
@@ -2786,35 +2786,22 @@ function renderTCTable(rows) {
     const tr = document.createElement('tr');
     let html = '';
     for (const c of TC_COLS) {
-      if (c.isSTT) { html += `<td class="num">${i + 1}</td>`; continue; }
-      if (c.isLinkTC) {
-        const url = escapeHtml(r.link_nhom || '');
-        if (url) {
-          const safeUrl = url.replace(/"/g, '&quot;');
-          html += `<td><a href="${safeUrl}" target="_blank" rel="noopener" class="link-zalo">zalo ↗</a><button class="copy-btn" onclick="copyLink(this, '${safeUrl}')">Copy</button></td>`;
-        } else {
-          html += '<td><span class="muted">—</span></td>';
-        }
-        continue;
-      }
-      if (c.key === 'trang_thai_duyet') {
-        html += `<td>${badgeStatus(r.trang_thai_duyet)}</td>`;
-        continue;
-      }
-      if (c.isEmailBtnTC) {
-        const em = escapeHtml(r.email || '');
-        const un = escapeHtml(r.username || '');
-        if (!em) { html += '<td><span class="muted">(trống)</span></td>'; continue; }
-        const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        html += `<td><button class="btn-email"
-          data-email="${esc(r.email||'')}"
-          data-username="${esc(r.username||'')}"
-          data-linknhom="${esc(r.link_nhom||'')}"
-          data-mabaomat="${esc(r.mabaomat||'')}"
-          data-userid="${esc(r.userid||'')}"
-          onclick="sendEmailTC(this)">Gửi email</button></td>`;
-        continue;
-      }
+          if (c.isSTT) { html += `<td class="num">${i + 1}</td>`; continue; }
+          if (c.key === 'trang_thai_duyet') {
+            html += `<td>${badgeStatus(r.trang_thai_duyet)}</td>`;
+            continue;
+          }
+          if (c.isEmailBtnTC) {
+            const em = escapeHtml(r.email || '');
+            if (!em) { html += '<td><span class="muted">(trống)</span></td>'; continue; }
+            const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            html += `<td><button class="btn-email"
+              data-email="${esc(r.email||'')}"
+              data-username="${esc(r.username||'')}"
+              data-mabaomat="${esc(r.mabaomat||'')}"
+              onclick="sendEmailTC(this)">Gửi email</button></td>`;
+            continue;
+          }
       if (c.key === '_email_sent_time') {
         const t = r._email_sent_time || '';
         html += `<td class="email-sent-cell">${t ? escapeHtml(t) : '<span class="muted">—</span>'}</td>`;
