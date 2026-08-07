@@ -464,9 +464,9 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
   <div style="margin-bottom:14px">
     <span class="sub-tab active" data-sub="filter-group">2.1 · LỌC HỌC SINH THEO NHÓM VIP</span>
     <span class="sub-tab" data-sub="s-group">2.2 · LỌC HỌC SINH THEO NHÓM S</span>
-    <span class="sub-tab" data-sub="wait-member">2.3 · HỌC SINH CHỜ DUYỆT KẾT NỐI</span>
-    <span class="sub-tab" data-sub="multi-mabaomat">2.4 · HỌC SINH NHIỀU MÃ BẢO MẬT</span>
-    <span class="sub-tab" data-sub="tc-thpt">2.6 · LỌC HS AIM TIÊU CHUẨN</span>
+    <span class="sub-tab" data-sub="tc-thpt">2.3 · LỌC HS AIM TIÊU CHUẨN</span>
+    <span class="sub-tab" data-sub="wait-member">2.4 · HỌC SINH CHỜ DUYỆT KẾT NỐI</span>
+    <span class="sub-tab" data-sub="multi-mabaomat">2.5 · HỌC SINH NHIỀU MÃ BẢO MẬT</span>
   </div>
 
   <!-- ====== 2.1 Lọc theo nhóm lớp ====== -->
@@ -647,7 +647,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
           </div>
         </div><!-- /sub-multi-mabaomat -->
 
-      <!-- ====== 2.6 Lọc HS AIM Tiêu chuẩn (tc_thpt) ====== -->
+      <!-- ====== 2.3 Lọc HS AIM Tiêu chuẩn (tc_thpt) ====== -->
       <div class="sub-pane" id="sub-tc-thpt">
 
         <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)" id="fTC-filter-row">
@@ -875,6 +875,10 @@ function applyRoleUI(){
     if(sfAimLabel) sfAimLabel.style.display='none';
     var sfFilterRow = document.getElementById('fS-filter-row');
     if(sfFilterRow) sfFilterRow.style.display='none';
+    // 2.3 TC THPT: DVKH chỉ có quyền search, ẩn filter row và toolbar
+    var tcFilterRow = document.getElementById('fTC-filter-row');
+    if(tcFilterRow) tcFilterRow.style.display='none';
+    document.querySelectorAll('#sub-tc-thpt .toolbar .btn').forEach(function(b){b.style.display='none';});
   }
 }
 (function autoGate(){
@@ -2694,7 +2698,7 @@ function sendEmailSGroup(btn) {
   });
 }
 
-// ===== 2.6 Lọc HS AIM Tiêu chuẩn (tc_thpt) =====
+// ===== 2.3 Lọc HS AIM Tiêu chuẩn (tc_thpt) =====
 let TC_THPT_DATA = [];
 const TC_COLS = [
   {key:"_stt", label:"STT", isSTT:true, width:"50px"},
@@ -3661,7 +3665,7 @@ async function loadData(){
     // Load S-group data for tab 2.2 (await để tránh trắng dữ liệu khi user click sớm)
     await loadSGroupData();
 
-    // Load tc_thpt data for tab 2.6
+    // Load tc_thpt data for tab 2.3
     await loadTCThptData();
 
   } catch(err) {
