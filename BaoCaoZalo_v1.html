@@ -77,7 +77,7 @@ tr:nth-child(even) td{background:#fafbfc}
 .b-mu{background:#f3f4f6;color:#374151}
 .chart-wrap{position:relative;width:100%;height:340px}
 .chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
-.filter-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:10px}
+.filter-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px}
 .filter-row label{display:flex;flex-direction:column;font-size:12px;color:var(--mut)}
 .filter-row select,.filter-row input{padding:6px 8px;border:1px solid var(--bd);border-radius:6px;font-size:13px;background:#fff;color:var(--ink)}
 .filter-row select[multiple]{min-height:70px}
@@ -476,6 +476,9 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
           <label>Exam
             <select id="f1-exam"><option value="">-- Tất cả --</option></select>
           </label>
+          <label>GVCN
+            <select id="f1-gvcn"><option value="">-- Tất cả --</option></select>
+          </label>
           <label>Mã nhóm 1:30
             <select id="f1-malop"><option value="">-- Tất cả --</option></select>
           </label>
@@ -686,6 +689,9 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
   <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)">
     <label>Exam
       <select id="f2-exam"><option value="">-- Tất cả --</option></select>
+    </label>
+    <label>GVCN
+      <select id="f2-gvcn"><option value="">-- Tất cả --</option></select>
     </label>
     <label>Mã nhóm 1:30
       <select id="f2-malop"><option value="">-- Tất cả --</option></select>
@@ -1811,6 +1817,7 @@ function initFilters1(){
   }
   document.getElementById('f1-sochua').addEventListener('change', refreshCascades1);
   exSel.addEventListener('change', refreshCascades1);
+  document.getElementById('f1-gvcn').addEventListener('change', refreshCascades1);
   refreshCascades1();
 }
 function refreshCascades1(){
@@ -1838,16 +1845,34 @@ function refreshCascades1(){
     exSel.value = '';
   }
 
-  // Step 3: populate malop từ pool + exam filter
+  // Step 3: populate GVCN từ pool + exam filter (GVCN phụ thuộc exam)
   let pool2 = pool;
   const finalEx = exSel.value;
   if (finalEx) {
     pool2 = pool2.filter(r => String(r._exam || '') === finalEx);
   }
+  const gvcnSel = document.getElementById('f1-gvcn');
+  const prevGvcn = gvcnSel.value;
+  gvcnSel.innerHTML = '<option value="">-- Tất cả --</option>';
+  uniq(pool2.map(r => r._gv)).forEach(v => {
+    if (!v) return;
+    const sel = (v === prevGvcn) ? 'selected' : '';
+    gvcnSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(v)}" ${sel}>${escapeHtml(v)}</option>`);
+  });
+  if (prevGvcn && ![...gvcnSel.options].some(o => o.value === prevGvcn)) {
+    gvcnSel.value = '';
+  }
+
+  // Step 4: populate malop từ pool + exam + GVCN filter
+  let pool3 = pool2;
+  const finalGvcn = gvcnSel.value;
+  if (finalGvcn) {
+    pool3 = pool3.filter(r => String(r._gv || '') === finalGvcn);
+  }
   const malopSel = document.getElementById('f1-malop');
   const prevMalop = malopSel.value;
   malopSel.innerHTML = '<option value="">-- Tất cả --</option>';
-  uniq(pool2.map(r => r._ma_lop)).forEach(v => {
+  uniq(pool3.map(r => r._ma_lop)).forEach(v => {
     if (!v) return;
     const sel = (v === prevMalop) ? 'selected' : '';
     malopSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(v)}" ${sel}>${escapeHtml(v)}</option>`);
@@ -1858,6 +1883,7 @@ function refreshCascades1(){
 }
 function applyFilter1(){
   const ex = document.getElementById('f1-exam').value;
+  const gvcn = document.getElementById('f1-gvcn').value;
   const malop = document.getElementById('f1-malop').value;
   const soChua = document.getElementById('f1-sochua').value;
   const f130 = document.getElementById('f1-130').value;
@@ -1869,7 +1895,7 @@ function applyFilter1(){
   // ver9: bảo mật — không có trường lọc nào thì để trống bảng
   // DVKH: bắt buộc nhập đủ SĐT/email/username (>=5 ký tự) mới cho lọc
   // Admin/GVCN: cũng cần ít nhất 1 trường lọc để hiển thị (không mặc định hiện tất cả)
-  const hasFilter = isDVKH() ? (q.length >= 5) : !!(ex || malop || soChua || f130 || faim || from || to || q);
+  const hasFilter = isDVKH() ? (q.length >= 5) : !!(ex || gvcn || malop || soChua || f130 || faim || from || to || q);
   if (!hasFilter){
     currentFilter1 = [];
     renderLookup([], 1, getCols21());
@@ -1884,8 +1910,9 @@ function applyFilter1(){
   const hasDateFilter = !!from || !!to;
 
   const filtered = getScopedLookup().filter(r=>{
-    if (!isDVKH() && ex && String(r._exam||'')!==ex) return false;
-    if (!isDVKH() && malop && String(r._ma_lop||'')!==malop) return false;
+      if (!isDVKH() && ex && String(r._exam||'')!==ex) return false;
+      if (!isDVKH() && gvcn && String(r._gv||'')!==gvcn) return false;
+      if (!isDVKH() && malop && String(r._ma_lop||'')!==malop) return false;
     // Filter Số HS chưa duyệt
     if (!isDVKH() && soChua) {
       const target = parseInt(soChua, 10);
@@ -2055,7 +2082,7 @@ function copyText(btn){
   }
 }
 function resetFilter1(){
-  ['f1-exam','f1-malop','f1-sochua','f1-130','f1-aim'].forEach(id=>document.getElementById(id).value='');
+  ['f1-exam','f1-gvcn','f1-malop','f1-sochua','f1-130','f1-aim'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f1-from').value='';
   document.getElementById('f1-to').value='';
   document.getElementById('q1').value='';
@@ -2082,6 +2109,7 @@ function initEmailSection() {
   }
   document.getElementById('f2-sochua').addEventListener('change', refreshCascades2);
   exSel.addEventListener('change', refreshCascades2);
+  document.getElementById('f2-gvcn').addEventListener('change', refreshCascades2);
   refreshCascades2();
 
   // Set up email table headers from COLS_21 + checkbox column
@@ -2129,10 +2157,28 @@ function refreshCascades2() {
   let pool2 = pool;
   const finalEx = exSel.value;
   if (finalEx) { pool2 = pool2.filter(r => String(r._exam || '') === finalEx); }
+
+  // GVCN cascade: populate GVCN options from pool + exam filter
+  const gvcnSel = document.getElementById('f2-gvcn');
+  const prevGvcn = gvcnSel.value;
+  gvcnSel.innerHTML = '<option value="">-- Tất cả --</option>';
+  uniq(pool2.map(r => r._gv)).forEach(v => {
+    if (!v) return;
+    const sel = (v === prevGvcn) ? 'selected' : '';
+    gvcnSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(v)}" ${sel}>${escapeHtml(v)}</option>`);
+  });
+  if (prevGvcn && ![...gvcnSel.options].some(o => o.value === prevGvcn)) {
+    gvcnSel.value = '';
+  }
+
+  // Malop cascade: pool + exam + GVCN filter
+  let pool3 = pool2;
+  const finalGvcn = gvcnSel.value;
+  if (finalGvcn) { pool3 = pool3.filter(r => String(r._gv || '') === finalGvcn); }
   const malopSel = document.getElementById('f2-malop');
   const prevMalop = malopSel.value;
   malopSel.innerHTML = '<option value="">-- Tất cả --</option>';
-  uniq(pool2.map(r => r._ma_lop)).forEach(v => {
+  uniq(pool3.map(r => r._ma_lop)).forEach(v => {
     if (!v) return;
     const sel = (v === prevMalop) ? 'selected' : '';
     malopSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(v)}" ${sel}>${escapeHtml(v)}</option>`);
@@ -2144,6 +2190,7 @@ function refreshCascades2() {
 
 function applyFilter2() {
   const ex = document.getElementById('f2-exam').value;
+  const gvcn = document.getElementById('f2-gvcn').value;
   const malop = document.getElementById('f2-malop').value;
   const soChua = document.getElementById('f2-sochua').value;
   const f130 = document.getElementById('f2-130').value;
@@ -2152,7 +2199,7 @@ function applyFilter2() {
   const to = document.getElementById('f2-to').value;
   const q = document.getElementById('q2').value.trim().toLowerCase();
 
-  const hasFilter = !!(ex || malop || soChua || f130 || faim || from || to || q);
+  const hasFilter = !!(ex || gvcn || malop || soChua || f130 || faim || from || to || q);
   if (!hasFilter) {
     currentFilter2 = [];
     EMAIL_STUDENTS = [];
@@ -2168,6 +2215,7 @@ function applyFilter2() {
 
   const filtered = getScopedLookup().filter(r => {
     if (ex && String(r._exam || '') !== ex) return false;
+    if (gvcn && String(r._gv || '') !== gvcn) return false;
     if (malop && String(r._ma_lop || '') !== malop) return false;
     if (soChua) {
       const target = parseInt(soChua, 10);
@@ -2259,7 +2307,7 @@ function renderEmailTable(rows) {
 }
 
 function resetFilter2() {
-  ['f2-exam', 'f2-malop', 'f2-sochua', 'f2-130', 'f2-aim'].forEach(id => document.getElementById(id).value = '');
+  ['f2-exam', 'f2-gvcn', 'f2-malop', 'f2-sochua', 'f2-130', 'f2-aim'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f2-from').value = '';
   document.getElementById('f2-to').value = '';
   document.getElementById('q2').value = '';
