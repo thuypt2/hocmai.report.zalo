@@ -11,7 +11,6 @@
 //   doPost:
 //     sendIndividualEmail                   → gửi 1 email + log Email_Log
 //     sendClassGroupEmails                  → gửi batch (Email_Queue hoặc selectedEmails)
-//     exportDataToSheet                     → xuất data ra Google Sheet mới (tab 3)
 //     createAccount / updateAccount / deleteAccount → quản trị
 // ============================================================
 
@@ -223,10 +222,6 @@ function handlePost(e) {
 
     if (body.action === 'sendClassGroupEmails') {
       return handleSendClassGroupEmails(body);
-    }
-
-    if (body.action === 'exportDataToSheet') {
-      return handleExportDataToSheet(body);
     }
 
     // Account management
@@ -511,87 +506,6 @@ function handleSendFromQueue(ss, body) {
     remainingQuota: MailApp.getRemainingDailyQuota(),
     errorDetails: errorDetails.length > 0 ? errorDetails : undefined,
   });
-}
-
-// ============================================================
-// HANDLER: Xuất data ra Google Sheet mới (tab 3 — Xuất data)
-// Nhận payload nén gzip (gz), giải nén, tạo spreadsheet mới
-// trong Drive của account chạy script (ssc.hmo2026@hocmai.vn)
-// ============================================================
-function handleExportDataToSheet(body) {
-  var gz = body.gz || '';
-  if (!gz) return jsonError('Thieu du lieu gz');
-
-  var payload = decodeGzipPayload(gz);
-  if (!payload || !payload.header || !payload.data) {
-    return jsonError('Du lieu xuat rong hoac sai format');
-  }
-
-  var header = payload.header;
-  var data   = payload.data;
-  if (header.length === 0 || data.length === 0) {
-    return jsonError('Du lieu xuat rong');
-  }
-
-  var now = new Date();
-  var pad = function(n) { return String(n).padStart(2, '0'); };
-  var stamp = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) +
-              '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
-  var ssName = 'Xuất data Zalo ' + stamp;
-
-  try {
-    var ss = SpreadsheetApp.create(ssName);
-    var sheet = ss.getSheets()[0];
-
-    // Ghi header: in đậm + nền xanh nhạt, đóng băng hàng 1
-    sheet.getRange(1, 1, 1, header.length).setValues([header]);
-    sheet.getRange(1, 1, 1, header.length)
-      .setFontWeight('bold')
-      .setBackground('#eef2ff')
-      .setHorizontalAlignment('center');
-    sheet.setFrozenRows(1);
-
-    // Ghi dữ liệu: setValues cần mảng mảng đồng nhất số cột
-    // Đảm bảo mỗi dòng có đúng số cột = header.length
-    var rows = data.map(function(r) {
-      var row = [];
-      for (var c = 0; c < header.length; c++) {
-        row.push(r[c] != null ? String(r[c]) : '');
-      }
-      return row;
-    });
-
-    sheet.getRange(2, 1, rows.length, header.length).setValues(rows);
-
-    // Auto-fit cột
-    for (var i = 1; i <= header.length; i++) {
-      sheet.autoResizeColumn(i);
-    }
-
-    return jsonOutput({
-      ok: true,
-      url: ss.getUrl(),
-      spreadsheetName: ssName,
-      rows: data.length,
-      columns: header.length,
-    });
-  } catch (err) {
-    return jsonError('Loi tao spreadsheet: ' + err.message);
-  }
-}
-
-// ===== Decode gzip payload: base64 (H4sI prefix) hoặc JSON thường =====
-function decodeGzipPayload(b64) {
-  try {
-    if (b64.indexOf('H4sI') === 0) {
-      var compressed = Utilities.base64Decode(b64);
-      var inflated   = Utilities.gzip(Utilities.newBlob(compressed), 'gunzip');
-      return JSON.parse(inflated.getDataAsString('UTF-8'));
-    }
-    return JSON.parse(b64);
-  } catch (err) {
-    return null;
-  }
 }
 
 // ============================================================

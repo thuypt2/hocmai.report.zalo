@@ -724,7 +724,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
   <div class="toolbar">
     <button class="btn" onclick="applyFilter2()">Lọc</button>
     <button class="btn gray" onclick="resetFilter2()">Reset</button>
-    <button class="btn" onclick="exportSelectedData()" title="Xuất các dòng đã tích chọn ra Google Sheet">Xuất data</button>
+    <button class="btn" onclick="exportSelectedData()" title="Xuất các dòng đã tích chọn ra file Excel">Xuất data</button>
     <input class="search-input" id="q2" placeholder="Tìm nhanh: username / email / phone / userid" onkeydown="if(event.key==='Enter')applyFilter2()">
     <span class="muted" id="result-info-2"></span>
     <span style="flex:1"></span>
@@ -776,6 +776,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
 <!-- ===== Email API URL (thay URL này bằng Apps Script của bạn) ===== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 // ===== v7 AUTH (Admin / GVCN / DVKH) =====
 const AUTH_API_URL='/api/auth';
@@ -2346,18 +2347,15 @@ function emailUpdateSelection() {
   document.getElementById('email-selected-count').textContent = EMAIL_SELECTED.size;
 }
 
-// ===== Xuất data selected ra Google Sheet =====
-const EXPORT_API_URL = '/api/export-to-sheet';
-
-async function exportSelectedData() {
+// ===== Xuất data selected ra file Excel (tải xuống) =====
+function exportSelectedData() {
   if (EMAIL_SELECTED.size === 0) {
     alert('Vui lòng chọn ít nhất 1 học sinh để xuất.');
     return;
   }
 
   const resultBox = document.getElementById('exportResult2');
-  const selectedIndices = [...EMAIL_SELECTED];
-  const selectedRows = selectedIndices.map(i => EMAIL_STUDENTS[i]).filter(Boolean);
+  const selectedRows = [...EMAIL_SELECTED].map(i => EMAIL_STUDENTS[i]).filter(Boolean);
   if (selectedRows.length === 0) {
     alert('Không có dữ liệu hợp lệ để xuất.');
     return;
@@ -2368,59 +2366,75 @@ async function exportSelectedData() {
     !c.isSTT && !c.isApproveBtn && !c.isEmailBtn && !c.isEmailSentTime
   );
 
-  // Build header labels + data arrays
+  // Build header + data arrays (same mapping as table display)
   const header = cols.map(c => c.label);
   const data = selectedRows.map(r => {
     return cols.map(c => {
-      if (c.key === '_ma_lop') return r._ma_lop || '';
-      if (c.isLink) return r[c.key] || '';
-      if (c.isGhiChu) return r['Display Name'] || r['ten_zalo'] || '';
+      if (c.key === '_ma_lop') return String(r._ma_lop || '');
+      if (c.isLink) return String(r[c.key] || '');
+      if (c.isGhiChu) return String(r['Display Name'] || r['ten_zalo'] || '');
       if (c.key === 'paid_time' || c.key === 'Thời điểm duyệt') return fmtDate(r[c.key]);
       if (c.key === 'Trạng thái duyệt' || c.key === 'Trạng thái duyệt AIM') return String(r[c.key] || '');
       return r[c.key] != null ? String(r[c.key]) : '';
     });
   });
 
-  resultBox.style.display = 'block';
-  resultBox.style.background = '#f0f7ff';
-  resultBox.style.borderColor = '#93c5fd';
-  resultBox.textContent = 'Đang xuất ' + data.length + ' dòng ra Google Sheet...';
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const stamp = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) +
+                '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
+  const fileName = 'Xuat_data_Zalo_' + stamp + '.xlsx';
 
   try {
-    const resp = await fetch(EXPORT_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ header, data }),
-    });
-    const result = await resp.json();
-
-    if (result.ok) {
+    if (typeof XLSX === 'undefined') {
+      // Fallback: CSV co BOM de Excel mo tieng Viet chuan
+      const aoa = [header].concat(data);
+      const NL = String.fromCharCode(10);
+      const csv = String.fromCharCode(0xFEFF) + aoa.map(row => row.map(cell => {
+        const s = String(cell == null ? '' : cell);
+        return (s.indexOf(',') >= 0 || s.indexOf('"') >= 0) ? '"' + s.split('"').join('""') + '"' : s;
+      }).join(',')).join(NL);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName.replace('.xlsx', '.csv');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      resultBox.style.display = 'block';
       resultBox.style.background = '#f0fdf4';
       resultBox.style.borderColor = '#bbf7d0';
-      const now = new Date();
-      const stamp = now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-      let msg = '[Xuất data] ' + stamp + '\nĐã tạo Google Sheet mới với ' + data.length + ' dòng.\n';
-      if (result.url) msg += 'Link: ' + result.url;
-      resultBox.textContent = msg;
-      // Add clickable link
-      if (result.url) {
-        resultBox.textContent = msg + '\n';
-        const link = document.createElement('a');
-        link.href = result.url;
-        link.target = '_blank';
-        link.textContent = 'Mở Google Sheet →';
-        link.style.cssText = 'color:#16a34a;font-weight:600;margin-top:4px;display:inline-block';
-        resultBox.appendChild(link);
-      }
-    } else {
-      resultBox.style.background = '#fef2f2';
-      resultBox.style.borderColor = '#fca5a5';
-      resultBox.textContent = 'Lỗi: ' + (result.error || JSON.stringify(result));
+      resultBox.textContent = 'Đã xuất ' + data.length + ' dòng (file CSV — thư viện Excel chưa tải được).';
+      return;
     }
+
+    const aoa = [header].concat(data);
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+    // Auto-fit column widths (giới hạn 50 ký tự)
+    ws['!cols'] = header.map((h, i) => {
+      let maxLen = String(h).length;
+      for (let r = 0; r < data.length && r < 200; r++) {
+        const v = String(data[r][i] == null ? '' : data[r][i]);
+        if (v.length > maxLen) maxLen = v.length;
+      }
+      return { wch: Math.min(Math.max(maxLen + 2, 10), 50) };
+    });
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Xuat data');
+    XLSX.writeFile(wb, fileName);
+
+    resultBox.style.display = 'block';
+    resultBox.style.background = '#f0fdf4';
+    resultBox.style.borderColor = '#bbf7d0';
+    resultBox.textContent = 'Đã xuất file ' + fileName + ' (' + data.length + ' dòng). File nằm trong thư mục Tải xuống của trình duyệt.';
   } catch (err) {
+    resultBox.style.display = 'block';
     resultBox.style.background = '#fef2f2';
     resultBox.style.borderColor = '#fca5a5';
-    resultBox.textContent = 'Lỗi hệ thống: ' + err.message;
+    resultBox.textContent = 'Lỗi xuất file: ' + err.message;
   }
 }
 
