@@ -2457,10 +2457,23 @@ async function fetchEmailTemplates() {
     if (json.ok && json.data && json.data.length) {
       EMAIL_TEMPLATES_LOADED = {};
       tplSel.innerHTML = '<option value="">-- Chọn mẫu email --</option>';
-      json.data.forEach(t => {
-        EMAIL_TEMPLATES_LOADED[t.key] = t;
+      for (const t of json.data) {
+        // Nếu html_body là đường dẫn file, fetch nội dung thực từ template-content API
+        let htmlBody = t.html_body || '';
+        if (htmlBody && (htmlBody.includes('\\') || htmlBody.includes('/') || htmlBody.endsWith('.txt'))) {
+          const filename = htmlBody.split(/[\\/]/).pop();
+          try {
+            const contentResp = await fetch('/api/template-content?name=' + encodeURIComponent(filename));
+            if (contentResp.ok) {
+              htmlBody = await contentResp.text();
+            }
+          } catch (e) {
+            console.warn('Không thể resolve template:', filename, e.message);
+          }
+        }
+        EMAIL_TEMPLATES_LOADED[t.key] = { key: t.key, name: t.name, subject: t.subject, html_body: htmlBody };
         tplSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(t.key)}">${escapeHtml(t.name)}</option>`);
-      });
+      }
     } else {
       loadHardcodedTemplates(tplSel);
     }
