@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const TEMPLATES_DIR = path.join(process.cwd(), 'api', 'templates');
+const TEMPLATES_DIR = path.join(__dirname, 'templates');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

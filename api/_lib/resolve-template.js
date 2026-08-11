@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const TEMPLATES_DIR = path.join(process.cwd(), 'api', 'templates');
+const TEMPLATES_DIR = path.join(__dirname, '..', 'templates');
 
 /**
  * Check if htmlBody is a file path (e.g., C:\...\file.txt) and resolve it to actual content.
@@ -12,7 +12,7 @@ function resolveTemplateContent(htmlBody) {
   if (!htmlBody || typeof htmlBody !== 'string') return htmlBody || '';
 
   // Detect file path: contains backslash or forward slash, or ends with .txt
-  const isFilePath = /[\\/]/.test(htmlBody) || htmlBody.endsWith('.txt');
+  const isFilePath = /[\\\\/]/.test(htmlBody) || htmlBody.endsWith('.txt');
 
   if (!isFilePath) return htmlBody;
 
