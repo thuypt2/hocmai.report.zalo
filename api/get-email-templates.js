@@ -1,6 +1,9 @@
 // Vercel API route — proxy sang Apps Script để lấy mẫu email từ sheet Email_Templates
 // Dùng chung Apps Script URL với send-class-group-email
-const { resolveTemplateContent } = require('./_lib/resolve-template');
+const fs = require('fs');
+const path = require('path');
+
+const TEMPLATES_DIR = path.join(__dirname, 'templates');
 
 const EMAIL_TEMPLATES_API_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycbyl0pjYwfE0IfiAyV952BTUSeV75yTmXjGgImTrskVVLNtOp608ZNRyc97ZZR6kF5_gOg/exec';
@@ -8,6 +11,27 @@ const EMAIL_TEMPLATES_API_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút cache
 let _cache = null;
 let _cacheTime = 0;
+
+/**
+ * Nếu htmlBody là đường dẫn file, đọc nội dung thực từ api/templates/.
+ */
+function resolveTemplateContent(htmlBody) {
+  if (!htmlBody || typeof htmlBody !== 'string') return htmlBody || '';
+  const trimmed = htmlBody.trim();
+  // Detect file path: contains backslash/forward slash, or ends with .txt
+  if (!(/[\\\\/]/.test(trimmed) || trimmed.endsWith('.txt'))) return trimmed;
+  const filename = path.basename(trimmed);
+  const filePath = path.join(TEMPLATES_DIR, filename);
+  try {
+    if (fs.existsSync(filePath)) {
+      return fs.readFileSync(filePath, 'utf-8');
+    }
+    console.warn('Template file not found:', filePath);
+  } catch (e) {
+    console.error('Error reading template:', filePath, e.message);
+  }
+  return trimmed; // fallback
+}
 
 function getField(item, names, fallbackIndices) {
   const headerKeys = Object.keys(item);
@@ -45,7 +69,9 @@ module.exports = async function handler(req, res) {
   }
 
   const now = Date.now();
-  if (_cache && (now - _cacheTime) < CACHE_TTL_MS) {
+  // Cho phép bypass cache với ?reset=1
+  const forceRefresh = (req.query && req.query.reset === '1');
+  if (!forceRefresh && _cache && (now - _cacheTime) < CACHE_TTL_MS) {
     res.setHeader('X-Cache', 'HIT');
     return res.status(200).json(_cache);
   }
@@ -81,11 +107,10 @@ module.exports = async function handler(req, res) {
     }
 
     // Format data từ sheet Email_Templates
-    // Column B = Subject (tên hiển thị), Column C = html_body (nội dung HTML)
     const formattedData = (json.data || []).map((item) => {
-      const subject = getField(item, ['Subject', 'subject', 'Chủ đề', 'Chu de', 'Tên mẫu'], [1]); // Cột B
-      const htmlBody = getField(item, ['html_body', 'Html_body', 'HTML_body', 'htmlBody', 'HTMLBody', 'Nội dung HTML', 'Noi dung HTML'], [2]); // Cột C
-      const templateName = getField(item, ['template_key', 'templatekey', 'TemplateName', 'template_name', 'Template Name', 'Tên mẫu', 'Mã mẫu', 'key'], [0]); // Cột A
+      const subject = getField(item, ['Subject', 'subject', 'Chủ đề', 'Chu de', 'Tên mẫu'], [1]);
+      const htmlBody = getField(item, ['html_body', 'Html_body', 'HTML_body', 'htmlBody', 'HTMLBody', 'Nội dung HTML', 'Noi dung HTML'], [2]);
+      const templateName = getField(item, ['template_key', 'templatekey', 'TemplateName', 'template_name', 'Template Name', 'Tên mẫu', 'Mã mẫu', 'key'], [0]);
 
       return {
         key: templateName || subject || 'template_' + Math.random().toString(36).substr(2, 9),
@@ -95,7 +120,7 @@ module.exports = async function handler(req, res) {
       };
     });
 
-    // Lọc bỏ dòng lỗi (N/A, #N/A, #REF!, #VALUE!, v.v.)
+    // Lọc bỏ dòng lỗi
     const isErrorValue = (v) => {
       const s = String(v || '').trim().toUpperCase();
       if (!s) return false;
@@ -107,7 +132,6 @@ module.exports = async function handler(req, res) {
       for (const v of Object.values(row)) {
         if (isErrorValue(v)) return false;
       }
-      // Chỉ hiển thị mẫu có Subject (cột B) không rỗng
       if (!row.subject || !row.subject.trim()) return false;
       return true;
     });
@@ -129,7 +153,7 @@ module.exports = async function handler(req, res) {
       generated_at: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
       total: 0,
       data: [],
-      error: 'Không thể tải mẫu email: ' + err.message + '. Vui lòng kiểm tra sheet có tên chính xác là "Email_Templates" trong Google Sheets bạn cung cấp cho Apps Script.',
+      error: 'Không thể tải mẫu email: ' + err.message,
     });
   }
 };
