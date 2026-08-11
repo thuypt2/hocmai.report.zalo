@@ -724,10 +724,13 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
   <div class="toolbar">
     <button class="btn" onclick="applyFilter2()">Lọc</button>
     <button class="btn gray" onclick="resetFilter2()">Reset</button>
+    <button class="btn" onclick="exportSelectedData()" title="Xuất các dòng đã tích chọn ra Google Sheet">Xuất data</button>
     <input class="search-input" id="q2" placeholder="Tìm nhanh: username / email / phone / userid" onkeydown="if(event.key==='Enter')applyFilter2()">
     <span class="muted" id="result-info-2"></span>
     <span style="flex:1"></span>
   </div>
+
+  <div id="exportResult2" style="display:none;margin-bottom:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-size:12px;white-space:pre-wrap"></div>
 
   <div class="tbl-wrap" style="max-height:320px;margin-bottom:16px">
     <table id="tbl-email-students">
@@ -2341,6 +2344,84 @@ function emailUpdateSelection() {
   });
   document.getElementById('email-send-count').textContent = EMAIL_SELECTED.size;
   document.getElementById('email-selected-count').textContent = EMAIL_SELECTED.size;
+}
+
+// ===== Xuất data selected ra Google Sheet =====
+const EXPORT_API_URL = '/api/export-to-sheet';
+
+async function exportSelectedData() {
+  if (EMAIL_SELECTED.size === 0) {
+    alert('Vui lòng chọn ít nhất 1 học sinh để xuất.');
+    return;
+  }
+
+  const resultBox = document.getElementById('exportResult2');
+  const selectedIndices = [...EMAIL_SELECTED];
+  const selectedRows = selectedIndices.map(i => EMAIL_STUDENTS[i]).filter(Boolean);
+  if (selectedRows.length === 0) {
+    alert('Không có dữ liệu hợp lệ để xuất.');
+    return;
+  }
+
+  // Build column list from getCols21(), excluding UI-only columns
+  const cols = getCols21().filter(c =>
+    !c.isSTT && !c.isApproveBtn && !c.isEmailBtn && !c.isEmailSentTime
+  );
+
+  // Build header labels + data arrays
+  const header = cols.map(c => c.label);
+  const data = selectedRows.map(r => {
+    return cols.map(c => {
+      if (c.key === '_ma_lop') return r._ma_lop || '';
+      if (c.isLink) return r[c.key] || '';
+      if (c.isGhiChu) return r['Display Name'] || r['ten_zalo'] || '';
+      if (c.key === 'paid_time' || c.key === 'Thời điểm duyệt') return fmtDate(r[c.key]);
+      if (c.key === 'Trạng thái duyệt' || c.key === 'Trạng thái duyệt AIM') return String(r[c.key] || '');
+      return r[c.key] != null ? String(r[c.key]) : '';
+    });
+  });
+
+  resultBox.style.display = 'block';
+  resultBox.style.background = '#f0f7ff';
+  resultBox.style.borderColor = '#93c5fd';
+  resultBox.textContent = 'Đang xuất ' + data.length + ' dòng ra Google Sheet...';
+
+  try {
+    const resp = await fetch(EXPORT_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ header, data }),
+    });
+    const result = await resp.json();
+
+    if (result.ok) {
+      resultBox.style.background = '#f0fdf4';
+      resultBox.style.borderColor = '#bbf7d0';
+      const now = new Date();
+      const stamp = now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+      let msg = '[Xuất data] ' + stamp + '\nĐã tạo Google Sheet mới với ' + data.length + ' dòng.\n';
+      if (result.url) msg += 'Link: ' + result.url;
+      resultBox.textContent = msg;
+      // Add clickable link
+      if (result.url) {
+        resultBox.textContent = msg + '\n';
+        const link = document.createElement('a');
+        link.href = result.url;
+        link.target = '_blank';
+        link.textContent = 'Mở Google Sheet →';
+        link.style.cssText = 'color:#16a34a;font-weight:600;margin-top:4px;display:inline-block';
+        resultBox.appendChild(link);
+      }
+    } else {
+      resultBox.style.background = '#fef2f2';
+      resultBox.style.borderColor = '#fca5a5';
+      resultBox.textContent = 'Lỗi: ' + (result.error || JSON.stringify(result));
+    }
+  } catch (err) {
+    resultBox.style.background = '#fef2f2';
+    resultBox.style.borderColor = '#fca5a5';
+    resultBox.textContent = 'Lỗi hệ thống: ' + err.message;
+  }
 }
 
 // ===== Email templates =====
