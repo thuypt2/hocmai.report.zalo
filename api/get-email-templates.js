@@ -1,5 +1,7 @@
 // Vercel API route — proxy sang Apps Script để lấy mẫu email từ sheet Email_Templates
 // Dùng chung Apps Script URL với send-class-group-email
+const { resolveTemplateContent } = require('./_lib/resolve-template');
+
 const EMAIL_TEMPLATES_API_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycbyl0pjYwfE0IfiAyV952BTUSeV75yTmXjGgImTrskVVLNtOp608ZNRyc97ZZR6kF5_gOg/exec';
 
@@ -89,7 +91,7 @@ module.exports = async function handler(req, res) {
         key: templateName || subject || 'template_' + Math.random().toString(36).substr(2, 9),
         name: subject || templateName || 'Mẫu không tên',
         subject: subject,
-        html_body: htmlBody || '',
+        html_body: resolveTemplateContent(htmlBody) || '',
       };
     });
 

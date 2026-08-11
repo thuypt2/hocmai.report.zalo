@@ -10,6 +10,33 @@ var LOG_SHEET_NAME = 'Email_log';
 
 var MAIN_SPREADSHEET_ID = '199t40ZaH-dHHD8H4toCs8Ze8CoRK8K2B161jbXZNtF4';
 var EMAIL_TEMPLATE_SHEET = 'Email_templates';
+var TEMPLATE_CONTENT_API = 'https://hocmai-report-zalo.vercel.app/api/template-content';
+
+/**
+ * Nếu htmlBody là đường dẫn file, fetch nội dung từ Vercel API.
+ */
+function resolveTemplateContentS(content) {
+  if (!content) return '';
+  var trimmed = String(content).trim();
+  if (/[\\\\/]/.test(trimmed) || trimmed.endsWith('.txt')) {
+    var filename = trimmed.split(/[\\\\/]/).pop();
+    try {
+      var url = TEMPLATE_CONTENT_API + '?name=' + encodeURIComponent(filename);
+      var resp = UrlFetchApp.fetch(url, {
+        method: 'get',
+        muteHttpExceptions: true,
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      });
+      if (resp.getResponseCode() === 200) {
+        return resp.getContentText();
+      }
+    } catch (e) {
+      console.error('Failed to fetch template content: ' + e.message);
+    }
+    return trimmed;
+  }
+  return trimmed;
+}
 
 // ===== Entry points =====
 function doGet(e) { return handleRequest(e); }
@@ -195,7 +222,7 @@ function getTemplateFromSheet(templateKey) {
   }
   if (!foundRow) throw new Error('Không tìm thấy template key="' + templateKey + '"');
 
-  return { subject: String(foundRow[subjectIdx] || ''), htmlBody: String(foundRow[bodyIdx] || '') };
+  return { subject: String(foundRow[subjectIdx] || ''), htmlBody: resolveTemplateContentS(String(foundRow[bodyIdx] || '')) };
 }
 
 // ===== Render template =====

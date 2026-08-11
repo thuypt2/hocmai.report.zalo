@@ -545,6 +545,37 @@ function logToEmailLog(email, username, maLop, exam, gv, linkGroup, linkAim, sdt
 // ============================================================
 // TEMPLATE: Đọc từ sheet Email_templates
 // ============================================================
+var TEMPLATE_CONTENT_API = 'https://hocmai-report-zalo.vercel.app/api/template-content';
+
+/**
+ * Nếu htmlBody là đường dẫn file (chứa \\ hoặc / hoặc kết thúc .txt),
+ * fetch nội dung từ Vercel API. Ngược lại trả về nguyên bản.
+ */
+function resolveTemplateContent(content) {
+  if (!content) return '';
+  var trimmed = String(content).trim();
+  // Kiểm tra có phải đường dẫn file không
+  if (/[\\\\/]/.test(trimmed) || trimmed.endsWith('.txt')) {
+    var filename = trimmed.split(/[\\\\/]/).pop(); // lấy tên file cuối cùng
+    try {
+      var url = TEMPLATE_CONTENT_API + '?name=' + encodeURIComponent(filename);
+      var resp = UrlFetchApp.fetch(url, {
+        method: 'get',
+        muteHttpExceptions: true,
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      });
+      if (resp.getResponseCode() === 200) {
+        return resp.getContentText();
+      }
+      console.warn('Template content API returned ' + resp.getResponseCode() + ' for ' + filename);
+    } catch (e) {
+      console.error('Failed to fetch template content: ' + e.message);
+    }
+    return trimmed; // fallback: trả về đường dẫn (sẽ không hiển thị đẹp nhưng không crash)
+  }
+  return trimmed;
+}
+
 function getTemplate(templateKey) {
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
 
@@ -618,9 +649,9 @@ function getTemplate(templateKey) {
   }
 
   return {
-    subject: String(foundRow[subjectIdx] || ''),
-    htmlBody: String(foundRow[bodyIdx] || ''),
-  };
+      subject: String(foundRow[subjectIdx] || ''),
+      htmlBody: resolveTemplateContent(String(foundRow[bodyIdx] || '')),
+    };
 }
 
 // ============================================================
