@@ -719,6 +719,13 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
         <option value="chua">Chưa duyệt</option>
       </select>
     </label>
+    <label>Mã bảo mật
+      <select id="f2-mabaomat">
+        <option value="">-- Tất cả --</option>
+        <option value="co">Có</option>
+        <option value="khong">Không</option>
+      </select>
+    </label>
   </div>
 
   <div class="toolbar">
@@ -2199,11 +2206,12 @@ function applyFilter2() {
   const soChua = document.getElementById('f2-sochua').value;
   const f130 = document.getElementById('f2-130').value;
   const faim = document.getElementById('f2-aim').value;
+  const fmbm = document.getElementById('f2-mabaomat').value;
   const from = document.getElementById('f2-from').value;
   const to = document.getElementById('f2-to').value;
   const q = document.getElementById('q2').value.trim().toLowerCase();
 
-  const hasFilter = !!(ex || gvcn || malop || soChua || f130 || faim || from || to || q);
+  const hasFilter = !!(ex || gvcn || malop || soChua || f130 || faim || fmbm || from || to || q);
   if (!hasFilter) {
     currentFilter2 = [];
     EMAIL_STUDENTS = [];
@@ -2229,6 +2237,8 @@ function applyFilter2() {
     if (f130 === 'chua' && String(r['Trạng thái duyệt'] || '') === 'Duyệt') return false;
     if (faim === 'duyet' && String(r['Trạng thái duyệt AIM'] || '') !== 'Duyệt') return false;
     if (faim === 'chua' && String(r['Trạng thái duyệt AIM'] || '') === 'Duyệt') return false;
+    if (fmbm === 'co' && !String(r['Mã bảo mật'] || '')) return false;
+    if (fmbm === 'khong' && String(r['Mã bảo mật'] || '')) return false;
     if (hasDateFilter) {
       if (!r._paid_time_ms) return false;
       if (r._paid_time_ms < fromTs || r._paid_time_ms > toTs) return false;
@@ -2311,7 +2321,7 @@ function renderEmailTable(rows) {
 }
 
 function resetFilter2() {
-  ['f2-exam', 'f2-gvcn', 'f2-malop', 'f2-sochua', 'f2-130', 'f2-aim'].forEach(id => document.getElementById(id).value = '');
+  ['f2-exam', 'f2-gvcn', 'f2-malop', 'f2-sochua', 'f2-130', 'f2-aim', 'f2-mabaomat'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f2-from').value = '';
   document.getElementById('f2-to').value = '';
   document.getElementById('q2').value = '';
