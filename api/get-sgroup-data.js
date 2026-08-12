@@ -45,10 +45,8 @@ module.exports = async function handler(req, res) {
     }
 
     if (!rawRows.length) {
-      _cache = { ok: true, total: 0, data: [], generated_at: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) };
-      _cacheTime = now;
-      res.setHeader('X-Cache', 'MISS');
-      return res.status(200).json(_cache);
+      // Không cache kết quả rỗng để tránh màn hình trắng kéo dài khi Google rate-limit
+      return res.status(200).json({ ok: true, total: 0, data: [], generated_at: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) });
     }
 
     // Map: dùng tên header để tìm vị trí cột (không phụ thuộc thứ tự)

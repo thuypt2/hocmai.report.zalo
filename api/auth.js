@@ -56,34 +56,8 @@ function sha256hex(v) {
   return crypto.createHash('sha256').update(String(v||''),'utf8').digest('hex');
 }
 
-// ── HTTP GET (dùng Node https module — Vercel fetch không theo được cross-domain redirect) ──
-const https = require('https');
-const http = require('http');
-
-function fetchGET(url) {
-  return new Promise((resolve, reject) => {
-    const parsed = new URL(url);
-    const mod = parsed.protocol === 'https:' ? https : http;
-    const req = mod.get(url, {
-      headers: { 'User-Agent': 'Vercel/1.0', 'Accept': 'application/json' },
-      timeout: 60000,
-    }, (res) => {
-      // Follow redirect (Google Apps Script: 302 script.google.com → script.googleusercontent.com)
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        fetchGET(res.headers.location).then(resolve).catch(reject);
-        return;
-      }
-      let data = '';
-      res.on('data', chunk => { data += chunk; });
-      res.on('end', () => {
-        try { resolve(JSON.parse(data)); }
-        catch(e) { reject(new Error('Không parse JSON: ' + data.slice(0, 200))); }
-      });
-    });
-    req.on('error', reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('Timeout kết nối Apps Script')); });
-  });
-}
+// ── HTTP GET (dùng shared util — Vercel fetch không theo được cross-domain redirect, có retry chống Google rate-limit) ──
+const { fetchGET } = require('./_lib/fetch-gapps');
 
 // ── Gọi Apps Script qua GET params ──────────────────────────────────────────
 function gasGet(params) {

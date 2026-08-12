@@ -40,9 +40,8 @@ module.exports = async function handler(req, res) {
     }
 
     if (!rawRows.length) {
-      _cache = { ok: true, total: 0, data: [], headers: [], generated_at: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) };
-      _cacheTime = now;
-      return res.status(200).json(_cache);
+      // Không cache kết quả rỗng để tránh màn hình trắng kéo dài khi Google rate-limit
+      return res.status(200).json({ ok: true, total: 0, data: [], headers: [], generated_at: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) });
     }
 
     function colIdx(names) {
