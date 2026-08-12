@@ -1,10 +1,19 @@
 // Vercel API route — proxy sang Apps Script gửi email
 // Hỗ trợ: (1) Individual send từ tab 2.2  (2) Batch send từ form quản trị
+//
+// QUAN TRỌNG: Vercel resolve template content (đọc file từ api/templates/)
+// rồi truyền templateBody xuống Apps Script — Apps Script chỉ render + gửi.
+// Không để Apps Script tự fetch (không ổn định, fallback ra raw path).
+
+const fs = require('fs');
+const path = require('path');
+const { fetchGET } = require('./_lib/fetch-gapps');
 
 const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
 const APPS_SCRIPT_SECRET = process.env.GOOGLE_APPS_SCRIPT_SECRET || '@Hocmai123';
 const APPS_SCRIPT_TIMEOUT = 240000; // 4 phút timeout cho Apps Script
+const TEMPLATES_DIR = path.join(__dirname, 'templates');
 
 // Config Vercel serverless
 export const config = {
@@ -20,6 +29,59 @@ function readBody(req) {
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
     req.on('error', reject);
   });
+}
+
+// Resolve html_body: nếu là path file (Windows/Linux), đọc nội dung từ api/templates/
+function resolveTemplateContent(htmlBody) {
+  if (!htmlBody || typeof htmlBody !== 'string') return htmlBody || '';
+  const trimmed = htmlBody.trim();
+  if (!(/[\\/]/.test(trimmed) || trimmed.endsWith('.txt'))) return trimmed;
+  const filename = trimmed.replace(/[\\/]+/g, '/').split('/').pop();
+  const filePath = path.join(TEMPLATES_DIR, filename);
+  try {
+    if (fs.existsSync(filePath)) return fs.readFileSync(filePath, 'utf-8');
+    console.warn('Template file not found:', filePath);
+  } catch (e) {
+    console.error('Error reading template:', filePath, e.message);
+  }
+  return trimmed;
+}
+
+// Lấy template từ sheet Email_Templates qua Apps Script (metadata + html_body raw),
+// rồi resolve nội dung trên Vercel
+async function getResolvedTemplate(templateKey) {
+  const url = APPS_SCRIPT_URL + '?action=getAllSpreadsheetData&sheet=Email_Templates';
+  const json = await fetchGET(url);
+  if (!json.ok || !Array.isArray(json.data)) {
+    throw new Error('Không đọc được Email_Templates: ' + (json.error || 'no data'));
+  }
+  const rows = json.data;
+  const headers = Object.keys(rows[0] || {});
+  function colIdx(names) {
+    for (const n of names) {
+      const nn = n.toLowerCase().replace(/[\s_]+/g, '');
+      for (const k of headers) {
+        if (k.toLowerCase().replace(/[\s_]+/g, '') === nn && rows[0][k] !== undefined) return k;
+      }
+    }
+    return null;
+  }
+  const keyK = colIdx(['template_key', 'templatekey', 'key', 'ma_mau']);
+  const subjectK = colIdx(['subject', 'chu_de', 'ten_mau']);
+  const bodyK = colIdx(['html_body', 'htmlbody', 'noi_dung_html']);
+  const activeK = colIdx(['active']);
+
+  const row = rows.find(r => {
+    if (String(r[keyK] || '').trim() !== templateKey) return false;
+    if (activeK && String(r[activeK] || '').trim().toUpperCase() !== 'TRUE') return false;
+    return true;
+  });
+  if (!row) throw new Error('Không tìm thấy template key="' + templateKey + '"');
+
+  return {
+    subject: String(row[subjectK] || ''),
+    htmlBody: resolveTemplateContent(String(row[bodyK] || '')),
+  };
 }
 
 async function callAppsScript(payload) {
@@ -91,29 +153,46 @@ export default async function handler(req, res) {
       return res.status(200).json(result);
     }
 
-    // ===== Individual send =====
+    // ===== Individual send (resolve template trên Vercel rồi truyền xuống) =====
     if (isIndividual) {
       const { email, username, ma_lop, exam, gv, link_group,
               sdt_gv, ma_bao_mat, nhom_aim, link_aim, final_phone,
               tencongdong, linknhom, mabaomats } = body;
+
+      let templateSubject = '';
+      let templateBody = '';
+
+      // Nếu client đã truyền sẵn nội dung (từ tab 3), dùng luôn
+      if (body.templateBody) {
+        templateSubject = body.templateSubject || '';
+        templateBody = body.templateBody;
+      } else {
+        // Ngược lại, resolve từ sheet qua Apps Script + đọc file trên Vercel
+        const tmpl = await getResolvedTemplate(body.templateKey || 'SSC:HD130');
+        templateSubject = tmpl.subject;
+        templateBody = tmpl.htmlBody;
+      }
+
       const result = await callAppsScript({
         action: 'sendIndividualEmail',
         secret: APPS_SCRIPT_SECRET,
-        templateKey: body.templateKey || '',
+        templateKey: body.templateKey || 'SSC:HD130',
+        templateSubject,
+        templateBody,
         email,
         username,
         ma_lop,
         exam,
         gv,
         link_group,
-        sdt_gv:      sdt_gv      || '',
-        ma_bao_mat:  ma_bao_mat  || '',
-        nhom_aim:    nhom_aim    || '',
-        link_aim:    link_aim    || '',
-        final_phone: final_phone || '',
-        tencongdong: tencongdong || '',
-        linknhom:    linknhom    || '',
-        mabaomats:   mabaomats   || '',
+        sdt_gv,
+        ma_bao_mat,
+        nhom_aim,
+        link_aim,
+        final_phone,
+        tencongdong,
+        linknhom,
+        mabaomats,
       });
 
       return res.status(200).json(result);

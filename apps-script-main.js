@@ -259,17 +259,24 @@ function handleSendIndividualEmail(body) {
   var tencongdong = body.tencongdong || '';
   var linknhom    = body.linknhom    || '';
   var mabaomats   = body.mabaomats   || '';
+  // Template đã resolve từ phía Vercel (nếu có) — ưu tiên dùng luôn, không cần getTemplate
+  var templateSubject = body.templateSubject || '';
+  var templateBody    = body.templateBody    || '';
 
   if (!email || email.indexOf('@') === -1) {
     return jsonError('Thieu email hoac email khong hop le');
   }
 
-  // Lấy template từ sheet Email_templates
+  // Lấy template từ sheet Email_templates (chỉ khi chưa có templateBody từ Vercel)
   var tmpl;
-  try {
-    tmpl = getTemplate(body.templateKey || CONFIG.TEMPLATE_KEY);
-  } catch (tmplErr) {
-    return jsonError('Loi template: ' + tmplErr.message);
+  if (templateBody) {
+    tmpl = { subject: templateSubject, htmlBody: templateBody };
+  } else {
+    try {
+      tmpl = getTemplate(body.templateKey || CONFIG.TEMPLATE_KEY);
+    } catch (tmplErr) {
+      return jsonError('Loi template: ' + tmplErr.message);
+    }
   }
 
   // Các key placeholder — phải khớp với {{key}} trong template html_body
