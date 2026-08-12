@@ -1,4 +1,6 @@
 // Vercel API route — proxy sang Apps Script lấy dữ liệu nhóm S (sheet users)
+const { fetchGET } = require('./_lib/fetch-gapps');
+
 const SGROUP_APPS_SCRIPT_URL =
   'https://script.google.com/macros/s/AKfycbzKaXJfwHknKqZJ0aJRFomT83kCaSTTUuLkKg2Hj6WgrDfgDHfjKuNTQ5WQ48lL9Mqp/exec';
 
@@ -23,18 +25,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('X-Cache', 'MISS');
 
   try {
-    const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), 30000);
-    const response = await fetch(SGROUP_APPS_SCRIPT_URL, {
-      method: 'GET',
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    clearTimeout(tid);
-    if (!response.ok) throw new Error('Apps Script HTTP ' + response.status);
-
-    const json = await response.json();
+    const json = await fetchGET(SGROUP_APPS_SCRIPT_URL);
 
     // Format mới: { success, sheets: [{ sheetName: "users", data: [[headers],[row1],...] }] }
     // Format cũ: { ok, data: [...] }

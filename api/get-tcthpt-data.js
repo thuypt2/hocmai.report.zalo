@@ -1,4 +1,6 @@
 // Vercel API route — proxy sang Apps Script lấy dữ liệu sheet tc_thpt (nhóm S)
+const { fetchGET } = require('./_lib/fetch-gapps');
+
 const TCTHPT_APPS_SCRIPT_URL =
   'https://script.google.com/macros/s/AKfycbzKaXJfwHknKqZJ0aJRFomT83kCaSTTUuLkKg2Hj6WgrDfgDHfjKuNTQ5WQ48lL9Mqp/exec';
 
@@ -24,18 +26,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const url = TCTHPT_APPS_SCRIPT_URL + '?sheet=tc_thpt';
-    const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), 30000);
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    clearTimeout(tid);
-    if (!response.ok) throw new Error('Apps Script HTTP ' + response.status);
-
-    const json = await response.json();
+    const json = await fetchGET(url);
 
     let rawRows = [];
     let headers = [];

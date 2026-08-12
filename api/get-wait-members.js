@@ -1,6 +1,8 @@
 const WAIT_MEMBER_API_URL =
   'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
 
+const { fetchGET } = require('./_lib/fetch-gapps');
+
 // Sheet chứa học sinh chờ duyệt kết nối — tên chính xác từ your Google Sheet
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút cache
 let _cache = null;
@@ -65,23 +67,8 @@ module.exports = async function handler(req, res) {
   res.setHeader('X-Cache', 'MISS');
 
   try {
-    const url = WAIT_MEMBER_API_URL + '?action=getAllSpreadsheetData&sheet=waiting_member';
-    const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), 30000);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    clearTimeout(tid);
-
-    if (!response.ok) {
-      throw new Error('Apps Script HTTP ' + response.status);
-    }
-
-    const json = await response.json();
+      const url = WAIT_MEMBER_API_URL + '?action=getAllSpreadsheetData&sheet=waiting_member';
+      const json = await fetchGET(url);
 
     if (!json.ok) {
       return res.status(200).json({
