@@ -16,7 +16,8 @@ function resolveTemplateContent(htmlBody) {
 
   if (!isFilePath) return htmlBody;
 
-  const filename = path.basename(htmlBody);
+  // Split theo cả \ và / (path Windows trong sheet, runtime Linux trên Vercel)
+  const filename = htmlBody.replace(/[\\/]+/g, '/').split('/').pop();
   const filePath = path.join(TEMPLATES_DIR, filename);
 
   try {

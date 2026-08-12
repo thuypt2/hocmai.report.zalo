@@ -29,8 +29,8 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // Sanitize filename: only allow basename, no path traversal
-  const safeName = path.basename(name);
+  // Sanitize filename: chỉ lấy basename, chống path traversal (xử lý cả \ Windows lẫn / Linux)
+  const safeName = name.replace(/[\\/]+/g, '/').split('/').pop();
   const filePath = path.join(TEMPLATES_DIR, safeName);
 
   try {

@@ -21,7 +21,8 @@ function resolveTemplateContent(htmlBody) {
   const trimmed = htmlBody.trim();
   // Detect file path: contains backslash/forward slash, or ends with .txt
   if (!(/[\\\\/]/.test(trimmed) || trimmed.endsWith('.txt'))) return trimmed;
-  const filename = path.basename(trimmed);
+  // Split theo cả \ và / (path Windows trong sheet, runtime Linux trên Vercel)
+  const filename = trimmed.replace(/[\\/]+/g, '/').split('/').pop();
   const filePath = path.join(TEMPLATES_DIR, filename);
   try {
     if (fs.existsSync(filePath)) {
