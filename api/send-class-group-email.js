@@ -2,7 +2,7 @@
 // Hỗ trợ: (1) Individual send từ tab 2.2  (2) Batch send từ form quản trị
 
 const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
-  'https://script.google.com/macros/s/AKfycbyl0pjYwfE0IfiAyV952BTUSeV75yTmXjGgImTrskVVLNtOp608ZNRyc97ZZR6kF5_gOg/exec';
+  'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
 const APPS_SCRIPT_SECRET = process.env.GOOGLE_APPS_SCRIPT_SECRET || '@Hocmai123';
 const APPS_SCRIPT_TIMEOUT = 240000; // 4 phút timeout cho Apps Script
 

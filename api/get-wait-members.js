@@ -1,5 +1,5 @@
 const WAIT_MEMBER_API_URL =
-  'https://script.google.com/macros/s/AKfycbyl0pjYwfE0IfiAyV952BTUSeV75yTmXjGgImTrskVVLNtOp608ZNRyc97ZZR6kF5_gOg/exec';
+  'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
 
 // Sheet chứa học sinh chờ duyệt kết nối — tên chính xác từ your Google Sheet
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút cache

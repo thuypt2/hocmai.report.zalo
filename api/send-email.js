@@ -2,7 +2,7 @@
 // Hỗ trợ action: send_selected (gửi email hàng loạt từ danh sách chọn)
 
 const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
-  'https://script.google.com/macros/s/AKfycbyl0pjYwfE0IfiAyV952BTUSeV75yTmXjGgImTrskVVLNtOp608ZNRyc97ZZR6kF5_gOg/exec';
+  'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
 const APPS_SCRIPT_SECRET = process.env.GOOGLE_APPS_SCRIPT_SECRET || '@Hocmai123';
 const APPS_SCRIPT_TIMEOUT = 240000; // 4 phút timeout
 

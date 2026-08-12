@@ -6,7 +6,7 @@ const path = require('path');
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
 
 const EMAIL_TEMPLATES_API_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
-  'https://script.google.com/macros/s/AKfycbyl0pjYwfE0IfiAyV952BTUSeV75yTmXjGgImTrskVVLNtOp608ZNRyc97ZZR6kF5_gOg/exec';
+  'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút cache
 let _cache = null;

@@ -1,6 +1,6 @@
 // Vercel API route — proxy sang Apps Script lấy dữ liệu sheet tc_thpt (nhóm S)
 const TCTHPT_APPS_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbzPKLZo7b6JG34OIyzQABIObStR8r6QJgnuQekE-SopoHKPHEwSSo06ZfLZx5qnv5Zz/exec';
+  'https://script.google.com/macros/s/AKfycbzKaXJfwHknKqZJ0aJRFomT83kCaSTTUuLkKg2Hj6WgrDfgDHfjKuNTQ5WQ48lL9Mqp/exec';
 
 const CACHE_TTL_MS = 2 * 60 * 1000;
 let _cache = null;
