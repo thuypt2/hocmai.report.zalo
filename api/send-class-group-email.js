@@ -173,26 +173,22 @@ export default async function handler(req, res) {
         templateBody = tmpl.htmlBody;
       }
 
+      // Dùng sendClassGroupEmails + selectedStudents (cơ chế useCustomTemplate)
+      // — bản Apps Script deploy hiện tại ĐÃ hỗ trợ, không cần redeploy.
+      const student = {
+        email, username, ma_lop, exam, gv, link_group,
+        sdt_gv, ma_bao_mat, nhom_aim, link_aim, final_phone,
+        tencongdong, linknhom, mabaomats,
+      };
+
       const result = await callAppsScript({
-        action: 'sendIndividualEmail',
+        action: 'sendClassGroupEmails',
         secret: APPS_SCRIPT_SECRET,
         templateKey: body.templateKey || 'SSC:HD130',
         templateSubject,
         templateBody,
-        email,
-        username,
-        ma_lop,
-        exam,
-        gv,
-        link_group,
-        sdt_gv,
-        ma_bao_mat,
-        nhom_aim,
-        link_aim,
-        final_phone,
-        tencongdong,
-        linknhom,
-        mabaomats,
+        selectedEmails: [email],
+        selectedStudents: [student],
       });
 
       return res.status(200).json(result);
