@@ -283,13 +283,24 @@ function buildData(allRows) {
 
   const lookup = rows.map(r => {
     const rawPt = r['paid_time'] || '';
-    const ptStr = String(rawPt).trim();
-    // ms timestamp for date range filter
-    let ptMs = 0;
-    try {
-      const d = new Date(ptStr.replace(' ', 'T'));
-      if (!isNaN(d) && d.getFullYear() > 2000) ptMs = d.getTime();
-    } catch (_) {}
+        const ptStr = String(rawPt).trim();
+        // ms timestamp for date range filter
+        let ptMs = 0;
+        try {
+          const d = new Date(ptStr.replace(' ', 'T'));
+          if (!isNaN(d) && d.getFullYear() > 2000) ptMs = d.getTime();
+        } catch (_) {}
+
+        // Thời gian duyệt: format có thể là DD/MM/YYYY HH:MM:SS hoặc YYYY-MM-DD
+        const rawDuyet = r['Thời gian duyệt'] || '';
+        const duyetStr = String(rawDuyet).trim();
+        let duyetMs = 0;
+        try {
+          // DD/MM/YYYY HH:MM:SS → YYYY-MM-DDTHH:MM:SS
+          const dd = duyetStr.replace(/^(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1').replace(' ', 'T');
+          const d = new Date(dd);
+          if (!isNaN(d) && d.getFullYear() > 2000) duyetMs = d.getTime();
+        } catch (_) {}
 
     const gkey = `${s(r, 'exam')}|||${s(r, 'Mã lớp')}|||${s(r, 'GV')}`;
     const gc = groupCounter[gkey] || { total: 0, chua: 0 };
@@ -320,7 +331,8 @@ function buildData(allRows) {
       _gv: s(r, 'GV'),
       _type: s(r, 'type'),
       _paid_time_iso: ptStr,
-      _paid_time_ms: ptMs,
+            _paid_time_ms: ptMs,
+            _duyet_time_ms: duyetMs,
       _chua_vao_lop:
         s(r, 'Trạng thái duyệt 1:30') !== 'Duyệt' &&
         s(r, 'Trạng thái duyệt AIM') !== 'Duyệt',

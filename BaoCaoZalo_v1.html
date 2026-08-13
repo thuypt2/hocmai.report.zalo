@@ -3582,9 +3582,7 @@ function applyNotJoinedMatrix(){
   // nên filter phải theo ngày duyệt, không phải paid_time
   if (fromVal || toVal) {
     rows = rows.filter(r => {
-      const duyetDate = r['Thời điểm duyệt'] || '';
-      if (!duyetDate) return false;
-      const duyetMs = new Date(duyetDate + 'T00:00:00').getTime();
+      const duyetMs = r._duyet_time_ms || 0;
       return duyetMs > 0 && duyetMs >= fromMs && duyetMs <= toMs;
     });
   }
