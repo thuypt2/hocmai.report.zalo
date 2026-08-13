@@ -1,18 +1,19 @@
-// Vercel API route — proxy sang Apps Script gửi email nhóm S (tab 2.2 sub-s-group + tab 2.3 tc-thpt)
+// Vercel API route — gửi email nhóm S (tab 2.2 sub-s-group + tab 2.3 tc-thpt)
 // QUAN TRỌNG: Vercel resolve template content (đọc từ MAIN sheet Email_Templates + file api/templates/)
-// rồi POST templateBody đã resolve xuống S-Group Apps Script.
-// Không để Apps Script tự fetch Vercel (UrlFetchApp không ổn định).
+// rồi POST templateBody đã resolve xuống MAIN Apps Script (đã hỗ trợ templateBody).
+// Ảnh hướng dẫn AIM được thêm vào template trên Vercel (MAIN Apps Script không làm việc này).
+// Dùng MAIN Apps Script vì nó đã được deploy với logic if(templateBody) — không cần deploy S-Group Apps Script.
 
 const fs = require('fs');
 const path = require('path');
 const { fetchGET } = require('./_lib/fetch-gapps');
 
-const SGROUP_APPS_SCRIPT_URL = process.env.SGROUP_APPS_SCRIPT_URL ||
-  'https://script.google.com/macros/s/AKfycbzKaXJfwHknKqZJ0aJRFomT83kCaSTTUuLkKg2Hj6WgrDfgDHfjKuNTQ5WQ48lL9Mqp/exec';
 const MAIN_APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
+const APPS_SCRIPT_SECRET = process.env.GOOGLE_APPS_SCRIPT_SECRET || '@Hocmai123';
 const IMAGE_URL = 'https://hocmai-report-zalo.vercel.app/huong-dan-vao-aim.png';
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
+const APPS_SCRIPT_TIMEOUT = 240000;
 
 export const config = {
   api: { bodyParser: { sizeLimit: '5mb' } },
@@ -41,6 +42,20 @@ function resolveTemplateContent(htmlBody) {
     console.error('Error reading template:', filePath, e.message);
   }
   return trimmed;
+}
+
+// Thêm ảnh hướng dẫn AIM vào cuối template (trước </body>)
+function appendImageGuide(htmlBody) {
+  if (!htmlBody) return htmlBody;
+  const imageBlock = '<br><br><div style="text-align:center;margin-top:16px">' +
+    '<p style="font-family:Arial,Helvetica,sans-serif;color:#374151;font-size:14px"><b>Hướng dẫn vào nhóm AIM:</b></p>' +
+    '<img src="' + IMAGE_URL + '" alt="Hướng dẫn vào AIM" style="max-width:600px;width:100%;border-radius:8px;border:1px solid #e5e7eb">' +
+    '</div>';
+  const bodyCloseIdx = htmlBody.lastIndexOf('</body>');
+  if (bodyCloseIdx >= 0) {
+    return htmlBody.slice(0, bodyCloseIdx) + imageBlock + htmlBody.slice(bodyCloseIdx);
+  }
+  return htmlBody + imageBlock;
 }
 
 // Lấy template từ sheet Email_Templates của MAIN spreadsheet qua Apps Script
@@ -79,32 +94,32 @@ async function getResolvedTemplate(templateKey) {
   };
 }
 
-// POST JSON tới S-Group Apps Script, xử lý redirect manual (Google 302: script.google.com → script.googleusercontent.com)
-async function postToSGroup(payload) {
-  const body = JSON.stringify(payload);
+// POST JSON tới MAIN Apps Script
+async function callMainAppsScript(payload) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), APPS_SCRIPT_TIMEOUT);
 
-  // POST lần 1 — có thể nhận 302 redirect
-  let resp = await fetch(SGROUP_APPS_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: body,
-    redirect: 'manual',
-  });
-
-  // Nếu redirect, POST lại tới URL đích (giữ nguyên method + body)
-  if (resp.status >= 300 && resp.status < 400 && resp.headers.get('location')) {
-    resp = await fetch(resp.headers.get('location'), {
+  try {
+    const resp = await fetch(MAIN_APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: body,
+      body: JSON.stringify(payload),
+      redirect: 'follow',
+      signal: controller.signal,
     });
-  }
-
-  const text = await resp.text();
-  try {
-    return JSON.parse(text);
+    clearTimeout(timeoutId);
+    const text = await resp.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { ok: false, error: 'Apps Script trả về không phải JSON', raw: text.slice(0, 500) };
+    }
   } catch (e) {
-    throw new Error('Apps Script không trả JSON: ' + text.slice(0, 300));
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') {
+      return { ok: false, error: 'Apps Script timeout (>4 phút)' };
+    }
+    return { ok: false, error: e.message };
   }
 }
 
@@ -127,19 +142,21 @@ export default async function handler(req, res) {
     // Resolve template trên Vercel (đọc từ MAIN sheet Email_Templates + file api/templates/)
     const tmpl = await getResolvedTemplate(templateKey || 'SSC:HDAIM-S');
 
-    // POST resolved template xuống S-Group Apps Script
-    const result = await postToSGroup({
+    // Thêm ảnh hướng dẫn AIM vào template (MAIN Apps Script không làm việc này)
+    const htmlBodyWithImage = appendImageGuide(tmpl.htmlBody);
+
+    // Gửi qua MAIN Apps Script (ĐÃ hỗ trợ templateBody từ commit df32064)
+    const result = await callMainAppsScript({
       action: 'sendIndividualEmail',
-      secret: '@Hocmai123',
+      secret: APPS_SCRIPT_SECRET,
       templateKey: templateKey || 'SSC:HDAIM-S',
       templateSubject: tmpl.subject,
-      templateBody: tmpl.htmlBody,
+      templateBody: htmlBodyWithImage,
       email: email,
       username: username || '',
       linknhom: linknhom || link_group || '',
       mabaomats: mabaomats || '',
       link_aim: link_aim || '',
-      imageUrl: IMAGE_URL,
     });
 
     return res.status(200).json(result);
