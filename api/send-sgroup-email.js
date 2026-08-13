@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { fetchGET } = require('./_lib/fetch-gapps');
+const { fetchGET, fetchPOST } = require('./_lib/fetch-gapps');
 
 const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
@@ -97,26 +97,11 @@ async function getResolvedTemplate(templateKey) {
   };
 }
 
-// Gọi Apps Script POST — dùng fetch() với redirect: 'follow' (giống send-class-group-email.js)
+// Gọi Apps Script POST — dùng https.request() (tránh Google security block với fetch())
 async function callAppsScript(payload) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 240000);
   try {
-    const resp = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    const text = await resp.text();
-    try { return JSON.parse(text); } catch {
-      return { ok: false, error: 'Apps Script không phải JSON', raw: text.slice(0, 500) };
-    }
+    return await fetchPOST(APPS_SCRIPT_URL, payload);
   } catch (e) {
-    clearTimeout(timeoutId);
-    if (e.name === 'AbortError') return { ok: false, error: 'Apps Script timeout (>4 phút)' };
     return { ok: false, error: e.message };
   }
 }
