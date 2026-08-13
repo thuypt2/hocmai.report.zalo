@@ -1,17 +1,21 @@
 // Vercel API route — gửi email nhóm S (tab 2.2 sub-s-group + tab 2.3 tc-thpt)
 // Dùng sendClassGroupEmails + selectedStudents (giống send-class-group-email.js, đã hỗ trợ templateBody).
 // Vercel resolve template trước, rồi POST templateBody đã resolve xuống MAIN Apps Script.
-// Dùng https.request() thay vì fetch() để tránh bị Google security chặn.
 
 const fs = require('fs');
 const path = require('path');
-const { fetchGET, fetchPOST } = require('./_lib/fetch-gapps');
+const { fetchGET } = require('./_lib/fetch-gapps');
 
 const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
 const APPS_SCRIPT_SECRET = process.env.GOOGLE_APPS_SCRIPT_SECRET || '@Hocmai123';
 const IMAGE_URL = 'https://hocmai-report-zalo.vercel.app/huong-dan-vao-aim.png';
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
+
+// Cache Email_Templates: tránh gọi Apps Script 2 lần (Google rate-limit từ Vercel IP)
+const _TEMPLATE_CACHE_TTL = 5 * 60 * 1000; // 5 phút
+let _templateCache = null;
+let _templateCacheTime = 0;
 
 export const config = {
   api: { bodyParser: { sizeLimit: '5mb' } },
@@ -26,7 +30,6 @@ function readBody(req) {
   });
 }
 
-// Resolve html_body: nếu là path file, đọc nội dung từ api/templates/
 function resolveTemplateContent(htmlBody) {
   if (!htmlBody || typeof htmlBody !== 'string') return htmlBody || '';
   const trimmed = htmlBody.trim();
@@ -35,14 +38,10 @@ function resolveTemplateContent(htmlBody) {
   const filePath = path.join(TEMPLATES_DIR, filename);
   try {
     if (fs.existsSync(filePath)) return fs.readFileSync(filePath, 'utf-8');
-    console.warn('Template file not found:', filePath);
-  } catch (e) {
-    console.error('Error reading template:', filePath, e.message);
-  }
+  } catch (e) {}
   return trimmed;
 }
 
-// Thêm ảnh hướng dẫn AIM vào cuối template (trước </body>)
 function appendImageGuide(htmlBody) {
   if (!htmlBody) return htmlBody;
   const imageBlock = '<br><br><div style="text-align:center;margin-top:16px">' +
@@ -50,20 +49,26 @@ function appendImageGuide(htmlBody) {
     '<img src="' + IMAGE_URL + '" alt="Hướng dẫn vào AIM" style="max-width:600px;width:100%;border-radius:8px;border:1px solid #e5e7eb">' +
     '</div>';
   const bodyCloseIdx = htmlBody.lastIndexOf('</body>');
-  if (bodyCloseIdx >= 0) {
-    return htmlBody.slice(0, bodyCloseIdx) + imageBlock + htmlBody.slice(bodyCloseIdx);
-  }
+  if (bodyCloseIdx >= 0) return htmlBody.slice(0, bodyCloseIdx) + imageBlock + htmlBody.slice(bodyCloseIdx);
   return htmlBody + imageBlock;
 }
 
-// Lấy template từ sheet Email_Templates của MAIN spreadsheet qua Apps Script
 async function getResolvedTemplate(templateKey) {
-  const url = APPS_SCRIPT_URL + '?action=getAllSpreadsheetData&sheet=Email_Templates';
-  const json = await fetchGET(url);
-  if (!json.ok || !Array.isArray(json.data)) {
-    throw new Error('Không đọc được Email_Templates: ' + (json.error || 'no data'));
+  const now = Date.now();
+  let rows;
+  if (_templateCache && (now - _templateCacheTime) < _TEMPLATE_CACHE_TTL) {
+    rows = _templateCache;
+  } else {
+    const url = APPS_SCRIPT_URL + '?action=getAllSpreadsheetData&sheet=Email_Templates';
+    const json = await fetchGET(url);
+    if (!json.ok || !Array.isArray(json.data)) {
+      throw new Error('Không đọc được Email_Templates: ' + (json.error || 'no data'));
+    }
+    rows = json.data;
+    _templateCache = rows;
+    _templateCacheTime = now;
   }
-  const rows = json.data;
+
   const headers = Object.keys(rows[0] || {});
   function colIdx(names) {
     for (const n of names) {
@@ -92,6 +97,30 @@ async function getResolvedTemplate(templateKey) {
   };
 }
 
+// Gọi Apps Script POST — dùng fetch() với redirect: 'follow' (giống send-class-group-email.js)
+async function callAppsScript(payload) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 240000);
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    const text = await resp.text();
+    try { return JSON.parse(text); } catch {
+      return { ok: false, error: 'Apps Script không phải JSON', raw: text.slice(0, 500) };
+    }
+  } catch (e) {
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') return { ok: false, error: 'Apps Script timeout (>4 phút)' };
+    return { ok: false, error: e.message };
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -108,13 +137,12 @@ export default async function handler(req, res) {
     const { email, username, linknhom, link_group, mabaomats, link_aim, templateKey } = body;
     if (!email) return res.status(400).json({ ok: false, error: 'Thiếu email' });
 
-    // Resolve template trên Vercel
+    // Resolve template trên Vercel (có cache)
     const tmpl = await getResolvedTemplate(templateKey || 'SSC:HDAIM-S');
 
     // Thêm ảnh hướng dẫn AIM
     const htmlBodyWithImage = appendImageGuide(tmpl.htmlBody);
 
-    // Gửi qua MAIN Apps Script: sendClassGroupEmails + selectedStudents (dùng https.request)
     const student = {
       email, username,
       linknhom: linknhom || link_group || '',
@@ -122,7 +150,7 @@ export default async function handler(req, res) {
       link_aim: link_aim || '',
     };
 
-    const result = await fetchPOST(APPS_SCRIPT_URL, {
+    const result = await callAppsScript({
       action: 'sendClassGroupEmails',
       secret: APPS_SCRIPT_SECRET,
       templateKey: templateKey || 'SSC:HDAIM-S',
