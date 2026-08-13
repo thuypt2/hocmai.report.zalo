@@ -123,21 +123,31 @@ function handleSendEmail(e) {
     body.imageUrl    = e.parameter.imageUrl    || '';
   }
 
-  var email       = (body.email       || '').trim();
-  var username    = (body.username    || '').trim();
-  var linknhom    = (body.linknhom    || '').trim();
-  var mabaomats   = (body.mabaomats   || '').trim();
-  var link_aim    = (body.link_aim    || '').trim();
-  var templateKey = (body.templateKey || 'SSC:HDAIM-S').trim();
-  var imageUrl    = (body.imageUrl    || '');
+  var email         = (body.email         || '').trim();
+  var username      = (body.username      || '').trim();
+  var linknhom      = (body.linknhom      || '').trim();
+  var mabaomats     = (body.mabaomats     || '').trim();
+  var link_aim      = (body.link_aim      || '').trim();
+  var templateKey   = (body.templateKey   || 'SSC:HDAIM-S').trim();
+  var imageUrl      = (body.imageUrl      || '');
+
+  // Nếu Vercel đã resolve template và truyền templateBody sẵn, dùng luôn
+  var templateSubject = (body.templateSubject || '').trim();
+  var templateBody    = (body.templateBody    || '').trim();
 
   if (!email || email.indexOf('@') === -1) {
     return json({ ok: false, error: 'Email không hợp lệ hoặc trống' });
   }
 
   var tmpl;
-  try { tmpl = getTemplateFromSheet(templateKey); }
-  catch (tmplErr) { return json({ ok: false, error: 'Lỗi template: ' + tmplErr.message }); }
+  if (templateBody) {
+    // Đã được resolve trên Vercel, dùng trực tiếp
+    tmpl = { subject: templateSubject, htmlBody: templateBody };
+  } else {
+    // Fallback: tự resolve từ sheet (qua UrlFetchApp → Vercel)
+    try { tmpl = getTemplateFromSheet(templateKey); }
+    catch (tmplErr) { return json({ ok: false, error: 'Lỗi template: ' + tmplErr.message }); }
+  }
 
   var data = {
     'username': username, 'linknhom': linknhom,

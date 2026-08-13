@@ -2813,8 +2813,7 @@ function renderSGroupTable(rows) {
 function sendEmailSGroup(btn) {
   const email    = btn.getAttribute('data-email')    || '';
   const username = btn.getAttribute('data-username') || '';
-  const ten_group = btn.getAttribute('data-ten-group') || '';
-  const link_group = btn.getAttribute('data-link-group') || '';
+  const linknhom = btn.getAttribute('data-linknhom') || '';
   const mabaomat = btn.getAttribute('data-mabaomat') || '';
   const userid   = btn.getAttribute('data-userid')   || '';
 
@@ -2823,6 +2822,7 @@ function sendEmailSGroup(btn) {
   btn.textContent = 'Đang gửi...';
 
   // Gọi qua Vercel proxy để tránh lỗi cross-origin POST redirect
+  // Vercel resolve template rồi gửi templateBody đã resolve xuống Apps Script
   const link_aim = 'https://hocmai.link/VACTaim900plus';
   fetch('/api/send-sgroup-email', {
     method: 'POST',
@@ -2830,8 +2830,7 @@ function sendEmailSGroup(btn) {
     body: JSON.stringify({
       email:        email,
       username:     username,
-      ten_group:    ten_group,
-      link_group:   link_group,
+      linknhom:     linknhom,
       link_aim:     link_aim,
       mabaomats:    mabaomat,
       templateKey:  'SSC:HDAIM-S',
@@ -2994,7 +2993,6 @@ function renderTCTable(rows) {
 function sendEmailTC(btn) {
   const email    = btn.getAttribute('data-email')    || '';
   const username = btn.getAttribute('data-username') || '';
-  const ten_group = btn.getAttribute('data-ten-group') || '';
   const link_group = btn.getAttribute('data-link-group') || '';
   const mabaomat = btn.getAttribute('data-mabaomat') || '';
 
@@ -3002,6 +3000,7 @@ function sendEmailTC(btn) {
   btn.disabled = true;
   btn.textContent = 'Đang gửi...';
 
+  // Vercel resolve template rồi gửi templateBody đã resolve xuống Apps Script
   const link_aim = 'https://hocmai.link/TNTHPTaim25plus';
   fetch('/api/send-sgroup-email', {
     method: 'POST',
@@ -3009,8 +3008,7 @@ function sendEmailTC(btn) {
     body: JSON.stringify({
       email:        email,
       username:     username,
-      ten_group:    ten_group,
-      link_group:   link_group,
+      linknhom:     link_group,
       link_aim:     link_aim,
       mabaomats:    mabaomat,
       templateKey:  'SSC:HDAIM-S',
