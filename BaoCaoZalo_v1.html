@@ -423,20 +423,9 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
     </div>
 
     <h3 style="margin:24px 0 12px">Ma trận học sinh vào nhóm theo tháng</h3>
-    <p class="muted" style="margin-bottom:8px">Hàng: tháng paid_time. Cột: tháng được duyệt 1:30. Ô: số HS đã trả tiền trong tháng và được duyệt vào tháng tương ứng. Cột cuối: % tổng duyệt / tổng paid trong tháng.</p>
+    <p class="muted" style="margin-bottom:8px">Hàng: tháng paid_time. Cột: tháng được duyệt 1:30. Ô: số HS đã trả tiền trong tháng và được duyệt vào tháng tương ứng. Cột cuối: % tổng duyệt / tổng paid trong tháng. <em>Dùng chung bộ lọc ngày và kỳ thi ở trên.</em></p>
 
-    <div class="filter-row" style="margin-bottom:10px">
-      <label>Kỳ thi
-        <select id="matrix-exam" onchange="applyNotJoinedMatrix()">
-          <option value="">-- Tất cả --</option>
-        </select>
-      </label>
-      <label style="justify-content:flex-end">
-        <span style="display:flex;gap:6px;margin-top:auto">
-          <button class="btn gray" onclick="resetMatrixFilter()">Xóa lọc</button>
-        </span>
-      </label>
-    </div>
+    <div></div>
 
     <div style="overflow-x:auto;max-width:100%">
       <table id="tbl-join-matrix" class="bar-tbl" style="font-size:12px;white-space:nowrap">
@@ -3489,21 +3478,6 @@ function initNotJoinedFilters(){
   (DATA.exams || []).forEach(ex => {
     sel.insertAdjacentHTML('beforeend', `<option value="${ex}">${ex}</option>`);
   });
-
-  // Init matrix exam filter (separate from table filter above)
-  const matrixSel = document.getElementById('matrix-exam');
-  if (matrixSel) {
-    matrixSel.innerHTML = '<option value="">-- Tất cả --</option>';
-    (DATA.exams || []).forEach(ex => {
-      matrixSel.insertAdjacentHTML('beforeend', `<option value="${ex}">${ex}</option>`);
-    });
-  }
-}
-
-function resetMatrixFilter() {
-  const matrixSel = document.getElementById('matrix-exam');
-  if (matrixSel) matrixSel.value = '';
-  applyNotJoinedMatrix();
 }
 
 function applyNotJoined(){
@@ -3590,12 +3564,26 @@ function resetNotJoined(){
   document.getElementById('nj-to').value = '';
   document.getElementById('nj-exam').value = '';
   applyNotJoined();
-  resetMatrixFilter();
+  applyNotJoinedMatrix();
 }
 
 function applyNotJoinedMatrix(){
-  const examVal = document.getElementById('matrix-exam').value;
-  const rows = examVal ? LOOKUP.filter(r => (r._exam || '') === examVal) : LOOKUP;
+  // Dùng chung bộ lọc từ 1.6 (nj-from, nj-to, nj-exam)
+  const examVal = document.getElementById('nj-exam').value;
+  const fromVal = document.getElementById('nj-from').value;
+  const toVal   = document.getElementById('nj-to').value;
+  const fromMs = fromVal ? new Date(fromVal + 'T00:00:00').getTime() : 0;
+  const toMs   = toVal   ? new Date(toVal   + 'T23:59:59').getTime() : Infinity;
+
+  let rows = examVal ? LOOKUP.filter(r => (r._exam || '') === examVal) : LOOKUP;
+
+  // Áp dụng date filter cho paid_time (lọc HS đăng ký trong khoảng)
+  if (fromVal || toVal) {
+    rows = rows.filter(r => {
+      const ms = r._paid_time_ms || 0;
+      return ms > 0 && ms >= fromMs && ms <= toMs;
+    });
+  }
 
   // Build month maps: paid_month → { total, duyet_by_month: { duyet_month: count } }
   const monthMap = {}; // key: YYYY-MM
