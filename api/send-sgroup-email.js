@@ -1,17 +1,17 @@
 // Vercel API route — gửi email nhóm S (tab 2.2 sub-s-group + tab 2.3 tc-thpt)
 // Dùng sendClassGroupEmails + selectedStudents (giống send-class-group-email.js, đã hỗ trợ templateBody).
 // Vercel resolve template trước, rồi POST templateBody đã resolve xuống MAIN Apps Script.
+// Dùng https.request() thay vì fetch() để tránh bị Google security chặn.
 
 const fs = require('fs');
 const path = require('path');
-const { fetchGET } = require('./_lib/fetch-gapps');
+const { fetchGET, fetchPOST } = require('./_lib/fetch-gapps');
 
 const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
 const APPS_SCRIPT_SECRET = process.env.GOOGLE_APPS_SCRIPT_SECRET || '@Hocmai123';
 const IMAGE_URL = 'https://hocmai-report-zalo.vercel.app/huong-dan-vao-aim.png';
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
-const APPS_SCRIPT_TIMEOUT = 240000;
 
 export const config = {
   api: { bodyParser: { sizeLimit: '5mb' } },
@@ -92,35 +92,6 @@ async function getResolvedTemplate(templateKey) {
   };
 }
 
-// POST JSON tới Apps Script (giống send-class-group-email.js)
-async function callAppsScript(payload) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), APPS_SCRIPT_TIMEOUT);
-
-  try {
-    const resp = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    const text = await resp.text();
-    try {
-      return JSON.parse(text);
-    } catch {
-      return { ok: false, error: 'Apps Script trả về không phải JSON', raw: text.slice(0, 500) };
-    }
-  } catch (e) {
-    clearTimeout(timeoutId);
-    if (e.name === 'AbortError') {
-      return { ok: false, error: 'Apps Script timeout (>4 phút)' };
-    }
-    return { ok: false, error: e.message };
-  }
-}
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -143,7 +114,7 @@ export default async function handler(req, res) {
     // Thêm ảnh hướng dẫn AIM
     const htmlBodyWithImage = appendImageGuide(tmpl.htmlBody);
 
-    // Gửi qua MAIN Apps Script: sendClassGroupEmails + selectedStudents (giống send-class-group-email.js)
+    // Gửi qua MAIN Apps Script: sendClassGroupEmails + selectedStudents (dùng https.request)
     const student = {
       email, username,
       linknhom: linknhom || link_group || '',
@@ -151,7 +122,7 @@ export default async function handler(req, res) {
       link_aim: link_aim || '',
     };
 
-    const result = await callAppsScript({
+    const result = await fetchPOST(APPS_SCRIPT_URL, {
       action: 'sendClassGroupEmails',
       secret: APPS_SCRIPT_SECRET,
       templateKey: templateKey || 'SSC:HDAIM-S',
