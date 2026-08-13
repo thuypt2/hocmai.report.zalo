@@ -3577,11 +3577,15 @@ function applyNotJoinedMatrix(){
 
   let rows = examVal ? LOOKUP.filter(r => (r._exam || '') === examVal) : LOOKUP;
 
-  // Áp dụng date filter cho paid_time (lọc HS đăng ký trong khoảng)
+  // Áp dụng date filter cho Thời điểm duyệt (ngày vào nhóm)
+  // Ma trận hiển thị "HS trả tiền tháng X → vào nhóm tháng Y",
+  // nên filter phải theo ngày duyệt, không phải paid_time
   if (fromVal || toVal) {
     rows = rows.filter(r => {
-      const ms = r._paid_time_ms || 0;
-      return ms > 0 && ms >= fromMs && ms <= toMs;
+      const duyetDate = r['Thời điểm duyệt'] || '';
+      if (!duyetDate) return false;
+      const duyetMs = new Date(duyetDate + 'T00:00:00').getTime();
+      return duyetMs > 0 && duyetMs >= fromMs && duyetMs <= toMs;
     });
   }
 
