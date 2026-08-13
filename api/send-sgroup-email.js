@@ -1,14 +1,12 @@
 // Vercel API route — gửi email nhóm S (tab 2.2 sub-s-group + tab 2.3 tc-thpt)
-// QUAN TRỌNG: Vercel resolve template content (đọc từ MAIN sheet Email_Templates + file api/templates/)
-// rồi POST templateBody đã resolve xuống MAIN Apps Script (đã hỗ trợ templateBody).
-// Ảnh hướng dẫn AIM được thêm vào template trên Vercel (MAIN Apps Script không làm việc này).
-// Dùng MAIN Apps Script vì nó đã được deploy với logic if(templateBody) — không cần deploy S-Group Apps Script.
+// Dùng sendClassGroupEmails + selectedStudents (giống send-class-group-email.js, đã hỗ trợ templateBody).
+// Vercel resolve template trước, rồi POST templateBody đã resolve xuống MAIN Apps Script.
 
 const fs = require('fs');
 const path = require('path');
 const { fetchGET } = require('./_lib/fetch-gapps');
 
-const MAIN_APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
+const APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
 const APPS_SCRIPT_SECRET = process.env.GOOGLE_APPS_SCRIPT_SECRET || '@Hocmai123';
 const IMAGE_URL = 'https://hocmai-report-zalo.vercel.app/huong-dan-vao-aim.png';
@@ -60,7 +58,7 @@ function appendImageGuide(htmlBody) {
 
 // Lấy template từ sheet Email_Templates của MAIN spreadsheet qua Apps Script
 async function getResolvedTemplate(templateKey) {
-  const url = MAIN_APPS_SCRIPT_URL + '?action=getAllSpreadsheetData&sheet=Email_Templates';
+  const url = APPS_SCRIPT_URL + '?action=getAllSpreadsheetData&sheet=Email_Templates';
   const json = await fetchGET(url);
   if (!json.ok || !Array.isArray(json.data)) {
     throw new Error('Không đọc được Email_Templates: ' + (json.error || 'no data'));
@@ -94,13 +92,13 @@ async function getResolvedTemplate(templateKey) {
   };
 }
 
-// POST JSON tới MAIN Apps Script
-async function callMainAppsScript(payload) {
+// POST JSON tới Apps Script (giống send-class-group-email.js)
+async function callAppsScript(payload) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), APPS_SCRIPT_TIMEOUT);
 
   try {
-    const resp = await fetch(MAIN_APPS_SCRIPT_URL, {
+    const resp = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
@@ -139,24 +137,28 @@ export default async function handler(req, res) {
     const { email, username, linknhom, link_group, mabaomats, link_aim, templateKey } = body;
     if (!email) return res.status(400).json({ ok: false, error: 'Thiếu email' });
 
-    // Resolve template trên Vercel (đọc từ MAIN sheet Email_Templates + file api/templates/)
+    // Resolve template trên Vercel
     const tmpl = await getResolvedTemplate(templateKey || 'SSC:HDAIM-S');
 
-    // Thêm ảnh hướng dẫn AIM vào template (MAIN Apps Script không làm việc này)
+    // Thêm ảnh hướng dẫn AIM
     const htmlBodyWithImage = appendImageGuide(tmpl.htmlBody);
 
-    // Gửi qua MAIN Apps Script (ĐÃ hỗ trợ templateBody từ commit df32064)
-    const result = await callMainAppsScript({
-      action: 'sendIndividualEmail',
+    // Gửi qua MAIN Apps Script: sendClassGroupEmails + selectedStudents (giống send-class-group-email.js)
+    const student = {
+      email, username,
+      linknhom: linknhom || link_group || '',
+      mabaomats: mabaomats || '',
+      link_aim: link_aim || '',
+    };
+
+    const result = await callAppsScript({
+      action: 'sendClassGroupEmails',
       secret: APPS_SCRIPT_SECRET,
       templateKey: templateKey || 'SSC:HDAIM-S',
       templateSubject: tmpl.subject,
       templateBody: htmlBodyWithImage,
-      email: email,
-      username: username || '',
-      linknhom: linknhom || link_group || '',
-      mabaomats: mabaomats || '',
-      link_aim: link_aim || '',
+      selectedEmails: [email],
+      selectedStudents: [student],
     });
 
     return res.status(200).json(result);
