@@ -85,6 +85,8 @@ tr:nth-child(even) td{background:#fafbfc}
 .btn:hover{background:#1d4ed8}
 .btn.gray{background:#6b7280}
 .btn.gray:hover{background:#4b5563}
+.btn.danger{background:#dc2626}
+.btn.danger:hover{background:#b91c1c}
 /* nút gửi email */
 .btn-email{background:#059669;color:#fff;border:0;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:500;white-space:nowrap;transition:background .15s}
 .btn-email:hover{background:#047857}
@@ -763,6 +765,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
   <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
     <button class="btn" onclick="emailSendSelected()">Gửi email cho <span id="email-send-count">0</span> học sinh đã chọn</button>
+    <button class="btn danger" onclick="emergencyStopEmail('emailSendResult2')" title="Dừng khẩn cấp: email hàng loạt sẽ dừng sau email đang gửi">⏹ Dừng gửi email khẩn cấp</button>
     <span class="muted" style="font-size:12px">(chỉ gửi cho HS có email hợp lệ)</span>
   </div>
 
@@ -817,6 +820,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
       <button class="btn" onclick="emailSendSelectedES()">Gửi email cho <span id="email-send-count-es">0</span> học sinh đã chọn</button>
+      <button class="btn danger" onclick="emergencyStopEmail('emailSendResultES')" title="Dừng khẩn cấp: email hàng loạt sẽ dừng sau email đang gửi">⏹ Dừng gửi email khẩn cấp</button>
       <span class="muted" style="font-size:12px">(chỉ gửi cho HS có email hợp lệ)</span>
     </div>
 
@@ -871,6 +875,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
       <button class="btn" onclick="emailSendSelectedETC()">Gửi email cho <span id="email-send-count-etc">0</span> học sinh đã chọn</button>
+      <button class="btn danger" onclick="emergencyStopEmail('emailSendResultETC')" title="Dừng khẩn cấp: email hàng loạt sẽ dừng sau email đang gửi">⏹ Dừng gửi email khẩn cấp</button>
       <span class="muted" style="font-size:12px">(chỉ gửi cho HS có email hợp lệ)</span>
     </div>
 
@@ -1283,6 +1288,40 @@ async function sendClassGroupEmails() {
   } catch (error) {
     resultBox.textContent = 'Lỗi hệ thống: ' + error.message;
   }
+}
+
+// ===== Dừng khẩn cấp gửi email hàng loạt =====
+// Gọi /api/email-stop → Apps Script set cờ STOP → loop batch dừng sau email hiện tại.
+// Áp dụng cho mọi luồng (tab 2.2 send_selected, admin queue, S/TC batch).
+let _emailBatchStop = false; // cờ client cho các loop client-side (S/TC)
+
+async function emergencyStopEmail(section) {
+  try {
+    const resp = await fetch('/api/email-stop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'stop' }),
+    });
+    const j = await resp.json();
+    _emailBatchStop = true; // dừng cả loop client-side
+    const box = section ? document.getElementById(section) : null;
+    const msg = j.ok
+      ? 'Đã bật DỪNG KHẨN CẤP. Email hàng loạt sẽ dừng sau email đang gửi.'
+      : 'Lỗi khi bật dừng: ' + (j.error || '');
+    if (box) box.textContent = msg; else alert(msg);
+    return j.ok;
+  } catch (err) {
+    alert('Lỗi kết nối: ' + err.message);
+    return false;
+  }
+}
+
+async function emailStopStatus(section) {
+  try {
+    const resp = await fetch('/api/email-stop?action=status', { method: 'GET' });
+    const j = await resp.json();
+    return j.ok && j.stopped;
+  } catch (e) { return false; }
 }
 
 // ===== Recompute DATA from scoped LOOKUP (GVCN role scoping) =====
@@ -2698,10 +2737,12 @@ async function emailSendSelected() {
 
     const sentOk = result.sent || 0;
     const sentErr = result.errors || 0;
+    const sentStopped = result.stopped || false;
     resultBox.textContent =
-      `[${stamp}] Gửi xong!\n` +
+      `[${stamp}] ${sentStopped ? 'ĐÃ DỪNG KHẨN CẤP (chưa gửi hết)!' : 'Gửi xong!'}\n` +
       'Thành công: ' + sentOk + '\n' +
       'Lỗi: ' + sentErr + '\n' +
+      (sentStopped ? '⚠️ Đã dừng theo yêu cầu — một số email chưa được gửi.\n' : '') +
       (result.log_ids ? 'IDs đã log: ' + result.log_ids.join(', ') : '');
 
     if (result.sent_ids && result.sent_ids.length) {
@@ -2880,6 +2921,11 @@ async function emailSendSelectedES() {
     let sentOk = 0, sentErr = 0;
     const sentIds = [];
     for (const s of students) {
+      // Dừng khẩn cấp (client-side): bấm "Dừng gửi email khẩn cấp"
+      if (_emailBatchStop) {
+        resultBox.textContent = `[${stamp}] ĐÃ DỪNG KHẨN CẤP sau ${sentIds.length} email.`;
+        break;
+      }
       try {
         const resp = await fetch('/api/send-sgroup-email', {
           method: 'POST',
@@ -3064,6 +3110,11 @@ async function emailSendSelectedETC() {
     let sentOk = 0, sentErr = 0;
     const sentIds = [];
     for (const s of students) {
+      // Dừng khẩn cấp (client-side): bấm "Dừng gửi email khẩn cấp"
+      if (_emailBatchStop) {
+        resultBox.textContent = `[${stamp}] ĐÃ DỪNG KHẨN CẤP sau ${sentIds.length} email.`;
+        break;
+      }
       try {
         const resp = await fetch('/api/send-sgroup-email', {
           method: 'POST',

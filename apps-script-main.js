@@ -224,6 +224,13 @@ function handlePost(e) {
       return handleSendClassGroupEmails(body);
     }
 
+    // Dừng khẩn cấp gửi email hàng loạt
+    if (body.action === 'stopEmailBatch' || body.action === 'resumeEmailBatch' || body.action === 'emailBatchStopStatus') {
+      if (body.action === 'stopEmailBatch') return setEmailBatchStop(true);
+      if (body.action === 'resumeEmailBatch') return setEmailBatchStop(false);
+      return getEmailBatchStopStatus();
+    }
+
     // Account management
     if (body.action === 'createAccount' || body.action === 'updateAccount' || body.action === 'deleteAccount') {
       if (body.secret !== CONFIG.ACCOUNTS_SECRET) return jsonError('Sai secret quan tri');
@@ -364,11 +371,18 @@ function handleSendSelectedEmails(ss, body) {
   var sentIds = [];
   var logIds = [];
   var errorDetails = [];
+  var stopped = false;
   var limit = Math.min(body.limit || 200, selectedEmails.length);
 
   for (var i = 0; i < limit; i++) {
     var email = (selectedEmails[i] || '').trim();
     var student = selectedStudents[i] || {};
+
+    // ── Dừng khẩn cấp: check cờ STOP mỗi vòng lặp ──
+    if (isEmailBatchStopped()) {
+      stopped = true;
+      break;
+    }
 
     if (!email || email.indexOf('@') === -1) {
       errors++;
@@ -439,6 +453,7 @@ function handleSendSelectedEmails(ss, body) {
     ok: true,
     sent: sent,
     errors: errors,
+    stopped: stopped,
     sent_ids: sentIds,
     log_ids: logIds,
     remainingQuota: MailApp.getRemainingDailyQuota(),
@@ -469,12 +484,19 @@ function handleSendFromQueue(ss, body) {
   var sent = 0;
   var errors = 0;
   var errorDetails = [];
+  var stopped = false;
   var limit = body.limit || 50;
 
   for (var i = 0; i < Math.min(rows.length, limit); i++) {
     var row = rows[i];
     var email = (row[0] || '').trim();
     var status = (row[1] || '').trim();
+
+    // ── Dừng khẩn cấp: check cờ STOP mỗi vòng lặp ──
+    if (isEmailBatchStopped()) {
+      stopped = true;
+      break;
+    }
 
     if (!email) continue;
     if (status === 'Da gui') continue;
@@ -510,9 +532,40 @@ function handleSendFromQueue(ss, body) {
     ok: true,
     sent: sent,
     errors: errors,
+    stopped: stopped,
     remainingQuota: MailApp.getRemainingDailyQuota(),
     errorDetails: errorDetails.length > 0 ? errorDetails : undefined,
   });
+}
+
+// ============================================================
+// DỪNG KHẨN CẤP GỬI EMAIL HÀNG LOẠT
+// Dùng CacheService (script-level) — nhanh, không ghi sheet mỗi vòng lặp.
+// Cờ "email_batch_stop" = '1' → các loop gửi batch dừng sau email hiện tại.
+// Được set qua API /api/email-stop (từ nút "Dừng gửi" trên UI).
+// ============================================================
+function isEmailBatchStopped() {
+  try {
+    var cache = CacheService.getScriptCache();
+    var v = cache.get('email_batch_stop');
+    return v === '1';
+  } catch (e) {
+    return false; // CacheService lỗi → không chặn nhầm
+  }
+}
+
+function setEmailBatchStop(on) {
+  var cache = CacheService.getScriptCache();
+  if (on) {
+    cache.put('email_batch_stop', '1', 3600); // TTL 1h
+  } else {
+    cache.remove('email_batch_stop');
+  }
+  return jsonOutput({ ok: true, stopped: !!on });
+}
+
+function getEmailBatchStopStatus() {
+  return jsonOutput({ ok: true, stopped: isEmailBatchStopped() });
 }
 
 // ============================================================
