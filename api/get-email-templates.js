@@ -7,7 +7,7 @@ const { fetchGET } = require('./_lib/fetch-gapps');
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
 
 const EMAIL_TEMPLATES_API_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
-  'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
+  'https://script.google.com/macros/s/AKfycbxv2T-koDfgQIiyqMTCTcOUT_H0d5857UNBqbx_CNoyz8axOH-c8DTpa_HesQgD5tQ1Zg/exec';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 phút cache
 let _cache = null;

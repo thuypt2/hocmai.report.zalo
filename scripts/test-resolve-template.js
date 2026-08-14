@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { fetchGET } = require('../api/_lib/fetch-gapps');
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQKeHZ37tSLjtOoTzJjXZeRYGfSXvIeNUFMxcqFZpRkEOyu6ciwpD6oTwhm2eRbDuqDA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxv2T-koDfgQIiyqMTCTcOUT_H0d5857UNBqbx_CNoyz8axOH-c8DTpa_HesQgD5tQ1Zg/exec';
 const TEMPLATES_DIR = path.join(process.cwd(), 'api', 'templates');
 
 function resolveTemplateContent(htmlBody) {
