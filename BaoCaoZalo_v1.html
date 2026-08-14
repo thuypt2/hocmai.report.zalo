@@ -2931,7 +2931,9 @@ async function emailSendSelectedES() {
     username: r.username || '',
     linknhom: r.link_nhom || '',
     mabaomats: r.mabaomat || '',
-    link_aim: 'https://hocmai.link/VACTaim900plus',
+    exam: r.exam || '',
+    ten_group_aim: r.ten_group_aim || '',
+    link_aim: r.link_aim || 'https://hocmai.link/VACTaim900plus',
   }));
 
   const stamp = nowStamp();
@@ -2955,6 +2957,8 @@ async function emailSendSelectedES() {
             linknhom: s.linknhom,
             mabaomats: s.mabaomats,
             link_aim: s.link_aim,
+            exam: s.exam,
+            ten_group_aim: s.ten_group_aim,
             templateKey: 'SSC:HDAIM-S',
           })
         });
@@ -3144,6 +3148,8 @@ async function emailSendSelectedETC() {
             linknhom: s.linknhom,
             mabaomats: s.mabaomats,
             link_aim: s.link_aim,
+            exam: s.exam,
+            ten_group_aim: s.ten_group_aim,
             templateKey: 'SSC:HDAIM-S',
           })
         });
@@ -3414,6 +3420,9 @@ function renderSGroupTable(rows) {
           data-username="${esc(r.username||'')}"
           data-linknhom="${esc(r.link_nhom||'')}"
           data-mabaomat="${esc(r.mabaomat||'')}"
+          data-exam="${esc(r.exam||'')}"
+          data-ten-group-aim="${esc(r.ten_group_aim||'')}"
+          data-link-aim="${esc(r.link_aim||'')}"
           data-userid="${esc(r.userid||'')}"
           onclick="sendEmailSGroup(this)">Gửi email</button></td>`;
         continue;
@@ -3438,6 +3447,8 @@ function sendEmailSGroup(btn) {
   const username = btn.getAttribute('data-username') || '';
   const linknhom = btn.getAttribute('data-linknhom') || '';
   const mabaomat = btn.getAttribute('data-mabaomat') || '';
+  const exam     = btn.getAttribute('data-exam')     || '';
+  const tenGroupAim = btn.getAttribute('data-ten-group-aim') || '';
   const userid   = btn.getAttribute('data-userid')   || '';
 
   if (!email) return;
@@ -3446,7 +3457,7 @@ function sendEmailSGroup(btn) {
 
   // Gọi qua Vercel proxy để tránh lỗi cross-origin POST redirect
   // Vercel resolve template rồi gửi templateBody đã resolve xuống Apps Script
-  const link_aim = 'https://hocmai.link/VACTaim900plus';
+  const link_aim = btn.getAttribute('data-link-aim') || 'https://hocmai.link/VACTaim900plus';
   fetch('/api/send-sgroup-email', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -3456,6 +3467,8 @@ function sendEmailSGroup(btn) {
       linknhom:     linknhom,
       link_aim:     link_aim,
       mabaomats:    mabaomat,
+      exam:         exam,
+      ten_group_aim: tenGroupAim,
       templateKey:  'SSC:HDAIM-S',
     })
   })

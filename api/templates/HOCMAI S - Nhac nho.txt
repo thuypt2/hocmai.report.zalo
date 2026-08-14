@@ -200,7 +200,11 @@ line-height:24px;
 color:#333333;
 padding:12px 0;">
 
-<strong>Nhóm HOCMAI S V-ACT AIM 900+ (hỏi bài với bạn bè, mentor):</strong>
+<strong>Nhóm {{ten_group_aim}} (hỏi bài với bạn bè, mentor):</strong>
+
+<br>
+
+<span style="font-size:13px;color:#666666;">Kỳ thi: <strong style="color:#005BAC;">{{exam}}</strong></span>
 
 </td>
 

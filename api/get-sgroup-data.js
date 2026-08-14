@@ -1,6 +1,27 @@
 // Vercel API route — proxy sang Apps Script lấy dữ liệu nhóm S (sheet users)
 const { fetchGET } = require('./_lib/fetch-gapps');
 
+// ── AIM link mapping theo tên nhóm AIM (nhóm S) ────────────────────────────────
+// Map bằng tên chuẩn hóa (lowercase, bỏ ký tự đặc biệt). Nếu cần sửa link,
+// chỉ chỉnh bảng này.
+const AIM_LINK_MAP = [
+  // HSA
+  { key: 'hsa',  link: 'https://hocmai.link/HSAaim100plus' },
+  // V-ACT
+  { key: 'vact', link: 'https://hocmai.link/VACTaim900plus' },
+  // TSA / QDA / TN-THPT (dự phòng cho tương lai)
+  { key: 'tsa',      link: 'https://hocmai.link/TSAaim70plus' },
+  { key: 'qda',      link: 'https://hocmai.link/QDAaim100plus' },
+  { key: 'tnthpt',   link: 'https://hocmai.link/TNTHPTaim25plus' },
+];
+function resolveAimLink(groupName) {
+  const g = String(groupName || '').trim().toLowerCase();
+  for (const m of AIM_LINK_MAP) {
+    if (g.includes(m.key)) return m.link;
+  }
+  return ''; // không match → rỗng (email bỏ link)
+}
+
 const SGROUP_APPS_SCRIPT_URL =
   'https://script.google.com/macros/s/AKfycbzKaXJfwHknKqZJ0aJRFomT83kCaSTTUuLkKg2Hj6WgrDfgDHfjKuNTQ5WQ48lL9Mqp/exec';
 
@@ -98,6 +119,7 @@ module.exports = async function handler(req, res) {
       trang_thai_duyet: get(row, idxDuyet),
       exam: get(row, effectiveExam),
       ten_group_aim: get(row, effectiveTenGroup),
+      link_aim: resolveAimLink(get(row, effectiveTenGroup)),
     }));
 
     _cache = {

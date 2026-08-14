@@ -406,6 +406,10 @@ function handleSendSelectedEmails(ss, body) {
         'tencongdong': student.tencongdong || '',
         'linknhom':    student.linknhom    || '',
         'mabaomatS':   student.mabaomats   || '',
+        // Nhóm S: bắt đúng thông tin kỳ thi + tên nhóm AIM + link nhóm AIM
+        'exam':        student.exam          || '',
+        'ten_group_aim': student.ten_group_aim || '',
+        'Link_AIM':    student.link_aim      || '',
       };
 
       var subject, htmlBody;

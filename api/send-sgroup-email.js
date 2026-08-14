@@ -119,7 +119,7 @@ export default async function handler(req, res) {
     let body = {};
     try { body = JSON.parse(rawBody); } catch { body = {}; }
 
-    const { email, username, linknhom, link_group, mabaomats, link_aim, templateKey } = body;
+    const { email, username, linknhom, link_group, mabaomats, link_aim, exam, ten_group_aim, templateKey } = body;
     if (!email) return res.status(400).json({ ok: false, error: 'Thiếu email' });
 
     // Resolve template trên Vercel (có cache)
@@ -133,6 +133,8 @@ export default async function handler(req, res) {
       linknhom: linknhom || link_group || '',
       mabaomats: mabaomats || '',
       link_aim: link_aim || '',
+      exam: exam || '',
+      ten_group_aim: ten_group_aim || '',
     };
 
     const result = await callAppsScript({
