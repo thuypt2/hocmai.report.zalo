@@ -79,6 +79,22 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: 'Không có học sinh để gửi' });
     }
 
+    // ── Dedup theo email: 1 email → chỉ gửi 1 lần (giữ row đầu tiên) ──
+    // Dữ liệu nguồn trả 1 row/học sinh/lớp đã join → học sinh trong nhiều nhóm
+    // sẽ có nhiều row cùng email. Tránh gửi N email trùng (bug "gửi thành 3 email").
+    const seen = new Set();
+    const uniqueStudents = [];
+    for (const s of students) {
+      const e = String((s && s.email) || '').trim().toLowerCase();
+      if (!e || seen.has(e)) continue;
+      seen.add(e);
+      uniqueStudents.push(s);
+    }
+    const deduped = students.length - uniqueStudents.length;
+    if (deduped > 0) {
+      console.log(`[send-email] dedup ${deduped} row trùng email (${seen.size} unique)`);
+    }
+
     // Gọi Apps Script: sendClassGroupEmails với danh sách email cụ thể + template
     const result = await callAppsScript({
       action: 'sendClassGroupEmails',
@@ -86,8 +102,8 @@ export default async function handler(req, res) {
       templateKey: templateKey,
       templateSubject: templateSubject,
       templateBody: templateBody,
-      selectedEmails: students.map(s => s.email),
-      selectedStudents: students,
+      selectedEmails: uniqueStudents.map(s => s.email),
+      selectedStudents: uniqueStudents,
     });
 
     return res.status(200).json(result);

@@ -2364,10 +2364,22 @@ function applyFilter2() {
     return true;
   });
 
-  currentFilter2 = filtered;
-  EMAIL_STUDENTS = filtered;
+  // Dedup theo email: hiện 1 row/học sinh (giữ row đầu tiên)
+  // Dữ liệu nguồn có thể trả nhiều row cùng email (join nhiều lớp) → tránh chọn trùng gửi N mail
+  {
+    const seen = new Set();
+    const deduped = filtered.filter(r => {
+      const e = String(r.final_email || '').trim().toLowerCase();
+      if (!e) return true; // giữ row không email (để hiển thị trạng thái)
+      if (seen.has(e)) return false;
+      seen.add(e);
+      return true;
+    });
+    currentFilter2 = deduped;
+    EMAIL_STUDENTS = deduped;
+  }
   EMAIL_SELECTED.clear();
-  renderEmailTable(filtered);
+  renderEmailTable(currentFilter2);
 }
 
 function renderEmailTable(rows) {
