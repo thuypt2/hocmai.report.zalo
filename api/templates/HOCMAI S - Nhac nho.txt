@@ -48,7 +48,7 @@ target="_blank"
 style="text-decoration:none;">
 
 <img
-src="https://w.ladicdn.com/5cff118624dbba3522f3cf7a/logo-hm-topuni-2-20240318143350-y-lvd.png"
+src="https://huongnghiep.hocmai.vn/wp-content/uploads/2026/08/54-scaled.png"
 alt="HOCMAI TopUni"
 width="240"
 style="
