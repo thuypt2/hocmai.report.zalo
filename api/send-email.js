@@ -71,6 +71,17 @@ export default async function handler(req, res) {
 
     const { action, templateKey, templateSubject, templateBody, students } = body;
 
+    // ── Dừng khẩn cấp gửi email hàng loạt ──
+    if (action === 'stop' || action === 'resume' || action === 'status') {
+      const asAction = action === 'stop' ? 'stopEmailBatch'
+        : action === 'resume' ? 'resumeEmailBatch' : 'emailBatchStopStatus';
+      const result = await callAppsScript({
+        action: asAction,
+        secret: APPS_SCRIPT_SECRET,
+      });
+      return res.status(200).json(result);
+    }
+
     if (action !== 'send_selected') {
       return res.status(400).json({ ok: false, error: 'action không hợp lệ' });
     }

@@ -1291,13 +1291,13 @@ async function sendClassGroupEmails() {
 }
 
 // ===== Dừng khẩn cấp gửi email hàng loạt =====
-// Gọi /api/email-stop → Apps Script set cờ STOP → loop batch dừng sau email hiện tại.
+// Gọi /api/send-email (action stop/resume/status) → Apps Script set cờ STOP → loop batch dừng.
 // Áp dụng cho mọi luồng (tab 2.2 send_selected, admin queue, S/TC batch).
 let _emailBatchStop = false; // cờ client cho các loop client-side (S/TC)
 
 async function emergencyStopEmail(section) {
   try {
-    const resp = await fetch('/api/email-stop', {
+    const resp = await fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'stop' }),
@@ -1318,7 +1318,11 @@ async function emergencyStopEmail(section) {
 
 async function emailStopStatus(section) {
   try {
-    const resp = await fetch('/api/email-stop?action=status', { method: 'GET' });
+    const resp = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'status' }),
+    });
     const j = await resp.json();
     return j.ok && j.stopped;
   } catch (e) { return false; }
