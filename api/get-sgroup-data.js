@@ -15,7 +15,8 @@ const AIM_LINK_MAP = [
   { key: 'tnthpt',   link: 'https://hocmai.link/TNTHPTaim25plus' },
 ];
 function resolveAimLink(groupName) {
-  const g = String(groupName || '').trim().toLowerCase();
+  // Chuẩn hóa: lowercase + bỏ mọi ký tự không phải chữ số để 'v-act' thành 'vact', '900 plus' -> '900plus'
+  const g = String(groupName || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
   for (const m of AIM_LINK_MAP) {
     if (g.includes(m.key)) return m.link;
   }
