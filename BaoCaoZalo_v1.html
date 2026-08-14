@@ -520,6 +520,11 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
       <div class="sub-pane" id="sub-s-group">
 
         <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)" id="fS-filter-row">
+          <label>Exam
+            <select id="fS-exam">
+              <option value="">-- Tất cả --</option>
+            </select>
+          </label>
           <label id="fS-aim-label">Trạng thái duyệt AIM
             <select id="fS-aim">
               <option value="">-- Tất cả --</option>
@@ -777,6 +782,11 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
   <div class="sub-pane" id="sub-email-s">
 
     <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)">
+      <label>Exam
+        <select id="fES-exam">
+          <option value="">-- Tất cả --</option>
+        </select>
+      </label>
       <label>Trạng thái duyệt AIM
         <select id="fES-aim">
           <option value="">-- Tất cả --</option>
@@ -2791,6 +2801,7 @@ function initEmailSHeaders() {
 function applyFilterES() {
   const q = (document.getElementById('qES')?.value || '').trim().toLowerCase();
   const fAim = (document.getElementById('fES-aim')?.value || '');
+  const fExam = (document.getElementById('fES-exam')?.value || '');
 
   let pool = S_GROUP_DATA.filter(r => (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim());
   if (q) {
@@ -2802,6 +2813,7 @@ function applyFilterES() {
   }
   if (fAim === 'duyet') pool = pool.filter(r => (r.trang_thai_duyet || '').trim() === 'Duyệt');
   else if (fAim === 'chua') pool = pool.filter(r => (r.trang_thai_duyet || '').trim() !== 'Duyệt');
+  if (fExam) pool = pool.filter(r => String(r.exam || '').trim().toLowerCase() === String(fExam).toLowerCase());
 
   EMAIL_S_STUDENTS = pool;
   EMAIL_S_SELECTED.clear();
@@ -2848,7 +2860,10 @@ function renderEmailSTable(rows) {
 }
 
 function resetFilterES() {
-  document.getElementById('fES-aim').value = '';
+  const aimSel = document.getElementById('fES-aim');
+  if (aimSel) aimSel.value = '';
+  const examSel = document.getElementById('fES-exam');
+  if (examSel) examSel.value = '';
   document.getElementById('qES').value = '';
   applyFilterES();
 }
@@ -3186,6 +3201,8 @@ const S_COLS = [
   {key:"sdt", label:"SĐT", width:"110px"},
   {key:"email", label:"Email", width:"220px"},
   {key:"product", label:"product", width:"100px"},
+  {key:"exam", label:"Exam", width:"110px"},
+  {key:"ten_group_aim", label:"Tên nhóm AIM", width:"220px", wordBreak:true},
   {key:"mabaomat", label:"mabaomat", width:"110px"},
   {key:"link_nhom", label:"link nhóm", isLinkSGroup:true, width:"130px"},
   {key:"maillan1", label:"maillan1", width:"100px"},
@@ -3228,6 +3245,7 @@ async function loadSGroupData() {
   }
   initSGroupHeaders();
   initEmailSHeaders();
+  populateSGroupExamFilters();
 
   // Thêm V-ACT S vào mục 1.1 Tổng quan (dữ liệu độc lập, không merge vào DATA)
   if (S_GROUP_DATA.length > 0) {
@@ -3236,6 +3254,18 @@ async function loadSGroupData() {
 
   // Render lại bảng 2.2 khi data về (tránh trống nếu user đã mở tab trước đó)
   applyFilterSGroup();
+}
+
+// Populate 2 select Exam (mục 2.2 và 3.2) từ S_GROUP_DATA
+function populateSGroupExamFilters() {
+  const exams = uniq(S_GROUP_DATA.map(r => (r.exam || '').trim()).filter(Boolean));
+  const opts = ['<option value="">-- Tất cả --</option>']
+    .concat(exams.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`))
+    .join('');
+  const selS = document.getElementById('fS-exam');
+  if (selS) { const prev = selS.value; selS.innerHTML = opts; if (prev) selS.value = prev; }
+  const selES = document.getElementById('fES-exam');
+  if (selES) { const prev = selES.value; selES.innerHTML = opts; if (prev) selES.value = prev; }
 }
 
 function renderVActSOverview() {
@@ -3292,6 +3322,7 @@ function renderVActSOverview() {
 function applyFilterSGroup() {
   const q = (document.getElementById('qS')?.value || '').trim().toLowerCase();
   const fAim = (document.getElementById('fS-aim')?.value || '');
+  const fExam = (document.getElementById('fS-exam')?.value || '');
 
   // DVKH: phải nhập từ khóa tìm kiếm mới hiển thị danh sách (không hiển thị toàn bộ)
   if (isDVKH() && !q) {
@@ -3329,6 +3360,11 @@ function applyFilterSGroup() {
     });
   }
 
+  // Lọc theo Exam
+  if (fExam) {
+    pool = pool.filter(r => String(r.exam || '').trim().toLowerCase() === String(fExam).toLowerCase());
+  }
+
   renderSGroupTable(pool);
 }
 
@@ -3336,6 +3372,8 @@ function resetFilterSGroup() {
   document.getElementById('qS').value = '';
   const aimSel = document.getElementById('fS-aim');
   if (aimSel) aimSel.value = '';
+  const examSel = document.getElementById('fS-exam');
+  if (examSel) examSel.value = '';
   applyFilterSGroup();
 }
 

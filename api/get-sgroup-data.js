@@ -73,6 +73,16 @@ module.exports = async function handler(req, res) {
     const idxNoti     = colIdx(['trạng thái bắn noti', 'noti']);
     const idxDuyet    = colIdx(['trạng thái duyệt', 'trang_thai_duyet', 'status']);
 
+    // Sheet users columns (theo vị trí thật):
+    //   H = exam, K = Tên nhóm AIM
+    // Ưu tiên map theo tên header; nếu không tìm thấy, fallback THEO VỊ TRÍ CỘT
+    const idxExam     = colIdx(['exam', 'kỳ thi', 'ky_thi', 'kythi']);
+    const idxTenGroup  = colIdx(['tên nhóm aim', 'name_group_aim', 'ten_group_aim', 'ten nhom aim', 'tên group cộng đồng', 'ten_group']);
+    const posExamIdx   = (headers.length > 7)  ? 7  : -1;  // cột H (index 7)
+    const posTenGroupIdx = (headers.length > 10) ? 10 : -1; // cột K (index 10)
+    const effectiveExam    = idxExam    >= 0 ? idxExam    : posExamIdx;
+    const effectiveTenGroup = idxTenGroup >= 0 ? idxTenGroup : posTenGroupIdx;
+
     function get(row, idx) { return idx >= 0 ? String(row[idx] || '').trim() : ''; }
 
     const data = rawRows.map(row => ({
@@ -86,6 +96,8 @@ module.exports = async function handler(req, res) {
       maillan1: get(row, idxMaillan1),
       noti: get(row, idxNoti),
       trang_thai_duyet: get(row, idxDuyet),
+      exam: get(row, effectiveExam),
+      ten_group_aim: get(row, effectiveTenGroup),
     }));
 
     _cache = {
