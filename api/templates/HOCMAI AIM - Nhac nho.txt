@@ -669,7 +669,7 @@ Tham gia ngay để không bỏ lỡ những trao đổi và thông tin học t�
                        target="_blank"
                        style="text-decoration:none;">
 
-                        <img src="https://hocmai-report-zalo.vercel.app/api/icons/facebook.png" alt="Facebook" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+                        <img src="https://hocmai-report-zalo.vercel.app/api/icons?name=facebook.png" alt="Facebook" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
 
                     </a>
 
@@ -678,7 +678,7 @@ Tham gia ngay để không bỏ lỡ những trao đổi và thông tin học t�
                        target="_blank"
                        style="text-decoration:none;">
 
-                        <img src="https://hocmai-report-zalo.vercel.app/api/icons/tiktok.png" alt="TikTok" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+                        <img src="https://hocmai-report-zalo.vercel.app/api/icons?name=tiktok.png" alt="TikTok" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
 
                     </a>
 
@@ -687,7 +687,7 @@ Tham gia ngay để không bỏ lỡ những trao đổi và thông tin học t�
                        target="_blank"
                        style="text-decoration:none;">
 
-                        <img src="https://hocmai-report-zalo.vercel.app/api/icons/threads.png" alt="Threads" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+                        <img src="https://hocmai-report-zalo.vercel.app/api/icons?name=threads.png" alt="Threads" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
 
                     </a>
 
@@ -696,7 +696,7 @@ Tham gia ngay để không bỏ lỡ những trao đổi và thông tin học t�
                        target="_blank"
                        style="text-decoration:none;">
 
-                        <img src="https://hocmai-report-zalo.vercel.app/api/icons/youtube.png" alt="YouTube" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+                        <img src="https://hocmai-report-zalo.vercel.app/api/icons?name=youtube.png" alt="YouTube" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
 
                     </a>
 

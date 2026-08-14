@@ -19,8 +19,11 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
   }
 
-  // req.url like /api/icons/facebook.png
-  const name = (req.url.match(/\/api\/icons\/([^/?]+)/) || [])[1];
+  // Support: /api/icons?name=facebook.png  (query param)
+  //       or  /api/icons/facebook.png      (path trailing)
+  const name =
+    (req.query && req.query.name) ||
+    ((req.url.match(/\/api\/icons\/([^/?]+)/) || [])[1]);
   if (!name) {
     return res.status(404).json({ ok: false, error: 'Not found' });
   }
