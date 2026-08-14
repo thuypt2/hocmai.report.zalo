@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOCMAI TopUni 2027</title>
+</head>
+
+<body style="margin:0;padding:0;background:#F3F6FB;">
+
+<center style="width:100%;background:#F3F6FB;">
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       bgcolor="#F3F6FB">
+
+<tr>
+
+<td align="center" style="padding:20px 10px;">
+
+<!-- ================= CONTAINER ================= -->
+
+<table role="presentation"
+       width="800"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       style="
+              width:800px;
+              max-width:800px;
+              background:#FFFFFF;
+              border:1px solid #D9E7FF;
+              border-radius:18px;
+              overflow:hidden;">
+
+<!-- ================= HEADER ================= -->
+
+<tr>
+
+<td style="padding:20px 24px;">
+
+<a href="https://hocmai.vn"
+target="_blank"
+style="text-decoration:none;">
+
+<img
+src="https://w.ladicdn.com/5cff118624dbba3522f3cf7a/logo-hm-topuni-2-20240318143350-y-lvd.png"
+alt="HOCMAI TopUni"
+width="240"
+style="
+display:block;
+width:240px;
+max-width:240px;
+height:auto;
+border:0;
+outline:none;
+text-decoration:none;">
+
+</a>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="border-top:1px solid #E7EEF8;"></td>
+
+</tr>
+
+<!-- ================= NỘI DUNG ================= -->
+
+<tr>
+
+<td style="padding:40px;">
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0">
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:16px;
+line-height:30px;
+color:#333333;
+text-align:justify;">
+
+Chào em,
+
+</td>
+
+</tr>
+
+<tr>
+<td height="18"></td>
+</tr>
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:16px;
+line-height:30px;
+color:#333333;
+text-align:justify;">
+
+Em đã đăng ký giải pháp
+<strong>HOCMAI TopUni 2027 - {{exam}}</strong>
+nhưng chưa tham gia đầy đủ nhóm AIM để hỏi bài, trao đổi chuyên môn với Admin/Mentor.
+
+<br>
+
+Em hãy nhanh chóng thực hiện theo hướng dẫn dưới đây để không bỏ lỡ việc đồng hành học tập với mentor và các bạn học viên HOCMAI nha.
+
+</td>
+
+</tr>
+
+<tr>
+<td height="30"></td>
+</tr>
+
+<!-- ================= P2 NỐI TIẾP TỪ ĐÂY ================= -->
+<!-- ================= THÔNG TIN NHÓM LỚP ================= -->
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       style="border:1px solid #F8FBFF;background:#F8FBFF;border-radius:16px;overflow:hidden;">
+
+<tr>
+
+<td style="padding:24px;">
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0">
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:22px;
+font-weight:bold;
+color:#005BAC;">
+
+THÔNG TIN NHÓM LỚP
+
+</td>
+
+</tr>
+
+<tr>
+<td height="18"></td>
+</tr>
+
+</table>
+
+<!-- Dòng 1 -->
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+
+</tr>
+
+<tr>
+
+<td colspan="2"
+style="border-top:1px dashed #F8FBFF;"></td>
+
+</tr>
+
+</table>
+
+
+<!-- Dòng 3 -->
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+
+<td width="72%"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:24px;
+color:#333333;
+padding:12px 0;">
+
+<strong>Nhóm {{ten_group_aim}} (hỏi bài với bạn bè, mentor):</strong>
+
+<br>
+
+<span style="font-size:13px;color:#666666;">Kỳ thi: <strong style="color:#005BAC;">{{exam}}</strong></span>
+
+</td>
+
+<td width="28%"
+align="right">
+
+<a href="{{linknhom}}"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+font-weight:bold;
+color:#005BAC;
+text-decoration:none;">
+
+Tham gia ngay
+
+</a>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td colspan="2"
+style="border-top:1px dashed #F8FBFF;"></td>
+
+</tr>
+
+</table>
+
+<!-- Dòng 4 -->
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+
+<td width="72%"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:24px;
+color:#333333;
+padding:12px 0;">
+
+<strong>Mã bảo mật:</strong>
+
+</td>
+
+<td width="28%"
+align="right"
+style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:16px;
+font-weight:bold;
+color:#E53935;">
+
+{{mabaomatS}}
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+
+<td height="28"></td>
+
+</tr>
+
+</table>
+<!-- ================= VIỆC CẦN LÀM NGAY ================= -->
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       style="border:1px solid #FBFFFB;background:#FBFFFB;border-radius:16px;overflow:hidden;">
+
+<tr>
+
+<td style="padding:24px 28px;">
+
+<table width="100%" cellpadding="0" cellspacing="0">
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:22px;
+font-weight:bold;
+color:#2E7D32;">
+
+VIỆC EM CẦN LÀM NGAY HÔM NAY
+
+</td>
+
+</tr>
+
+<tr><td height="24"></td></tr>
+
+<!-- STEP 1 -->
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:28px;
+color:#333333;">
+
+Mở ứng dụng <strong>Zalo trên điện thoại</strong>, bấm vào liên kết nhóm lớp hoặc quét mã QR của nhóm lớp trên máy tính, gửi yêu cầu tham gia và trả lời câu hỏi với mã bảo mật
+<strong style="color:#E53935;">{{mabaomatS}}</strong>.
+
+</td>
+
+</tr>
+
+<tr><td height="18"></td></tr>
+
+<!-- LƯU Ý -->
+
+<tr>
+
+<td>
+
+<table width="100%"
+cellpadding="0"
+cellspacing="0"
+style="
+background:#FFF8EA;
+border:1px solid #FFF8EA;
+border-radius:12px;
+overflow:hidden;">
+
+<tr>
+
+<td style="padding:18px;">
+
+<div style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+font-weight:bold;
+color:#E67E00;">
+
+LƯU Ý
+
+</div>
+
+<div style="height:10px;"></div>
+
+<div style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:14px;
+line-height:26px;
+color:#444444;">
+
+<strong style="color:#E53935;">
+
+Hệ thống sẽ tự động duyệt trong vòng 24 giờ nếu em điền đúng mã bảo mật.
+
+</strong>
+
+<br>
+
+Nếu điền sai, em hãy hủy yêu cầu tham gia và thực hiện lại các thao tác trên.
+
+<br>
+
+Mỗi tài khoản chỉ được duyệt 01 số điện thoại vào nhóm lớp.
+
+</div>
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+
+</tr>
+
+<tr><td height="24"></td></tr>
+
+<!-- STEP 2 -->
+
+<tr>
+
+<td style="
+font-family:Arial,Helvetica,sans-serif;
+font-size:15px;
+line-height:28px;
+color:#333333;">
+
+
+
+Tham gia ngay để không bỏ lỡ những trao đổi và thông tin học tập hữu ích em nhé!
+
+</td>
+
+</tr>
+
+<td height="2"></td></tr>
+
+</table>
+
+</td>
+
+</tr>
+
+
+<!-- ======================= CTA ======================= -->
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0">
+
+    <tr>
+        <td height="12"></td>
+    </tr>
+
+    <tr>
+
+        <td align="center">
+
+            <table role="presentation"
+                   cellpadding="0"
+                   cellspacing="0"
+                   border="0">
+
+                <tr>
+
+                    <!-- Nút AIM -->
+
+                    <td align="center">
+
+                        <a href="{{Link_AIM}}"
+                           target="_blank"
+                           style="
+                           display:inline-block;
+                           width:230px;
+                           background:#FF8A00;
+                           color:#FFFFFF;
+                           font-family:Arial,Helvetica,sans-serif;
+                           font-size:15px;
+                           font-weight:bold;
+                           line-height:48px;
+                           text-align:center;
+                           text-decoration:none;
+                           border-radius:6px;">
+
+                            THAM GIA NHÓM AIM
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+            </table>
+
+        </td>
+
+    </tr>
+
+    <tr>
+        <td height="40"></td>
+    </tr>
+
+</table>
+
+<!-- ======================= CHỮ KÝ ======================= -->
+
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0">
+
+    <tr>
+
+        <td align="right"
+            style="
+            padding:0 40px;
+            font-family:Arial,Helvetica,sans-serif;
+            font-size:16px;
+            line-height:30px;
+            color:#333333;">
+
+            Thân gửi,
+
+            <br>
+
+            <strong style="color:#005BAC;">
+
+                Đội ngũ HOCMAI
+
+            </strong>
+
+        </td>
+
+    </tr>
+
+    <tr>
+        <td height="40"></td>
+    </tr>
+
+</table>
+
+<!-- ======================= FOOTER ======================= -->
+
+<tr>
+
+    <td bgcolor="#005BAC"
+        style="padding:18px 30px;">
+
+        <table role="presentation"
+               width="100%"
+               cellpadding="0"
+               cellspacing="0"
+               border="0">
+
+            <tr>
+
+                <td align="center"
+                                    width="20%"
+                                    style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#FFFFFF;">
+
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="#FFFFFF" style="vertical-align:middle;margin-right:6px;"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+
+                                    1900 6933
+
+                                </td>
+
+                                <td width="1" bgcolor="#4A8ED8"></td>
+
+                                <td align="center"
+                                    width="20%">
+
+                                    <a href="mailto:hotro@hocmai.vn"
+                                       style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#FFFFFF;text-decoration:none;">
+
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="#FFFFFF" style="vertical-align:middle;margin-right:6px;"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+
+                                        hotro@hocmai.vn
+
+                                    </a>
+
+                                </td>
+
+                                <td width="1" bgcolor="#4A8ED8"></td>
+
+                                <td align="center"
+                                    width="60%"
+                                    style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#FFFFFF;">
+
+                    Kết nối với HOCMAI
+
+                    <!-- Facebook -->
+                    <a href="https://www.facebook.com/Hocmai.vnTHPT/"
+                       target="_blank"
+                       style="text-decoration:none;">
+
+                        <img src="https://hocmai-report-zalo.vercel.app/api/icons?name=facebook.png" alt="Facebook" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+
+
+                    </a>
+
+                    <!-- TikTok -->
+                    <a href="https://www.tiktok.com/@hocmai.official"
+                       target="_blank"
+                       style="text-decoration:none;">
+
+                        <img src="https://hocmai-report-zalo.vercel.app/api/icons?name=tiktok.png" alt="TikTok" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+
+
+                    </a>
+
+                    <!-- Threads -->
+                    <a href="https://www.threads.com/@hocmai_official"
+                       target="_blank"
+                       style="text-decoration:none;">
+
+                        <img src="https://hocmai-report-zalo.vercel.app/api/icons?name=threads.png" alt="Threads" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+
+
+                    </a>
+
+                    <!-- YouTube -->
+                    <a href="https://www.youtube.com/@HOCMAITHPT"
+                       target="_blank"
+                       style="text-decoration:none;">
+
+                        <img src="https://hocmai-report-zalo.vercel.app/api/icons?name=youtube.png" alt="YouTube" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+
+
+                    </a>
+
+</td>
+
+            </tr>
+
+        </table>
+
+    </td>
+
+</tr>
+
+<!-- ======================= KẾT THÚC PHẦN NỘI DUNG ======================= -->
+
+        </td>
+    </tr>
+</table>
+
+<!-- ======================= ĐÓNG CONTAINER ======================= -->
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
+
+</center>
+
+</body>
+
+</html>

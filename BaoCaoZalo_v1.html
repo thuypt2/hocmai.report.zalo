@@ -3100,6 +3100,26 @@ function previewEmailTemplateETC() {
   preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${t.html_body || t.body || ''}</div>`;
 }
 
+// Lấy nội dung template TC (file riêng trong api/templates) qua Vercel
+let _tcTemplateCache = null;
+async function getTcTemplateBody() {
+  if (_tcTemplateCache) return _tcTemplateCache;
+  try {
+    const resp = await fetch('/api/template-content?name=' + encodeURIComponent('HOCMAI AIM - Nhac nho TC.txt'));
+    const text = await resp.text();
+    try {
+      const j = JSON.parse(text);
+      if (!j.ok) return null;
+      _tcTemplateCache = j.content || '';
+    } catch (e) {
+      // Nếu trả về raw HTML (không phải JSON) — dùng luôn
+      if (/<html|<!DOCTYPE/i.test(text)) { _tcTemplateCache = text; }
+      else return null;
+    }
+  } catch (e) { return null; }
+  return _tcTemplateCache;
+}
+
 async function emailSendSelectedETC() {
   const tplSel = document.getElementById('emailTemplateETC');
   const resultBox = document.getElementById('emailSendResultETC');
@@ -3109,13 +3129,19 @@ async function emailSendSelectedETC() {
   const template = EMAIL_TEMPLATES_LOADED[key];
   if (!template) { alert('Vui lòng chọn mẫu email.'); return; }
 
+  // Ưu tiên dùng template AIM riêng cho TC (file trong api/templates) để bắt đúng
+  // exam / tên nhóm / link nhóm. Nếu không lấy được, fallback template user chọn.
+  const tcBody = await getTcTemplateBody();
+  const tcSubject = tcBody ? '[HOCMAI] Nhắc nhở tham gia Nhóm AIM - Giải pháp TopUni' : (template.subject || '');
+  const tcHtmlBody = tcBody || (template.html_body || template.body || '');
+
   const selected = [...EMAIL_TC_SELECTED].map(i => EMAIL_TC_STUDENTS[i]).filter(r => {
     const e = (r.email || '').trim();
     return e && e.includes('@');
   });
   if (selected.length === 0) { alert('Không có học sinh nào có email hợp lệ.'); return; }
 
-  const confirmed = confirm(`Bạn muốn gửi email "${template.name}" cho ${selected.length} học sinh?`);
+  const confirmed = confirm(`Bạn muốn gửi email "${tcBody ? 'AIM - Nhắc nhở (TC)' : template.name}" cho ${selected.length} học sinh?`);
   if (!confirmed) return;
 
   resultBox.textContent = `Đang gửi email cho ${selected.length} học sinh...`;
@@ -3125,7 +3151,9 @@ async function emailSendSelectedETC() {
     username: r.username || '',
     linknhom: r.link_group || '',
     mabaomats: r.mabaomat || '',
-    link_aim: 'https://hocmai.link/TNTHPTaim25plus',
+    exam: r.exam || '',
+    ten_group_aim: r.ten_group || '',
+    link_aim: r.link_group || 'https://hocmai.link/TNTHPTaim25plus',
   }));
 
   const stamp = nowStamp();
@@ -3150,7 +3178,9 @@ async function emailSendSelectedETC() {
             link_aim: s.link_aim,
             exam: s.exam,
             ten_group_aim: s.ten_group_aim,
-            templateKey: 'SSC:HDAIM-S',
+            templateKey: 'SSC:HDAIM',
+            templateSubject: tcSubject || '',
+            templateBody: tcHtmlBody || '',
           })
         });
         const result = await resp.json();
@@ -3607,6 +3637,7 @@ function renderTCTable(rows) {
               data-email="${esc(r.email||'')}"
               data-username="${esc(r.username||'')}"
               data-mabaomat="${esc(r.mabaomat||'')}"
+              data-exam="${esc(r.exam||'')}"
               data-ten-group="${esc(r.ten_group||'')}"
               data-link-group="${esc(r.link_group||'')}"
               onclick="sendEmailTC(this)">Gửi email</button></td>`;
@@ -3627,18 +3658,22 @@ function renderTCTable(rows) {
     total > MAX ? `Hiển thị ${MAX} / ${total} dòng` : `Hiển thị ${total} dòng`;
 }
 
-function sendEmailTC(btn) {
+async function sendEmailTC(btn) {
   const email    = btn.getAttribute('data-email')    || '';
   const username = btn.getAttribute('data-username') || '';
   const link_group = btn.getAttribute('data-link-group') || '';
   const mabaomat = btn.getAttribute('data-mabaomat') || '';
+  const exam     = btn.getAttribute('data-exam')     || '';
+  const tenGroup = btn.getAttribute('data-ten-group') || '';
 
   if (!email) return;
   btn.disabled = true;
   btn.textContent = 'Đang gửi...';
 
   // Vercel resolve template rồi gửi templateBody đã resolve xuống Apps Script
-  const link_aim = 'https://hocmai.link/TNTHPTaim25plus';
+  const link_aim = link_group || 'https://hocmai.link/TNTHPTaim25plus';
+  const tcBody = await getTcTemplateBody();
+  const tcSubject = '[HOCMAI] Nhắc nhở tham gia Nhóm AIM - Giải pháp TopUni';
   fetch('/api/send-sgroup-email', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -3648,7 +3683,11 @@ function sendEmailTC(btn) {
       linknhom:     link_group,
       link_aim:     link_aim,
       mabaomats:    mabaomat,
-      templateKey:  'SSC:HDAIM-S',
+      exam:         exam,
+      ten_group_aim: tenGroup,
+      templateKey:  'SSC:HDAIM',
+      templateSubject: tcSubject,
+      templateBody: tcBody || '',
     })
   })
   .then(r => r.json())

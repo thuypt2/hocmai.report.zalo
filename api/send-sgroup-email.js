@@ -119,11 +119,17 @@ export default async function handler(req, res) {
     let body = {};
     try { body = JSON.parse(rawBody); } catch { body = {}; }
 
-    const { email, username, linknhom, link_group, mabaomats, link_aim, exam, ten_group_aim, templateKey } = body;
+    const { email, username, linknhom, link_group, mabaomats, link_aim, exam, ten_group_aim, templateKey, templateSubject, templateBody } = body;
     if (!email) return res.status(400).json({ ok: false, error: 'Thiếu email' });
 
-    // Resolve template trên Vercel (có cache)
-    const tmpl = await getResolvedTemplate(templateKey || 'SSC:HDAIM-S');
+    // Resolve template trên Vercel: nếu client đã gửi templateBody sẵn (đã resolve),
+    // dùng luôn. Ngược lại resolve theo templateKey.
+    let tmpl;
+    if (templateBody) {
+      tmpl = { subject: templateSubject || '', htmlBody: templateBody };
+    } else {
+      tmpl = await getResolvedTemplate(templateKey || 'SSC:HDAIM-S');
+    }
 
     // Thêm ảnh hướng dẫn AIM
     const htmlBodyWithImage = appendImageGuide(tmpl.htmlBody);
