@@ -1486,7 +1486,7 @@ function recomputeDataFromLookup(){
 function renderKPI(){
   const root = document.getElementById('kpis');
   root.innerHTML = '';
-  function kpiCard(label, total, d130, daim, isTotal, tangThang){
+  function kpiCard(label, total, d130, daim, isTotal, tangThang, cid){
     tangThang = tangThang || 0;
     const pct130 = total ? (d130/total*100) : 0;
     const pctAim = total ? (daim/total*100) : 0;
@@ -1498,7 +1498,7 @@ function renderKPI(){
     const tangHtml = tangThang > 0
       ? ` <span style="font-size:13px;color:#16a34a;font-weight:600;vertical-align:middle">&#8593;${tangThang.toLocaleString('vi-VN')}</span>`
       : '';
-    return `<div class="${cls}">
+    return `<div class="${cls}"${cid ? ' id="' + cid + '"' : ''}>
       <div class="lbl">${escapeHtml(label)}</div>
       <div class="val">${total.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span>${tangHtml}</div>
       <div class="bar-row">
@@ -1529,7 +1529,8 @@ function renderKPI(){
   for (const ex of DATA.exams){
     const s = DATA.exam_stats[ex];
     const label = ex || '(rỗng)';
-    root.insertAdjacentHTML('beforeend', kpiCard(label, s.tong_hs, s.duyet_130, s.duyet_aim, false, countNewThisMonth(ex)));
+    const cid = (ex === 'HSA') ? 'kpi-hsa' : (ex === 'V-ACT' ? 'kpi-vact' : '');
+    root.insertAdjacentHTML('beforeend', kpiCard(label, s.tong_hs, s.duyet_130, s.duyet_aim, false, countNewThisMonth(ex), cid));
   }
   // Card riêng cho dòng chưa có exam/mã lớp
   const noExam = DATA.rows_no_exam || 0;
@@ -3332,48 +3333,83 @@ function renderVActSOverview() {
   });
   if (!validRows.length) return;
 
-  const total = validRows.length;
-  const duyetAim = validRows.filter(function(r) {
-    return (r.trang_thai_duyet || '').trim() === 'Duyệt';
-  }).length;
-  const pctAim = total ? (duyetAim / total * 100) : 0;
-  const wAim = Math.max(0, Math.min(100, pctAim));
-  const labelAimInside = pctAim >= 8;
+  // ── Tách riêng 2 kỳ thi: HSA S và V-ACT S (dữ liệu nhóm S, chỉ có AIM) ──
+  function statFor(exam) {
+    const sub = validRows.filter(r => (r.exam || '').trim() === exam);
+    const total = sub.length;
+    if (!total) return null;
+    const duyetAim = sub.filter(r => (r.trang_thai_duyet || '').trim() === 'Duyệt').length;
+    const pctAim = duyetAim / total * 100;
+    const wAim = Math.max(0, Math.min(100, pctAim));
+    const labelAimInside = pctAim >= 8;
+    return { total, duyetAim, pctAim, wAim, labelAimInside };
+  }
 
-  // Thêm KPI card cho V-ACT S (chỉ AIM)
-  const kpisRoot = document.getElementById('kpis');
-  // Xóa card V-ACT S cũ nếu có (tránh trùng khi reload)
-  const old = document.getElementById('kpi-vacts');
-  if (old) old.remove();
-  kpisRoot.insertAdjacentHTML('beforeend',
-    `<div class="kpi" id="kpi-vacts" style="border-left:3px solid #f59e0b">
-      <div class="lbl">V-ACT S <span style="font-size:10px;color:#b45309">(chỉ AIM)</span></div>
-      <div class="val">${total.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span></div>
+  function sCardHTML(id, title, st) {
+    return `<div class="kpi" id="${id}" style="border-left:3px solid #f59e0b">
+      <div class="lbl">${escapeHtml(title)} <span style="font-size:10px;color:#b45309">(chỉ AIM)</span></div>
+      <div class="val">${st.total.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span></div>
       <div class="bar-cap" style="margin-top:6px"><span>Nhóm 1:30</span><span class="muted" style="font-size:11px">(chỉ có AIM)</span></div>
       <div class="bar-row">
-        <div class="bar-cap"><span>Nhóm AIM</span><span><b>${duyetAim.toLocaleString('vi-VN')}</b> · ${pctAim.toFixed(1).replace('.',',')}%</span></div>
-        <div class="bar"><div class="fill fill-aim" style="width:${wAim.toFixed(1)}%">${labelAimInside ? duyetAim.toLocaleString('vi-VN')+' · '+pctAim.toFixed(1).replace('.',',')+'%' : ''}</div></div>
-        ${!labelAimInside && pctAim>0 ? `<div style="font-size:10px;color:#374151;text-align:right;margin-top:-4px">${duyetAim.toLocaleString('vi-VN')} · ${pctAim.toFixed(1).replace('.',',')}%</div>` : ''}
+        <div class="bar-cap"><span>Nhóm AIM</span><span><b>${st.duyetAim.toLocaleString('vi-VN')}</b> · ${st.pctAim.toFixed(1).replace('.',',')}%</span></div>
+        <div class="bar"><div class="fill fill-aim" style="width:${st.wAim.toFixed(1)}%">${st.labelAimInside ? st.duyetAim.toLocaleString('vi-VN')+' · '+st.pctAim.toFixed(1).replace('.',',')+'%' : ''}</div></div>
+        ${!st.labelAimInside && st.pctAim>0 ? `<div style="font-size:10px;color:#374151;text-align:right;margin-top:-4px">${st.duyetAim.toLocaleString('vi-VN')} · ${st.pctAim.toFixed(1).replace('.',',')}%</div>` : ''}
       </div>
-    </div>`);
+    </div>`;
+  }
 
-  // Thêm dòng V-ACT S vào exam table
+  // ── KPI cards: 2 ô riêng, đặt ngay cạnh card kỳ thi tương ứng ──
+  const kpisRoot = document.getElementById('kpis');
+  function placeCard(kpiId, anchorId, html) {
+    const oldEl = document.getElementById(kpiId);
+    if (oldEl) oldEl.remove();
+    const anchor = document.getElementById(anchorId);
+    if (anchor) anchor.insertAdjacentHTML('afterend', html);
+    else kpisRoot.insertAdjacentHTML('beforeend', html);
+  }
+  // Xóa card cũ (kiểu gộp chung 1 card V-ACT S) nếu còn sót
+  const oldKpi = document.getElementById('kpi-vacts');
+  if (oldKpi) oldKpi.remove();
+
+  const hsaS  = statFor('HSA');
+  const vactS = statFor('V-ACT');
+  if (hsaS)  placeCard('kpi-hsa-s',  'kpi-hsa',  sCardHTML('kpi-hsa-s',  'HSA S',  hsaS));
+  if (vactS) placeCard('kpi-vact-s', 'kpi-vact', sCardHTML('kpi-vact-s', 'V-ACT S', vactS));
+
+  // ── Exam table: 2 dòng riêng, đặt ngay sau dòng cuối của kỳ thi tương ứng ──
   const tb = document.querySelector('#tbl-exam tbody');
-  // Xóa dòng V-ACT S cũ nếu có
   const oldRow = document.getElementById('row-vacts');
   if (oldRow) oldRow.remove();
-  const taim = total ? (duyetAim / total * 100).toFixed(2) : '0';
-  tb.insertAdjacentHTML('beforeend',
-    `<tr id="row-vacts" style="background:#fffbeb">
-      <td><b>V-ACT S</b> <span style="font-size:11px;color:#b45309">(chỉ AIM)</span></td>
+
+  function sRowHTML(id, title, st) {
+    const taim = st.total ? (st.duyetAim / st.total * 100).toFixed(2) : '0';
+    return `<tr id="${id}" style="background:#fffbeb">
+      <td><b>${title}</b> <span style="font-size:11px;color:#b45309">(chỉ AIM)</span></td>
       <td class="muted">—</td>
       <td class="num muted">—</td>
-      <td class="num">${total.toLocaleString('vi-VN')}</td>
+      <td class="num">${st.total.toLocaleString('vi-VN')}</td>
       <td class="num muted">—</td>
       <td class="num muted">—</td>
-      <td class="num">${duyetAim.toLocaleString('vi-VN')}</td>
+      <td class="num">${st.duyetAim.toLocaleString('vi-VN')}</td>
       <td class="num">${taim}%</td>
-    </tr>`);
+    </tr>`;
+  }
+  function lastRowOfExam(examName) {
+    const trs = [...tb.querySelectorAll('tr')].filter(tr => {
+      const td = tr.firstElementChild;
+      return td && td.textContent.trim().startsWith(examName);
+    });
+    return trs.length ? trs[trs.length - 1] : null;
+  }
+  function placeRow(rowId, examName, html) {
+    const oldEl = document.getElementById(rowId);
+    if (oldEl) oldEl.remove();
+    const anchor = lastRowOfExam(examName);
+    if (anchor) anchor.insertAdjacentHTML('afterend', html);
+    else tb.insertAdjacentHTML('beforeend', html);
+  }
+  if (hsaS)  placeRow('row-hsa-s',  'HSA',   sRowHTML('row-hsa-s',  'HSA S',  hsaS));
+  if (vactS) placeRow('row-vact-s', 'V-ACT', sRowHTML('row-vact-s', 'V-ACT S', vactS));
 }
 
 function applyFilterSGroup() {
