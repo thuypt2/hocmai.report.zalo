@@ -3515,7 +3515,6 @@ function renderSOverview() {
     return `<div class="kpi" id="${id}" style="border-left:3px solid #f59e0b">
       <div class="lbl">${escapeHtml(title)} <span style="font-size:10px;color:#b45309">(chỉ AIM)</span></div>
       <div class="val">${st.total.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span></div>
-      <div class="bar-cap" style="margin-top:6px"><span>Nhóm 1:30</span><span class="muted" style="font-size:11px">(chỉ có AIM)</span></div>
       <div class="bar-row">
         <div class="bar-cap"><span>Nhóm AIM</span><span><b>${st.duyetAim.toLocaleString('vi-VN')}</b> · ${st.pctAim.toFixed(1).replace('.',',')}%</span></div>
         <div class="bar"><div class="fill fill-aim" style="width:${st.wAim.toFixed(1)}%">${st.labelAimInside ? st.duyetAim.toLocaleString('vi-VN')+' · '+st.pctAim.toFixed(1).replace('.',',')+'%' : ''}</div></div>
