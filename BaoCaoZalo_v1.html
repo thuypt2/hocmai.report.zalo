@@ -120,6 +120,12 @@ tr:nth-child(even) td{background:#fafbfc}
 .bar-tbl tfoot td{background:#FAFAFA;font-weight:700;border-top:2px solid #E5E7EB}
 .ov-section-divider td{background:#eef2ff;color:#1e3a8a;font-weight:700;font-size:13px;text-align:left;padding:8px 10px;border-left:none;border-right:none}
 .ov-section-divider td.github {background:#fffbeb;color:#b45309;border-left:3px solid #f59e0b;padding-left:8px}
+/* Cặp KPI song song: VIP | S cùng kỳ thi */
+.ov-pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px;margin-bottom:12px;grid-column:1/-1}
+.ov-pair .ov-vip,.ov-pair .ov-s-slot{min-width:0}
+.ov-pair .ov-s-slot .kpi{border-left:3px solid #f59e0b}
+.ov-pair.s-only .ov-vip{display:none}
+.ov-pair.s-only{grid-template-columns:1fr}
 .bar-tbl .cell-total{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px}
 .bar-tbl-wrap{max-height:calc(100vh - 260px);overflow:auto;border:none}
 .bar-tbl-wrap .bar-tbl thead th{top:0}
@@ -1651,13 +1657,16 @@ function renderKPI(){
   const totalAll = DATA.total_rows || 0;
   const d130All  = DATA.exams.reduce((s,e)=>s+(DATA.exam_stats[e]?.duyet_130||0), 0);
   const daimAll  = DATA.exams.reduce((s,e)=>s+(DATA.exam_stats[e]?.duyet_aim||0), 0);
-  root.insertAdjacentHTML('beforeend', `<h3 style="margin:0 0 10px;font-size:15px;color:#1e3a8a">NHÓM VIP (vào nhóm 1:30 & AIM)</h3>`);
-  root.insertAdjacentHTML('beforeend', kpiCard('TỔNG (mọi exam)', totalAll, d130All, daimAll, true, countNewThisMonth(null)));
+  root.insertAdjacentHTML('beforeend', `<h3 style="margin:0 0 10px;font-size:15px;color:#1e3a8a">TỔNG QUAN DUYỆT NHÓM — GÓI VIP & GÓI S (song song từng kỳ thi)</h3>`);
+  // Card tổng VIP (full width)
+  root.insertAdjacentHTML('beforeend', `<div class="ov-pair ov-total-vip">${kpiCard('TỔNG VIP (mọi exam)', totalAll, d130All, daimAll, true, countNewThisMonth(null))}</div>`);
+  // Mỗi kỳ thi = 1 .ov-pair chứa card VIP + slot S bên cạnh (S slot do renderSOverview điền)
   for (const ex of DATA.exams){
     const s = DATA.exam_stats[ex];
     const label = ex || '(rỗng)';
     const cid = (ex === 'HSA') ? 'kpi-hsa' : (ex === 'V-ACT' ? 'kpi-vact' : '');
-    root.insertAdjacentHTML('beforeend', kpiCard(label, s.tong_hs, s.duyet_130, s.duyet_aim, false, countNewThisMonth(ex), cid));
+    const sEmpty = `<div class="ov-s-slot" data-s-exam="${escapeAttr(ex)}"></div>`;
+    root.insertAdjacentHTML('beforeend', `<div class="ov-pair" data-pair-exam="${escapeAttr(ex)}"><div class="ov-vip">${kpiCard(label, s.tong_hs, s.duyet_130, s.duyet_aim, false, countNewThisMonth(ex), cid)}</div>${sEmpty}</div>`);
   }
   // Card riêng cho dòng chưa có exam/mã lớp
   const noExam = DATA.rows_no_exam || 0;
@@ -1675,7 +1684,7 @@ function renderExamTable(){
   tb.innerHTML = ''; tf.innerHTML = '';
   // Thêm dòng tiêu đề hai phần: VIP nhóm 1:30 + S đăng ký AIM
   tb.insertAdjacentHTML('beforeend',
-    `<tr class="ov-section-divider"><td colspan="8"><b>NHÓM VIP</b> — hoc sinh vao nhom 1:30 & AIM (loc theo paid_time)</td></tr>`);
+    `<tr class="ov-section-divider"><td colspan="8"><b>GÓI VIP</b> — hoc sinh vao nhom 1:30 & AIM (loc theo paid_time). Dòng <span style="color:#b45309">"…S (chỉ AIM)"</span> bên dưới từng kỳ thi là GÓI S tương ứng.</td></tr>`);
   let totalN=0, d130N=0, daimN=0, nhomN=0;
   let gvN = 0;
 
@@ -3466,6 +3475,11 @@ function renderSOverview() {
   const validRows = getSGroupFiltered().filter(function(r) {
     return (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim();
   });
+  // Trước khi render, dọn sạch các slot S cũ (đã có .ov-s-slot ngay sau mỗi card VIP)
+  const kpisRoot = document.getElementById('kpis');
+  kpisRoot.querySelectorAll('.ov-s-slot').forEach(slot => slot.innerHTML = '');
+  kpisRoot.querySelectorAll('.ov-pair.s-only').forEach(p => p.remove());
+
   if (!validRows.length) return;
 
   // ── Tách riêng từng kỳ thi có trong dữ liệu nhóm S (đăng ký S vào AIM) ──
@@ -3493,34 +3507,43 @@ function renderSOverview() {
     </div>`;
   }
 
-  // ── KPI: khối riêng "NHÓM S (đăng ký S vào AIM)" đặt sau khối VIP ──
-  const kpisRoot = document.getElementById('kpis');
-  // Xóa khối S cũ tránh trùng
-  kpisRoot.querySelectorAll('.ov-s-block').forEach(el => el.remove());
+  // ── KPI: điền S card vào slot cạnh card VIP cùng kỳ thi; kỳ thi S không có VIP → pair s-only ──
   const sExams = [...new Set(validRows.map(r => (r.exam || '').trim()).filter(Boolean))].sort();
-  const stCards = sExams.map(ex => {
+  const vipExams = new Set((DATA.exams || []).map(ex => String(ex)));
+  sExams.forEach(ex => {
     const st = statFor(ex);
+    if (!st) return;
     const cid = 'kpi-s-' + ex.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    return st ? sCardHTML(cid, ex + ' S', st) : '';
-  }).filter(Boolean).join('');
-  if (!stCards) return;
-  const sBlock = document.createElement('div');
-  sBlock.className = 'ov-s-block';
-  sBlock.innerHTML = `<h3 style="margin:18px 0 10px;font-size:15px;color:#b45309">NHÓM S — hoc sinh dang ky S vao nhom AIM (chi tinh AIM)</h3>` + stCards;
-  // Chèn trước card "Chưa phân loại" nếu có, nếu không thì append cuối
-  const noExamCard = [...kpisRoot.querySelectorAll('.kpi')].find(el => (el.textContent || '').includes('Chưa phân loại'));
-  if (noExamCard) kpisRoot.insertBefore(sBlock, noExamCard);
-  else kpisRoot.appendChild(sBlock);
+    const html = sCardHTML(cid, ex + ' S', st);
+    // Tìm slot cùng exam trong pair VIP đã render
+    const slot = kpisRoot.querySelector('[data-s-exam="' + CSS.escape(ex) + '"]');
+    if (slot) {
+      slot.innerHTML = html;
+      const pair = slot.closest('.ov-pair');
+      if (pair) pair.classList.remove('s-only');
+    } else {
+      // Kỳ thi này chỉ có S, không có VIP → tạo pair riêng
+      const pair = document.createElement('div');
+      pair.className = 'ov-pair s-only';
+      pair.setAttribute('data-pair-exam', ex);
+      pair.innerHTML = `<div class="ov-vip"></div><div class="ov-s-slot" data-s-exam="${escapeAttr(ex)}">${html}</div>`;
+      const noExamCard = [...kpisRoot.querySelectorAll('.kpi')].find(el => (el.textContent || '').includes('Chưa phân loại'));
+      const totalVip = kpisRoot.querySelector('.ov-total-vip');
+      if (noExamCard) kpisRoot.insertBefore(pair, noExamCard.parentNode ? noExamCard.parentNode : noExamCard);
+      else if (totalVip) totalVip.insertAdjacentElement('afterend', pair);
+      else kpisRoot.appendChild(pair);
+    }
+  });
 
-  // ── Exam table: 1 khối "NHÓM S" với 1 dòng / kỳ thi, đặt sau toàn bộ VIP ──
+  // ── Exam table: dòng S đặt NGAY SAU dòng VIP cùng kỳ thi (song song) ──
   const tb = document.querySelector('#tbl-exam tbody');
-  tb.querySelectorAll('tr.ov-s-row, tr.ov-s-divider').forEach(el => el.remove());
-  let sHtml = `<tr class="ov-s-divider"><td colspan="8"><b>NHÓM S</b> — hoc sinh dang ky S vao nhom AIM (chi tinh AIM)</td></tr>`;
+  tb.querySelectorAll('tr.ov-s-row').forEach(el => el.remove());
   sExams.forEach(ex => {
     const st = statFor(ex);
     if (!st) return;
     const taim = st.total ? (st.duyetAim / st.total * 100).toFixed(2) : '0';
-    sHtml += `<tr class="ov-s-row" style="background:#fffbeb">
+    const rowId = 'row-s-' + ex.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const rowHtml = `<tr id="${rowId}" class="ov-s-row" style="background:#fffbeb">
       <td><b>${escapeHtml(ex)} S</b> <span style="font-size:11px;color:#b45309">(chỉ AIM)</span></td>
       <td class="muted">—</td>
       <td class="num muted">—</td>
@@ -3530,8 +3553,17 @@ function renderSOverview() {
       <td class="num">${st.duyetAim.toLocaleString('vi-VN')}</td>
       <td class="num">${taim}%</td>
     </tr>`;
+    // Tìm dòng VIP cuối cùng bắt đầu bằng tên kỳ thi (trước S nếu đã có)
+    const trs = [...tb.querySelectorAll('tr')];
+    let anchor = null;
+    for (let i = trs.length - 1; i >= 0; i--) {
+      const td = trs[i].firstElementChild;
+      if (!td || trs[i].classList.contains('ov-s-row')) continue;
+      if (td.textContent.trim().startsWith(ex)) { anchor = trs[i]; break; }
+    }
+    if (anchor && anchor.id !== rowId) anchor.insertAdjacentHTML('afterend', rowHtml);
+    else tb.insertAdjacentHTML('beforeend', rowHtml);
   });
-  tb.insertAdjacentHTML('beforeend', sHtml);
 }
 
 function applyFilterSGroup() {
