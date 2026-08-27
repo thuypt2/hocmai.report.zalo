@@ -120,12 +120,11 @@ tr:nth-child(even) td{background:#fafbfc}
 .bar-tbl tfoot td{background:#FAFAFA;font-weight:700;border-top:2px solid #E5E7EB}
 .ov-section-divider td{background:#eef2ff;color:#1e3a8a;font-weight:700;font-size:13px;text-align:left;padding:8px 10px;border-left:none;border-right:none}
 .ov-section-divider td.github {background:#fffbeb;color:#b45309;border-left:3px solid #f59e0b;padding-left:8px}
-/* Cặp KPI song song: VIP | S cùng kỳ thi */
-.ov-pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px;margin-bottom:12px;grid-column:1/-1}
-.ov-pair .ov-vip,.ov-pair .ov-s-slot{min-width:0}
-.ov-pair .ov-s-slot .kpi{border-left:3px solid #f59e0b}
-.ov-pair.s-only .ov-vip{display:none}
-.ov-pair.s-only{grid-template-columns:1fr}
+/* Layout Mục 1.1: hàng VIP (trên) + hàng S (dưới) — thẳng cột theo kỳ thi */
+.ov-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:12px}
+.ov-row .ov-vip,.ov-row .ov-s-slot{min-width:0}
+.ov-row .ov-s-slot .kpi{border-left:3px solid #f59e0b}
+.ov-s-empty{font-size:12px;color:#9ca3af;border:1px dashed #e5e7eb;border-radius:8px;padding:14px;text-align:center;height:100%}
 .bar-tbl .cell-total{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px}
 .bar-tbl-wrap{max-height:calc(100vh - 260px);overflow:auto;border:none}
 .bar-tbl-wrap .bar-tbl thead th{top:0}
@@ -1618,6 +1617,9 @@ function recomputeDataFromLookup(){
 function renderKPI(){
   const root = document.getElementById('kpis');
   root.innerHTML = '';
+  // Mục 1.1 dùng layout 2 hàng (.ov-row). Đổi #kpis sang block để .ov-row xếp dọc full-width,
+  // tránh grid auto-fit của .kpis xếp các row theo cột.
+  root.style.display = 'block';
   function kpiCard(label, total, d130, daim, isTotal, tangThang, cid){
     tangThang = tangThang || 0;
     const pct130 = total ? (d130/total*100) : 0;
@@ -1657,21 +1659,29 @@ function renderKPI(){
   const totalAll = DATA.total_rows || 0;
   const d130All  = DATA.exams.reduce((s,e)=>s+(DATA.exam_stats[e]?.duyet_130||0), 0);
   const daimAll  = DATA.exams.reduce((s,e)=>s+(DATA.exam_stats[e]?.duyet_aim||0), 0);
-  root.insertAdjacentHTML('beforeend', `<h3 style="margin:0 0 10px;font-size:15px;color:#1e3a8a">TỔNG QUAN DUYỆT NHÓM — GÓI VIP & GÓI S (song song từng kỳ thi)</h3>`);
-  // Card tổng VIP (full width)
-  root.insertAdjacentHTML('beforeend', `<div class="ov-pair ov-total-vip">${kpiCard('TỔNG VIP (mọi exam)', totalAll, d130All, daimAll, true, countNewThisMonth(null))}</div>`);
-  // Mỗi kỳ thi = 1 .ov-pair chứa card VIP + slot S bên cạnh (S slot do renderSOverview điền)
-  for (const ex of DATA.exams){
-    const s = DATA.exam_stats[ex];
-    const label = ex || '(rỗng)';
-    const cid = (ex === 'HSA') ? 'kpi-hsa' : (ex === 'V-ACT' ? 'kpi-vact' : '');
-    const sEmpty = `<div class="ov-s-slot" data-s-exam="${escapeAttr(ex)}"></div>`;
-    root.insertAdjacentHTML('beforeend', `<div class="ov-pair" data-pair-exam="${escapeAttr(ex)}"><div class="ov-vip">${kpiCard(label, s.tong_hs, s.duyet_130, s.duyet_aim, false, countNewThisMonth(ex), cid)}</div>${sEmpty}</div>`);
-  }
+  root.insertAdjacentHTML('beforeend', `<h3 style="margin:0 0 10px;font-size:15px;color:#1e3a8a">TỔNG QUAN DUYỆT NHÓM — GÓI VIP & GÓI S (VIP 1 hàng, S 1 hàng tương ứng)</h3>`);
+
+  // ===== Hàng 1: VIP — tất cả card xếp 1 hàng ngang =====
+  root.insertAdjacentHTML('beforeend', `<div class="ov-row ov-row-vip">` +
+    `<div class="ov-vip">${kpiCard('TỔNG VIP (mọi exam)', totalAll, d130All, daimAll, true, countNewThisMonth(null))}</div>` +
+    DATA.exams.map(ex => {
+      const s = DATA.exam_stats[ex];
+      const label = ex || '(rỗng)';
+      const cid = (ex === 'HSA') ? 'kpi-hsa' : (ex === 'V-ACT' ? 'kpi-vact' : '');
+      return `<div class="ov-vip" data-vip-exam="${escapeAttr(ex)}">${kpiCard(label, s.tong_hs, s.duyet_130, s.duyet_aim, false, countNewThisMonth(ex), cid)}</div>`;
+    }).join('') + '</div>');
+
+  // ===== Hàng 2: S — slot cho từng kỳ thi tương ứng (renderSOverview điền) =====
+  root.insertAdjacentHTML('beforeend', `<div class="ov-row ov-row-s">` +
+    `<div class="ov-s-slot" data-s-exam="__TOTAL__"><div class="ov-s-empty">—</div></div>` +
+    DATA.exams.map(ex =>
+      `<div class="ov-s-slot" data-s-exam="${escapeAttr(ex)}"><div class="ov-s-empty">(không có gói S)</div></div>`
+    ).join('') + '</div>');
+
   // Card riêng cho dòng chưa có exam/mã lớp
   const noExam = DATA.rows_no_exam || 0;
   if (noExam > 0) {
-    root.insertAdjacentHTML('beforeend', `<div class="kpi" style="opacity:.7;border-style:dashed">
+    root.insertAdjacentHTML('beforeend', `<div class="kpi" style="opacity:.7;border-style:dashed;max-width:360px">
       <div class="lbl" style="color:#6b7280">Chưa phân loại (exam / mã lớp trống)</div>
       <div class="val" style="color:#6b7280">${noExam.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span></div>
       <div class="muted" style="font-size:11px;margin-top:4px">Các học sinh này chưa được xếp vào kỳ thi nào — không tính trong bảng KPI theo exam bên dưới.</div>
@@ -3475,10 +3485,17 @@ function renderSOverview() {
   const validRows = getSGroupFiltered().filter(function(r) {
     return (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim();
   });
-  // Trước khi render, dọn sạch các slot S cũ (đã có .ov-s-slot ngay sau mỗi card VIP)
+  // Trước khi render, dọn sạch các slot S cũ và các cột S-only thêm (nhưng giữ .ov-s-empty placeholder)
   const kpisRoot = document.getElementById('kpis');
-  kpisRoot.querySelectorAll('.ov-s-slot').forEach(slot => slot.innerHTML = '');
-  kpisRoot.querySelectorAll('.ov-pair.s-only').forEach(p => p.remove());
+  const sRow = kpisRoot.querySelector('.ov-row-s');
+  const vipRow = kpisRoot.querySelector('.ov-row-vip');
+  kpisRoot.querySelectorAll('.ov-s-slot').forEach(slot => {
+    // Ghi đè nội dung: nếu đang là card S thì reset về placeholder
+    slot.innerHTML = '<div class="ov-s-empty">' + (slot.getAttribute('data-s-exam') === '__TOTAL__' ? '—' : '(không có gói S)') + '</div>';
+  });
+  // Xóa các slot S-only (kỳ thi không có VIP) đã thêm ở lần render trước
+  if (sRow) sRow.querySelectorAll('.ov-s-slot.s-only-slot').forEach(el => el.remove());
+  if (vipRow) vipRow.querySelectorAll('.ov-vip.v-only-vip').forEach(el => el.remove());
 
   if (!validRows.length) return;
 
@@ -3507,7 +3524,7 @@ function renderSOverview() {
     </div>`;
   }
 
-  // ── KPI: điền S card vào slot cạnh card VIP cùng kỳ thi; kỳ thi S không có VIP → pair s-only ──
+  // ── KPI: điền S card vào slot tương ứng (hàng S dưới, thẳng cột với VIP) ──
   const sExams = [...new Set(validRows.map(r => (r.exam || '').trim()).filter(Boolean))].sort();
   const vipExams = new Set((DATA.exams || []).map(ex => String(ex)));
   sExams.forEach(ex => {
@@ -3515,23 +3532,22 @@ function renderSOverview() {
     if (!st) return;
     const cid = 'kpi-s-' + ex.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const html = sCardHTML(cid, ex + ' S', st);
-    // Tìm slot cùng exam trong pair VIP đã render
-    const slot = kpisRoot.querySelector('[data-s-exam="' + CSS.escape(ex) + '"]');
+    const slot = kpisRoot.querySelector('.ov-row-s [data-s-exam="' + CSS.escape(ex) + '"]');
     if (slot) {
       slot.innerHTML = html;
-      const pair = slot.closest('.ov-pair');
-      if (pair) pair.classList.remove('s-only');
+    } else if (vipExams.has(ex)) {
+      // Nếu kỳ thi có VIP nhưng renderKPI không tạo slot (edge) — tạo slot ở hàng S sau VIP tương ứng
+      const vipSlot = kpisRoot.querySelector('.ov-row-vip [data-vip-exam="' + CSS.escape(ex) + '"]');
+      const newSlot = document.createElement('div');
+      newSlot.className = 'ov-s-slot';
+      newSlot.setAttribute('data-s-exam', ex);
+      newSlot.innerHTML = html;
+      if (vipSlot && vipSlot.nextElementSibling) vipSlot.parentNode.insertBefore(newSlot, vipSlot.nextElementSibling);
+      else if (sRow) sRow.appendChild(newSlot);
     } else {
-      // Kỳ thi này chỉ có S, không có VIP → tạo pair riêng
-      const pair = document.createElement('div');
-      pair.className = 'ov-pair s-only';
-      pair.setAttribute('data-pair-exam', ex);
-      pair.innerHTML = `<div class="ov-vip"></div><div class="ov-s-slot" data-s-exam="${escapeAttr(ex)}">${html}</div>`;
-      const noExamCard = [...kpisRoot.querySelectorAll('.kpi')].find(el => (el.textContent || '').includes('Chưa phân loại'));
-      const totalVip = kpisRoot.querySelector('.ov-total-vip');
-      if (noExamCard) kpisRoot.insertBefore(pair, noExamCard.parentNode ? noExamCard.parentNode : noExamCard);
-      else if (totalVip) totalVip.insertAdjacentElement('afterend', pair);
-      else kpisRoot.appendChild(pair);
+      // Kỳ thi này chỉ có S (không có VIP trong DATA.exams) → thêm cột giữ chỗ cả 2 hàng
+      if (vipRow) vipRow.insertAdjacentHTML('beforeend', `<div class="ov-vip v-only-vip"><div class="ov-s-empty">—</div></div>`);
+      if (sRow) sRow.insertAdjacentHTML('beforeend', `<div class="ov-s-slot s-only-slot" data-s-exam="${escapeAttr(ex)}">${html}</div>`);
     }
   });
 
