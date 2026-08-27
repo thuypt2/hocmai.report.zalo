@@ -94,6 +94,8 @@ module.exports = async function handler(req, res) {
     const idxMaillan1 = colIdx(['maillan1', 'mail_lan1']);
     const idxNoti     = colIdx(['trạng thái bắn noti', 'noti']);
     const idxDuyet    = colIdx(['trạng thái duyệt', 'trang_thai_duyet', 'status']);
+    const idxNgayDuyet = colIdx(['ngày duyệt', 'ngay_duyet', 'ngay duyet']);
+    const idxNguoiDuyet = colIdx(['người duyệt', 'nguoi_duyet', 'nguoi duyet']);
 
     // Sheet users columns (theo vị trí thật):
     //   H = exam, K = Tên nhóm AIM
@@ -118,6 +120,8 @@ module.exports = async function handler(req, res) {
       maillan1: get(row, idxMaillan1),
       noti: get(row, idxNoti),
       trang_thai_duyet: get(row, idxDuyet),
+      ngay_duyet: get(row, idxNgayDuyet),
+      nguoi_duyet: get(row, idxNguoiDuyet),
       exam: get(row, effectiveExam),
       ten_group_aim: get(row, effectiveTenGroup),
       link_aim: resolveAimLink(get(row, effectiveTenGroup)),

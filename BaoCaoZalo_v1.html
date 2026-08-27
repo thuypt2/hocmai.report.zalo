@@ -118,6 +118,8 @@ tr:nth-child(even) td{background:#fafbfc}
 .bar-tbl td:first-child{text-align:left;font-weight:600;color:#374151;white-space:nowrap}
 .bar-tbl tbody tr:hover td{background:#F8FAFC}
 .bar-tbl tfoot td{background:#FAFAFA;font-weight:700;border-top:2px solid #E5E7EB}
+.ov-section-divider td{background:#eef2ff;color:#1e3a8a;font-weight:700;font-size:13px;text-align:left;padding:8px 10px;border-left:none;border-right:none}
+.ov-section-divider td.github {background:#fffbeb;color:#b45309;border-left:3px solid #f59e0b;padding-left:8px}
 .bar-tbl .cell-total{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px}
 .bar-tbl-wrap{max-height:calc(100vh - 260px);overflow:auto;border:none}
 .bar-tbl-wrap .bar-tbl thead th{top:0}
@@ -257,6 +259,27 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
             <span class="sub-tab" data-ov="r1-cross-exam">1.4 · HỌC SINH ĐĂNG KÝ NHIỀU KÌ THI</span>
             <span class="sub-tab" data-ov="r1-multi-ma">1.5 · HỌC SINH NHIỀU MÃ BẢO MẬT</span>
           </div>
+
+  <!-- ===== Bộ lọc toàn cục Mục 1: Từ ngày → Đến ngày + Exam (áp cho mọi bảng/biểu đồ mục 1) ===== -->
+  <div class="filter-row" id="ov-filter-row" style="margin-bottom:14px;background:#f8fafc;border:1px solid var(--bd);border-radius:10px;padding:12px 16px">
+    <label>Từ ngày
+      <input type="date" id="ov-from">
+    </label>
+    <label>Đến ngày
+      <input type="date" id="ov-to">
+    </label>
+    <label>Exam
+      <select id="ov-exam">
+        <option value="">-- Tất cả --</option>
+      </select>
+    </label>
+    <label style="justify-content:flex-end">
+      <span style="display:flex;gap:6px;margin-top:auto">
+        <button class="btn" onclick="applyOvFilter(true)">Lọc</button>
+        <button class="btn gray" onclick="resetOvFilter()">Xóa</button>
+      </span>
+    </label>
+  </div>
 
 <section id="r1" class="ov-pane active">
   <h2>1.1 · Tổng quan duyệt nhóm</h2>
@@ -1000,16 +1023,16 @@ function applyRoleUI(){
     var al=document.getElementById('adminPageLink');
     if(al) al.style.display=isAdmin()?'':'none';
   }
-  // GVCN: muc 1 Tong quan chi xem 1.2 (Bieu do xu huong + HS chua vao nhom) va 1.3 (Thong ke ti trong); an 1.1, 1.4, 1.5
+  // GVCN: muc 1 Tong quan chi xem 1.3 (Thong ke ti trong); an 1.1, 1.2 (Bieu do xu huong), 1.4, 1.5
     if (isGVCN()) {
-      ['r1','r1-cross-exam','r1-multi-ma'].forEach(function(id){
+      ['r1','r1-cross-exam','r1-multi-ma','r1-chart'].forEach(function(id){
         var el=document.getElementById(id);
         if(el) el.style.display='none';
       });
-      // Ẩn sub-tab buttons tương ứng
+      // Ẩn sub-tab buttons tương ứng (kể cả 1.2 biểu đồ xu hướng)
       document.querySelectorAll('#tab-overview .sub-tab[data-ov]').forEach(function(s){
         var ov = s.dataset.ov;
-        if (ov === 'r1' || ov === 'r1-cross-exam' || ov === 'r1-multi-ma') s.style.display = 'none';
+        if (ov === 'r1' || ov === 'r1-cross-exam' || ov === 'r1-multi-ma' || ov === 'r1-chart') s.style.display = 'none';
       });
       // Auto-switch sang 1.3
       switchOvTab('r1-stats');
@@ -1059,6 +1082,109 @@ function applyRoleUI(){
 
 let DATA = null;
 let LOOKUP = [];
+
+// ===== Bộ lọc toàn cục Mục 1 (Từ ngày → Đến ngày + Exam) =====
+let OV_FILTER = { from: '', to: '', exam: '' };
+
+function _ovPaidMs(r){
+  const v = String(r.paid_time || '').trim();
+  if (!v) return 0;
+  let d = new Date(v.replace(' ', 'T'));
+  if (isNaN(d) || d.getFullYear() < 2000) {
+    const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    d = m ? new Date(m[3]+'-'+m[2]+'-'+m[1]) : new Date(NaN);
+  }
+  return isNaN(d) ? 0 : d.getTime();
+}
+function _ovDuyetMs(r){
+  const v = String(r.ngay_duyet || '').trim();
+  if (!v) return 0;
+  const d = new Date(v.replace(' ', 'T'));
+  return isNaN(d) ? 0 : d.getTime();
+}
+function _ovFromMs(){ return OV_FILTER.from ? new Date(OV_FILTER.from + 'T00:00:00').getTime() : 0; }
+function _ovToMs(){ return OV_FILTER.to ? new Date(OV_FILTER.to + 'T23:59:59').getTime() : Infinity; }
+function _ovExamOk(ex){ return !OV_FILTER.exam || String(ex || '') === OV_FILTER.exam; }
+
+// Dòng VIP (nhóm 1:30 + AIM) sau bộ lọc toàn cục — lọc theo exam + paid_time
+function getOvRows(){
+  const fromMs = _ovFromMs(), toMs = _ovToMs();
+  return LOOKUP.filter(r => {
+    if (!_ovExamOk(r._exam)) return false;
+    const ms = r._paid_time_ms || _ovPaidMs(r);
+    if (ms > 0 && ms < fromMs) return false;
+    if (ms > 0 && ms > toMs) return false;
+    return true;
+  });
+}
+
+// Dòng nhóm S (đăng ký S vào AIM) sau bộ lọc toàn cục — lọc theo exam + ngày duyệt
+// Dòng chưa duyệt (không có ngay_duyet) không bị cắt bởi ngày để không mất dữ liệu chờ duyệt
+function getSGroupFiltered(){
+  const fromMs = _ovFromMs(), toMs = _ovToMs();
+  return (S_GROUP_DATA || []).filter(r => {
+    if (!_ovExamOk(r.exam)) return false;
+    if (OV_FILTER.from || OV_FILTER.to) {
+      const ms = _ovDuyetMs(r);
+      if (ms && (ms < fromMs || ms > toMs)) return false;
+    }
+    return true;
+  });
+}
+
+function initOvFilter(){
+  const sel = document.getElementById('ov-exam');
+  if (!sel) return;
+  const prev = sel.value;
+  const exams = [...new Set([
+    ...(DATA.exams || []),
+    ...(S_GROUP_DATA || []).map(r => String(r.exam || '').trim()).filter(Boolean)
+  ])];
+  sel.innerHTML = '<option value="">-- Tất cả --</option>' +
+    exams.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join('');
+  if (prev) sel.value = prev;
+}
+
+function renderOverviewAll(){
+  recomputeDataFromLookup();
+  renderKPI();
+  renderExamTable();
+  if (S_GROUP_DATA && S_GROUP_DATA.length > 0) renderSOverview();
+  initChartFilters();
+  applyCharts();
+  renderBarTable();
+  renderExamPie();
+  renderHSA();
+  renderGroupsByExam();
+  renderCrossExam();
+  initNotJoinedFilters();
+  applyNotJoined();
+  applyNotJoinedMatrix();
+  buildMultiMa();
+  initMultiMaFilters();
+  renderMultiMa();
+}
+
+function applyOvFilter(alsoRender){
+  OV_FILTER.from = document.getElementById('ov-from').value;
+  OV_FILTER.to   = document.getElementById('ov-to').value;
+  OV_FILTER.exam = document.getElementById('ov-exam').value;
+  // Khi global exam được chọn, reset các select con của mục 1 để tránh nhầm phạm vi
+  if (OV_FILTER.exam) {
+    ['chart-exam-filter','nj-exam','mm-exam'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
+  if (alsoRender) renderOverviewAll();
+}
+
+function resetOvFilter(){
+  document.getElementById('ov-from').value = '';
+  document.getElementById('ov-to').value = '';
+  document.getElementById('ov-exam').value = '';
+  applyOvFilter(true);
+}
 
 // ===== Cột hiển thị cho TAB 2.1 (ver6: thêm cột trạng thái duyệt + nút Duyệt 1:30) =====
 const COLS_21 = [
@@ -1383,7 +1509,7 @@ function recomputeDataFromLookup(){
     const wn = Math.ceil(doy/7);
     return 'W'+String(wn).padStart(2,'0')+' ('+d.getFullYear()+')';
   }
-  const rows = LOOKUP;
+  const rows = getOvRows();
   DATA.total_rows = rows.length;
   const examSet = new Set(rows.map(r => r._exam||'').filter(Boolean));
   const exam_stats = {};
@@ -1515,7 +1641,7 @@ function renderKPI(){
   function countNewThisMonth(exam) {
     const now = new Date();
     const ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    const lookup = getScopedLookup();
+    const lookup = getOvRows();
     if (exam) {
       return lookup.filter(r => (r._exam || '') === exam && String(r.paid_time || '').startsWith(ym)).length;
     }
@@ -1525,6 +1651,7 @@ function renderKPI(){
   const totalAll = DATA.total_rows || 0;
   const d130All  = DATA.exams.reduce((s,e)=>s+(DATA.exam_stats[e]?.duyet_130||0), 0);
   const daimAll  = DATA.exams.reduce((s,e)=>s+(DATA.exam_stats[e]?.duyet_aim||0), 0);
+  root.insertAdjacentHTML('beforeend', `<h3 style="margin:0 0 10px;font-size:15px;color:#1e3a8a">NHÓM VIP (vào nhóm 1:30 & AIM)</h3>`);
   root.insertAdjacentHTML('beforeend', kpiCard('TỔNG (mọi exam)', totalAll, d130All, daimAll, true, countNewThisMonth(null)));
   for (const ex of DATA.exams){
     const s = DATA.exam_stats[ex];
@@ -1546,12 +1673,15 @@ function renderExamTable(){
   const tb = document.querySelector('#tbl-exam tbody');
   const tf = document.querySelector('#tbl-exam tfoot');
   tb.innerHTML = ''; tf.innerHTML = '';
+  // Thêm dòng tiêu đề hai phần: VIP nhóm 1:30 + S đăng ký AIM
+  tb.insertAdjacentHTML('beforeend',
+    `<tr class="ov-section-divider"><td colspan="8"><b>NHÓM VIP</b> — hoc sinh vao nhom 1:30 & AIM (loc theo paid_time)</td></tr>`);
   let totalN=0, d130N=0, daimN=0, nhomN=0;
   let gvN = 0;
 
   // Compute per-exam + per-GV stats from scoped lookup
   const gvMap = {};
-  for (const r of getScopedLookup()) {
+  for (const r of getOvRows()) {
     const ex = r._exam || '(rỗng)';
     const gv = r._gv || '(không có)';
     const key = ex + '|||' + gv;
@@ -1744,10 +1874,11 @@ function resetChartFilters() {
 }
 
 function renderHSA(){
+  if (window._hsaPieChart) { window._hsaPieChart.destroy(); window._hsaPieChart = null; }
   const pieLabels = Object.keys(DATA.hsa_pie);
   const pieVals = pieLabels.map(k=>DATA.hsa_pie[k]);
   const pieTotal = pieVals.reduce((a,b)=>a+b,0);
-  new Chart(document.getElementById('cHSA-pie'),{
+  window._hsaPieChart = new Chart(document.getElementById('cHSA-pie'),{
     type:'doughnut',
     data:{labels:pieLabels, datasets:[{data:pieVals,
       backgroundColor:['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2'],
@@ -1781,11 +1912,12 @@ function renderHSA(){
 }
 
 function renderExamPie(){
+  if (window._examPieChart) { window._examPieChart.destroy(); window._examPieChart = null; }
   const labels = DATA.exams.slice();
   const vals = labels.map(ex => DATA.exam_stats[ex]?.tong_hs || 0);
   const total = vals.reduce((a,b)=>a+b,0);
   const palette = ['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2','#db2777'];
-  new Chart(document.getElementById('cExam-pie'),{
+  window._examPieChart = new Chart(document.getElementById('cExam-pie'),{
     type:'doughnut',
     data:{labels:labels, datasets:[{data:vals,
       backgroundColor:labels.map((_,i)=>palette[i%palette.length]),
@@ -3305,9 +3437,12 @@ async function loadSGroupData() {
   initEmailSHeaders();
   populateSGroupExamFilters();
 
-  // Thêm V-ACT S vào mục 1.1 Tổng quan (dữ liệu độc lập, không merge vào DATA)
+  // Cập nhật lại select Exam global (thêm các exam của nhóm S nếu chưa có)
+  initOvFilter();
+
+  // Thêm nhóm S vào mục 1.1 Tổng quan (dữ liệu độc lập, không merge vào DATA)
   if (S_GROUP_DATA.length > 0) {
-    renderVActSOverview();
+    renderSOverview();
   }
 
   // Render lại bảng 2.2 khi data về (tránh trống nếu user đã mở tab trước đó)
@@ -3326,14 +3461,14 @@ function populateSGroupExamFilters() {
   if (selES) { const prev = selES.value; selES.innerHTML = opts; if (prev) selES.value = prev; }
 }
 
-function renderVActSOverview() {
-  // Lọc bỏ dòng trống (không có username, email lẫn sđt)
-  const validRows = S_GROUP_DATA.filter(function(r) {
+function renderSOverview() {
+  // Lọc bỏ dòng trống (không có username, email lẫn sđt) + áp bộ lọc toàn cục Mục 1
+  const validRows = getSGroupFiltered().filter(function(r) {
     return (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim();
   });
   if (!validRows.length) return;
 
-  // ── Tách riêng 2 kỳ thi: HSA S và V-ACT S (dữ liệu nhóm S, chỉ có AIM) ──
+  // ── Tách riêng từng kỳ thi có trong dữ liệu nhóm S (đăng ký S vào AIM) ──
   function statFor(exam) {
     const sub = validRows.filter(r => (r.exam || '').trim() === exam);
     const total = sub.length;
@@ -3358,33 +3493,35 @@ function renderVActSOverview() {
     </div>`;
   }
 
-  // ── KPI cards: 2 ô riêng, đặt ngay cạnh card kỳ thi tương ứng ──
+  // ── KPI: khối riêng "NHÓM S (đăng ký S vào AIM)" đặt sau khối VIP ──
   const kpisRoot = document.getElementById('kpis');
-  function placeCard(kpiId, anchorId, html) {
-    const oldEl = document.getElementById(kpiId);
-    if (oldEl) oldEl.remove();
-    const anchor = document.getElementById(anchorId);
-    if (anchor) anchor.insertAdjacentHTML('afterend', html);
-    else kpisRoot.insertAdjacentHTML('beforeend', html);
-  }
-  // Xóa card cũ (kiểu gộp chung 1 card V-ACT S) nếu còn sót
-  const oldKpi = document.getElementById('kpi-vacts');
-  if (oldKpi) oldKpi.remove();
+  // Xóa khối S cũ tránh trùng
+  kpisRoot.querySelectorAll('.ov-s-block').forEach(el => el.remove());
+  const sExams = [...new Set(validRows.map(r => (r.exam || '').trim()).filter(Boolean))].sort();
+  const stCards = sExams.map(ex => {
+    const st = statFor(ex);
+    const cid = 'kpi-s-' + ex.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    return st ? sCardHTML(cid, ex + ' S', st) : '';
+  }).filter(Boolean).join('');
+  if (!stCards) return;
+  const sBlock = document.createElement('div');
+  sBlock.className = 'ov-s-block';
+  sBlock.innerHTML = `<h3 style="margin:18px 0 10px;font-size:15px;color:#b45309">NHÓM S — hoc sinh dang ky S vao nhom AIM (chi tinh AIM)</h3>` + stCards;
+  // Chèn trước card "Chưa phân loại" nếu có, nếu không thì append cuối
+  const noExamCard = [...kpisRoot.querySelectorAll('.kpi')].find(el => (el.textContent || '').includes('Chưa phân loại'));
+  if (noExamCard) kpisRoot.insertBefore(sBlock, noExamCard);
+  else kpisRoot.appendChild(sBlock);
 
-  const hsaS  = statFor('HSA');
-  const vactS = statFor('V-ACT');
-  if (hsaS)  placeCard('kpi-hsa-s',  'kpi-hsa',  sCardHTML('kpi-hsa-s',  'HSA S',  hsaS));
-  if (vactS) placeCard('kpi-vact-s', 'kpi-vact', sCardHTML('kpi-vact-s', 'V-ACT S', vactS));
-
-  // ── Exam table: 2 dòng riêng, đặt ngay sau dòng cuối của kỳ thi tương ứng ──
+  // ── Exam table: 1 khối "NHÓM S" với 1 dòng / kỳ thi, đặt sau toàn bộ VIP ──
   const tb = document.querySelector('#tbl-exam tbody');
-  const oldRow = document.getElementById('row-vacts');
-  if (oldRow) oldRow.remove();
-
-  function sRowHTML(id, title, st) {
+  tb.querySelectorAll('tr.ov-s-row, tr.ov-s-divider').forEach(el => el.remove());
+  let sHtml = `<tr class="ov-s-divider"><td colspan="8"><b>NHÓM S</b> — hoc sinh dang ky S vao nhom AIM (chi tinh AIM)</td></tr>`;
+  sExams.forEach(ex => {
+    const st = statFor(ex);
+    if (!st) return;
     const taim = st.total ? (st.duyetAim / st.total * 100).toFixed(2) : '0';
-    return `<tr id="${id}" style="background:#fffbeb">
-      <td><b>${title}</b> <span style="font-size:11px;color:#b45309">(chỉ AIM)</span></td>
+    sHtml += `<tr class="ov-s-row" style="background:#fffbeb">
+      <td><b>${escapeHtml(ex)} S</b> <span style="font-size:11px;color:#b45309">(chỉ AIM)</span></td>
       <td class="muted">—</td>
       <td class="num muted">—</td>
       <td class="num">${st.total.toLocaleString('vi-VN')}</td>
@@ -3393,23 +3530,8 @@ function renderVActSOverview() {
       <td class="num">${st.duyetAim.toLocaleString('vi-VN')}</td>
       <td class="num">${taim}%</td>
     </tr>`;
-  }
-  function lastRowOfExam(examName) {
-    const trs = [...tb.querySelectorAll('tr')].filter(tr => {
-      const td = tr.firstElementChild;
-      return td && td.textContent.trim().startsWith(examName);
-    });
-    return trs.length ? trs[trs.length - 1] : null;
-  }
-  function placeRow(rowId, examName, html) {
-    const oldEl = document.getElementById(rowId);
-    if (oldEl) oldEl.remove();
-    const anchor = lastRowOfExam(examName);
-    if (anchor) anchor.insertAdjacentHTML('afterend', html);
-    else tb.insertAdjacentHTML('beforeend', html);
-  }
-  if (hsaS)  placeRow('row-hsa-s',  'HSA',   sRowHTML('row-hsa-s',  'HSA S',  hsaS));
-  if (vactS) placeRow('row-vact-s', 'V-ACT', sRowHTML('row-vact-s', 'V-ACT S', vactS));
+  });
+  tb.insertAdjacentHTML('beforeend', sHtml);
 }
 
 function applyFilterSGroup() {
@@ -3985,9 +4107,9 @@ function resetFilter4(){
 let CROSS_EXAM = { pairs: [], students: {}, examSet: [], totals: {} };
 
 function renderCrossExam(){
-  // Nhóm học sinh theo email → tập hợp các kỳ thi
+  // Nhóm học sinh theo email → tập hợp các kỳ thi (trên tập đã lọc toàn cục Mục 1)
   var studentExams = {};
-  LOOKUP.forEach(function(r){
+  getOvRows().forEach(function(r){
     var email = (r.final_email || '').trim().toLowerCase();
     if (!email) email = (r.username || '').trim().toLowerCase();
     if (!email) return;
@@ -4173,7 +4295,7 @@ function showCrossStudents(exA, exB){
   // Lấy các dòng LOOKUP tương ứng, lọc theo examA hoặc examB
   var rows = [];
   var seen = {};
-  LOOKUP.forEach(function(r){
+  getOvRows().forEach(function(r){
     var email = (r.final_email || '').trim().toLowerCase();
     if (!email) email = (r.username || '').trim().toLowerCase();
     var exam = (r._exam || '').trim();
@@ -4224,7 +4346,7 @@ function buildMultiMa(){
   // Có >= 2 mã bảo mật khác nhau trong CÙNG kỳ thi = nghi ngờ dữ liệu lặp.
   // Phân biệt: cùng mã lớp (lặp thật sự — 1 nhóm có 2 mã) vs khác mã lớp (HS đăng ký nhiều gói).
   var groups = {};
-  LOOKUP.forEach(function(r){
+  getOvRows().forEach(function(r){
     var email = (r.final_email || '').trim().toLowerCase();
     if (!email) email = (r.username || '').trim().toLowerCase();
     if (!email) return;
@@ -4402,7 +4524,7 @@ function applyNotJoined(){
   const grandChua = [0,0,0,0];
 
   exams.forEach((ex, idx) => {
-    const rows = LOOKUP.filter(r => (r._exam || '') === ex);
+    const rows = getOvRows().filter(r => (r._exam || '') === ex || (!ex && !(r._exam || '')));
 
     // Cột 2: Tổng HS đã đăng ký (không phụ thuộc thời gian)
     const totalHS = rows.length;
@@ -4470,7 +4592,7 @@ function applyNotJoinedMatrix(){
   const fromMs = fromVal ? new Date(fromVal + 'T00:00:00').getTime() : 0;
   const toMs   = toVal   ? new Date(toVal   + 'T23:59:59').getTime() : Infinity;
 
-  let rows = examVal ? LOOKUP.filter(r => (r._exam || '') === examVal) : LOOKUP;
+  let rows = examVal ? getOvRows().filter(r => (r._exam || '') === examVal) : getOvRows();
 
   // Áp dụng date filter cho Thời điểm duyệt (ngày vào nhóm)
   // Ma trận hiển thị "HS trả tiền tháng X → vào nhóm tháng Y",
@@ -4713,6 +4835,8 @@ async function loadData(){
     initNotJoinedFilters(); applyNotJoined(); applyNotJoinedMatrix();
     initLookupHeaders();
     initFilters1(); initEmailSection(); applyFilter1();
+    // Khởi tạo bộ lọc toàn cục Mục 1 (Từ ngày / Đến ngày / Exam)
+    initOvFilter();
 
     // Init 2.4 (học sinh nhiều mã bảo mật) — tính từ LOOKUP
     initMultiMabaomat();
