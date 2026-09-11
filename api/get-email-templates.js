@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { fetchGET } = require('./_lib/fetch-gapps');
 
-const TEMPLATES_DIR = path.join(__dirname, 'templates');
+const TEMPLATES_DIR = path.join(process.cwd(), 'api', 'templates');
 
 const EMAIL_TEMPLATES_API_URL = process.env.GOOGLE_APPS_SCRIPT_URL ||
   'https://script.google.com/macros/s/AKfycbxbezQjKSkXGXfWEGaTu1Y7rXdLUzfAPqtA9rQ7EJnWuV5ilD4bz3XbhNTJHxl4t-CKug/exec';
@@ -19,11 +19,13 @@ let _cacheTime = 0;
 function resolveTemplateContent(htmlBody) {
   if (!htmlBody || typeof htmlBody !== 'string') return htmlBody || '';
   const trimmed = htmlBody.trim();
-  // Detect file path: contains backslash/forward slash, or ends with .txt
-  if (!(/[\\\\/]/.test(trimmed) || trimmed.endsWith('.txt'))) return trimmed;
-  // Split theo cả \ và / (path Windows trong sheet, runtime Linux trên Vercel)
-  const filename = trimmed.replace(/[\\/]+/g, '/').split('/').pop();
-  const filePath = path.join(TEMPLATES_DIR, filename);
+    // Bỏ dấu chấm thừa cuối (lỗi nhập liệu: "file.txt.") trước khi detect path
+    const clean = trimmed.replace(/\.+$/, '');
+    // Detect file path: contains backslash/forward slash, or ends with .txt
+    if (!(/[\\/]/.test(clean) || /\.(txt|html|htm)$/i.test(clean))) return trimmed;
+    // Split theo cả \ và / (path Windows trong sheet, runtime Linux trên Vercel)
+    const filename = clean.replace(/[\\/]+/g, '/').split('/').pop();
+    const filePath = path.join(TEMPLATES_DIR, filename);
   try {
     if (fs.existsSync(filePath)) {
       return fs.readFileSync(filePath, 'utf-8');

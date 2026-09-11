@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const TEMPLATES_DIR = path.join(__dirname, 'templates');
+const TEMPLATES_DIR = path.join(process.cwd(), 'api', 'templates');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -30,7 +30,8 @@ module.exports = async function handler(req, res) {
   }
 
   // Sanitize filename: chỉ lấy basename, chống path traversal (xử lý cả \ Windows lẫn / Linux)
-  const safeName = name.replace(/[\\/]+/g, '/').split('/').pop();
+  const rawName = String(name || '').trim().replace(/\.+$/, ''); // bỏ dấu chấm thừa cuối ("file.txt.")
+  const safeName = rawName.replace(/[\\/]+/g, '/').split('/').pop();
   const filePath = path.join(TEMPLATES_DIR, safeName);
 
   try {

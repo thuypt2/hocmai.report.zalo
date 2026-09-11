@@ -33,8 +33,10 @@ function readBody(req) {
 function resolveTemplateContent(htmlBody) {
   if (!htmlBody || typeof htmlBody !== 'string') return htmlBody || '';
   const trimmed = htmlBody.trim();
-  if (!(/[\\\\/]/.test(trimmed) || trimmed.endsWith('.txt'))) return trimmed;
-  const filename = trimmed.replace(/[\\\\/]+/g, '/').split('/').pop();
+  // Bỏ dấu chấm thừa cuối (lỗi nhập liệu: "file.txt.") trước khi detect path
+  const clean = trimmed.replace(/\.+$/, '');
+  if (!(/[\\/]/.test(clean) || /\.(txt|html|htm)$/i.test(clean))) return trimmed;
+  const filename = clean.replace(/[\\/]+/g, '/').split('/').pop();
   const filePath = path.join(TEMPLATES_DIR, filename);
   try {
     if (fs.existsSync(filePath)) return fs.readFileSync(filePath, 'utf-8');
