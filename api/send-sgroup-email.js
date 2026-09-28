@@ -100,9 +100,13 @@ async function getResolvedTemplate(templateKey) {
 }
 
 // Gọi Apps Script POST — dùng https.request() (tránh Google security block với fetch())
+// QUAN TRỌNG: KHÔNG retry (attempts=99 vô hiệu hóa retry trong fetchPOST).
+// Gửi email KHÔNG idempotent — nếu Apps Script đã gửi email thành công nhưng response
+// bị Google rate-limit trả HTML, retry sẽ GỬI LẠI EMAIL (bug "mỗi email bị gửi 3 lần").
+// Retry chỉ an toàn cho thao tác đọc (GET).
 async function callAppsScript(payload) {
   try {
-    return await fetchPOST(APPS_SCRIPT_URL, payload);
+    return await fetchPOST(APPS_SCRIPT_URL, payload, 99);
   } catch (e) {
     return { ok: false, error: e.message };
   }
