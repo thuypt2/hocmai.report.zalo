@@ -1237,33 +1237,28 @@ const COLS_22 = [
 // ===== Templates email fallback (khi API không khả dụng) =====
 const EMAIL_TEMPLATES_FALLBACK = {
   'SSC:HD130': {
-    name: 'SSC:HD130 — Thông tin nhóm 1:30',
-    subject: '[HOCMAI] Thông tin nhóm Zalo lớp {{Mã lớp}}',
-    body: `<p>Kính gửi quý phụ huynh / học sinh <b>{{username}}</b>,</p>
-<p>Cảm ơn bạn đã đăng ký khoá học tại HOCMAI. Dưới đây là thông tin nhóm Zalo của lớp học:</p>
-<ul>
-  <li><b>Mã lớp:</b> {{Mã lớp}}</li>
-  <li><b>Giáo viên chủ nhiệm:</b> {{GV}}</li>
-  <li><b>SĐT GV:</b> {{SĐT GV}}</li>
-  <li><b>Link nhóm Zalo 1:30:</b> <a href="{{link group}}">{{link group}}</a></li>
-  <li><b>Mã bảo mật:</b> {{Mã bảo mật}}</li>
-</ul>
-<p>Vui lòng tham gia nhóm Zalo để nhận thông báo và tài liệu học tập quan trọng.</p>
-<p>Trân trọng,<br>HOCMAI</p>`,
+    name: 'SSC:HD130 — Nhắc nhở tham gia Nhóm học tập VIP',
+    subject: '[HOCMAI] Nhắc nhở tham gia Nhóm học tập - Giải pháp TopUni VIP',
+    body: 'HOCMAI VIP - Nhac nho.txt',
+    is_html: true
+  },
+  'SSC:HDAIM': {
+    name: 'SSC:HDAIM — Nhắc nhở tham gia Nhóm AIM',
+    subject: '[HOCMAI] Nhắc nhở tham gia Nhóm AIM - Giải pháp TopUni',
+    body: 'HOCMAI AIM - Nhac nho.txt',
+    is_html: true
   },
   'SSC:HDAIM-S': {
-    name: 'SSC:HDAIM-S — Thông tin nhóm AIM',
-    subject: '[HOCMAI] Thông tin nhóm AIM — {{tencongdong}}',
-    body: `<p>Kính gửi quý phụ huynh / học sinh <b>{{username}}</b>,</p>
-<p>Chúc mừng bạn đã tham gia cộng đồng học tập <b>{{tencongdong}}</b> tại HOCMAI!</p>
-<ul>
-  <li><b>Cộng đồng:</b> {{tencongdong}}</li>
-  <li><b>Link nhóm:</b> <a href="{{linknhom}}">{{linknhom}}</a></li>
-  <li><b>Mã bảo mật:</b> {{mabaomatS}}</li>
-  <li><b>Nhóm AIM:</b> {{Nhom_AIM}}</li>
-</ul>
-<p>Vui lòng tham gia nhóm để nhận thông báo và tài liệu học tập quan trọng.</p>
-<p>Trân trọng,<br>HOCMAI</p>`,
+    name: 'SSC:HDAIM-S — Nhắc nhở tham gia Nhóm AIM S',
+    subject: '[HOCMAI] Nhắc nhở tham gia Nhóm AIM S - Giải pháp TopUni',
+    body: 'HOCMAI S - Nhac nho.txt',
+    is_html: true
+  },
+  'SSC.Khaosatdaunam': {
+    name: 'SSC.Khaosatdaunam — Khảo sát tình hình học tập',
+    subject: '[HOCMAI] Khảo sát tình hình học tập – Cùng HOCMAI bắt nhịp năm học mới',
+    body: 'SSC.Khaosatdaunam.txt',
+    is_html: true
   },
   default: {
     name: 'Mẫu mặc định',
@@ -2139,11 +2134,12 @@ function switchTab(tab){
   if (tab==='email') { switchSub3('email-vip'); applyFilter2(); }
 }
 function switchSub3(sub3){
+  console.log('switchSub3:', sub3);
   document.querySelectorAll('#tab-email .sub-tab').forEach(s=>s.classList.toggle('active', s.dataset.sub3===sub3));
   document.querySelectorAll('#tab-email .sub-pane').forEach(p=>p.classList.toggle('active', p.id==='sub-'+sub3));
-  if (sub3==='email-vip') { applyFilter2(); }
-  else if (sub3==='email-s') { applyFilterES(); }
-  else if (sub3==='email-tc') { applyFilterETC(); }
+  if (sub3==='email-vip') { fetchEmailTemplates(); applyFilter2(); }
+  else if (sub3==='email-s') { fetchEmailTemplatesES(); applyFilterES(); }
+  else if (sub3==='email-tc') { fetchEmailTemplatesETC(); applyFilterETC(); }
 }
 function switchSub(sub){
   document.querySelectorAll('#tab-lookup .sub-tab').forEach(s=>s.classList.toggle('active', s.dataset.sub===sub));
@@ -2809,9 +2805,11 @@ async function fetchEmailTemplates() {
       EMAIL_TEMPLATES_LOADED = {};
       tplSel.innerHTML = '<option value="">-- Chọn mẫu email --</option>';
       for (const t of json.data) {
-        // Nếu html_body là đường dẫn file, fetch nội dung thực từ template-content API
         let htmlBody = t.html_body || '';
-        if (htmlBody && (htmlBody.includes('\\') || htmlBody.includes('/') || htmlBody.endsWith('.txt'))) {
+        // LOG: t.key, t.name, length of htmlBody
+        console.log('Template from API:', t.key, t.name, 'htmlBody len:', htmlBody.length);
+        
+        if (htmlBody && !htmlBody.includes('<') && (htmlBody.includes('/') || htmlBody.endsWith('.txt') || htmlBody.endsWith('.html'))) {
           const filename = htmlBody.split(/[\\/]/).pop();
           try {
             const contentResp = await fetch('/api/template-content?name=' + encodeURIComponent(filename));
@@ -2822,33 +2820,130 @@ async function fetchEmailTemplates() {
             console.warn('Không thể resolve template:', filename, e.message);
           }
         }
-        EMAIL_TEMPLATES_LOADED[t.key] = { key: t.key, name: t.name, subject: t.subject, html_body: htmlBody };
+        EMAIL_TEMPLATES_LOADED[t.key] = { key: t.key, name: t.name, subject: t.subject, html_body: htmlBody, is_html: true };
         tplSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(t.key)}">${escapeHtml(t.name)}</option>`);
       }
     } else {
-      loadHardcodedTemplates(tplSel);
+      await loadHardcodedTemplates(tplSel);
     }
   } catch (err) {
     console.warn('Không thể tải mẫu email từ API:', err.message);
-    loadHardcodedTemplates(tplSel);
+    await loadHardcodedTemplates(tplSel);
   }
 }
 
-function loadHardcodedTemplates(tplSel) {
+async function fetchEmailTemplatesES() {
+  const tplSel = document.getElementById('emailTemplateES');
+  try {
+    const resp = await fetch('/api/get-email-templates');
+    const json = await resp.json();
+    if (json.ok && json.data && json.data.length) {
+      EMAIL_TEMPLATES_LOADED = {};
+      tplSel.innerHTML = '<option value="">-- Chọn mẫu email --</option>';
+      for (const t of json.data) {
+        let htmlBody = t.html_body || '';
+        if (htmlBody && !htmlBody.includes('<') && (htmlBody.includes('/') || htmlBody.endsWith('.txt') || htmlBody.endsWith('.html'))) {
+          const filename = htmlBody.split(/[\\/]/).pop();
+          try {
+            const contentResp = await fetch('/api/template-content?name=' + encodeURIComponent(filename));
+            if (contentResp.ok) htmlBody = await contentResp.text();
+          } catch (e) {}
+        }
+        EMAIL_TEMPLATES_LOADED[t.key] = { key: t.key, name: t.name, subject: t.subject, html_body: htmlBody, is_html: true };
+        tplSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(t.key)}">${escapeHtml(t.name)}</option>`);
+      }
+    } else {
+      await loadHardcodedTemplatesES(tplSel);
+    }
+  } catch (err) {
+    await loadHardcodedTemplatesES(tplSel);
+  }
+}
+
+async function fetchEmailTemplatesETC() {
+  const tplSel = document.getElementById('emailTemplateETC');
+  try {
+    const resp = await fetch('/api/get-email-templates');
+    const json = await resp.json();
+    if (json.ok && json.data && json.data.length) {
+      EMAIL_TEMPLATES_LOADED = {};
+      tplSel.innerHTML = '<option value="">-- Chọn mẫu email --</option>';
+      for (const t of json.data) {
+        let htmlBody = t.html_body || '';
+        if (htmlBody && !htmlBody.includes('<') && (htmlBody.includes('/') || htmlBody.endsWith('.txt') || htmlBody.endsWith('.html'))) {
+          const filename = htmlBody.split(/[\\/]/).pop();
+          try {
+            const contentResp = await fetch('/api/template-content?name=' + encodeURIComponent(filename));
+            if (contentResp.ok) htmlBody = await contentResp.text();
+          } catch (e) {}
+        }
+        EMAIL_TEMPLATES_LOADED[t.key] = { key: t.key, name: t.name, subject: t.subject, html_body: htmlBody, is_html: true };
+        tplSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(t.key)}">${escapeHtml(t.name)}</option>`);
+      }
+    } else {
+      await loadHardcodedTemplates(tplSel);
+    }
+  } catch (err) {
+    await loadHardcodedTemplates(tplSel);
+  }
+}
+
+async function loadHardcodedTemplates(tplSel) {
   EMAIL_TEMPLATES_LOADED = {};
-  tplSel.innerHTML = '';
+  tplSel.innerHTML = '<option value="">Đang xử lý mẫu...</option>';
+  
   for (const [key, t] of Object.entries(EMAIL_TEMPLATES_FALLBACK)) {
     const name = t.name || t.subject || '';
     if (!name.trim()) continue;
-    EMAIL_TEMPLATES_LOADED[key] = { key, name: name, subject: t.subject || '', html_body: t.body || '' };
-    tplSel.insertAdjacentHTML('beforeend', `<option value="${key}">${escapeHtml(name)}</option>`);
+    
+    let body = t.body || '';
+    console.log('Fallback Template:', key, 'body len:', body.length);
+    // Nếu body là tên file, fetch nội dung
+    if (body && !body.includes('<') && (body.endsWith('.txt') || body.endsWith('.html'))) {
+      try {
+        const contentResp = await fetch('/api/template-content?name=' + encodeURIComponent(body));
+        if (contentResp.ok) {
+          body = await contentResp.text();
+        }
+      } catch (e) {
+        console.warn('Không thể fetch fallback template:', body, e);
+      }
+    }
+    
+    EMAIL_TEMPLATES_LOADED[key] = { key, name: name, subject: t.subject || '', html_body: body, is_html: t.is_html };
   }
-  if (!Object.keys(EMAIL_TEMPLATES_LOADED).length) {
-    tplSel.innerHTML = '<option value="">(Không có mẫu nào)</option>';
+
+  const selETC = document.getElementById('emailTemplateETC');
+  if (selETC) {
+    selETC.innerHTML = '<option value="">-- Chọn mẫu email --</option>';
+    for (const key in EMAIL_TEMPLATES_LOADED) {
+      selETC.insertAdjacentHTML('beforeend', `<option value="${key}">${escapeHtml(EMAIL_TEMPLATES_LOADED[key].name)}</option>`);
+    }
   }
 }
 
-function previewEmailTemplate2() {
+async function loadHardcodedTemplatesES(tplSel) {
+  EMAIL_TEMPLATES_LOADED = {};
+  tplSel.innerHTML = '<option value="">Đang xử lý mẫu...</option>';
+  for (const [key, t] of Object.entries(EMAIL_TEMPLATES_FALLBACK)) {
+    const name = t.name || t.subject || '';
+    if (!name.trim()) continue;
+    let body = t.body || '';
+    if (body && !body.includes('<') && (body.endsWith('.txt') || body.endsWith('.html'))) {
+      try {
+        const contentResp = await fetch('/api/template-content?name=' + encodeURIComponent(body));
+        if (contentResp.ok) body = await contentResp.text();
+      } catch (e) {}
+    }
+    EMAIL_TEMPLATES_LOADED[key] = { key, name: name, subject: t.subject || '', html_body: body, is_html: t.is_html };
+  }
+  tplSel.innerHTML = '<option value="">-- Chọn mẫu email --</option>';
+  for (const key in EMAIL_TEMPLATES_LOADED) {
+    tplSel.insertAdjacentHTML('beforeend', `<option value="${key}">${escapeHtml(EMAIL_TEMPLATES_LOADED[key].name)}</option>`);
+  }
+}
+
+async function previewEmailTemplate2() {
   const sel = document.getElementById('emailTemplate2');
   const preview = document.getElementById('emailPreview2');
   if (!sel || !preview) return;
@@ -2856,7 +2951,17 @@ function previewEmailTemplate2() {
   const t = EMAIL_TEMPLATES_LOADED[key];
   if (!t) return;
   preview.style.display = 'block';
-  const body = t.html_body || t.body || '';
+  let body = t.html_body || t.body || '';
+  
+  // Nếu nội dung chỉ là text (không có tag html), bọc trong <pre> để giữ format
+  if (body && !body.trim().startsWith('<') && !body.includes('</div>') && !body.includes('</p>')) {
+    if (t.is_html) {
+      // Giữ nguyên để render HTML
+    } else {
+      body = `<pre style="white-space:pre-wrap; font-family:Arial, sans-serif; font-size:14px;">${body}</pre>`;
+    }
+  }
+  
   preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${body || '(Chưa có nội dung html_body)'}</div>`;
 }
 
@@ -3068,7 +3173,7 @@ function emailUpdateSelectionES() {
   document.getElementById('email-selected-count-es').textContent = EMAIL_S_SELECTED.size;
 }
 
-function previewEmailTemplateES() {
+async function previewEmailTemplateES() {
   const sel = document.getElementById('emailTemplateES');
   const preview = document.getElementById('emailPreviewES');
   if (!sel || !preview) return;
@@ -3076,7 +3181,15 @@ function previewEmailTemplateES() {
   const t = EMAIL_TEMPLATES_LOADED[key];
   if (!t) return;
   preview.style.display = 'block';
-  preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${t.html_body || t.body || ''}</div>`;
+  let body = t.html_body || t.body || '';
+  if (body && !body.trim().startsWith('<') && !body.includes('</div>') && !body.includes('</p>')) {
+    if (t.is_html) {
+      // Giữ nguyên để render HTML
+    } else {
+      body = `<pre style="white-space:pre-wrap; font-family:Arial, sans-serif; font-size:14px;">${body}</pre>`;
+    }
+  }
+  preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${body || '(Chưa có nội dung html_body)'}</div>`;
 }
 
 async function emailSendSelectedES() {
@@ -3262,7 +3375,7 @@ function emailUpdateSelectionETC() {
   document.getElementById('email-selected-count-etc').textContent = EMAIL_TC_SELECTED.size;
 }
 
-function previewEmailTemplateETC() {
+async function previewEmailTemplateETC() {
   const sel = document.getElementById('emailTemplateETC');
   const preview = document.getElementById('emailPreviewETC');
   if (!sel || !preview) return;
@@ -3270,7 +3383,15 @@ function previewEmailTemplateETC() {
   const t = EMAIL_TEMPLATES_LOADED[key];
   if (!t) return;
   preview.style.display = 'block';
-  preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${t.html_body || t.body || ''}</div>`;
+  let body = t.html_body || t.body || '';
+  if (body && !body.trim().startsWith('<') && !body.includes('</div>') && !body.includes('</p>')) {
+    if (t.is_html) {
+      // Giữ nguyên để render HTML
+    } else {
+      body = `<pre style="white-space:pre-wrap; font-family:Arial, sans-serif; font-size:14px;">${body}</pre>`;
+    }
+  }
+  preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${body || '(Chưa có nội dung html_body)'}</div>`;
 }
 
 // Lấy nội dung template TC (file riêng trong api/templates) qua Vercel
@@ -3394,7 +3515,7 @@ async function loadEmailTemplatesFor(selectId) {
             if (contentResp.ok) htmlBody = await contentResp.text();
           } catch (e) {}
         }
-        EMAIL_TEMPLATES_LOADED[t.key] = { key: t.key, name: t.name, subject: t.subject, html_body: htmlBody };
+        EMAIL_TEMPLATES_LOADED[t.key] = { key: t.key, name: t.name, subject: t.subject, html_body: htmlBody, is_html: true };
         tplSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(t.key)}">${escapeHtml(t.name)}</option>`);
       }
     }
@@ -3511,8 +3632,11 @@ function renderSOverview() {
     return { total, duyetAim, pctAim, wAim, labelAimInside };
   }
 
-  function sCardHTML(id, title, st) {
-    return `<div class="kpi" id="${id}" style="border-left:3px solid #f59e0b">
+  function sCardHTML(id, title, st, isTotal) {
+    const boxStyle = isTotal
+      ? 'border-left:3px solid #f59e0b;background:#fffbeb'
+      : 'border-left:3px solid #f59e0b';
+    return `<div class="kpi" id="${id}" style="${boxStyle}">
       <div class="lbl">${escapeHtml(title)} <span style="font-size:10px;color:#b45309">(chỉ AIM)</span></div>
       <div class="val">${st.total.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span></div>
       <div class="bar-row">
@@ -3526,6 +3650,15 @@ function renderSOverview() {
   // ── KPI: điền S card vào slot tương ứng (hàng S dưới, thẳng cột với VIP) ──
   const sExams = [...new Set(validRows.map(r => (r.exam || '').trim()).filter(Boolean))].sort();
   const vipExams = new Set((DATA.exams || []).map(ex => String(ex)));
+
+  // ==== Card TỔNG S (mọi exam) — tương tự TỔNG VIP (mọi exam) ====
+  const sTotal = validRows.length;
+  const sTotalDuyet = validRows.filter(r => (r.trang_thai_duyet || '').trim() === 'Duyệt').length;
+  const sTotalPct = sTotal ? sTotalDuyet / sTotal * 100 : 0;
+  const sTotalStat = { total: sTotal, duyetAim: sTotalDuyet, pctAim: sTotalPct, wAim: Math.max(0, Math.min(100, sTotalPct)), labelAimInside: sTotalPct >= 8 };
+  const sTotalSlot = kpisRoot.querySelector('.ov-row-s [data-s-exam="__TOTAL__"]');
+  if (sTotalSlot) sTotalSlot.innerHTML = sCardHTML('kpi-s-total', 'TỔNG S (mọi exam)', sTotalStat, true);
+
   sExams.forEach(ex => {
     const st = statFor(ex);
     if (!st) return;

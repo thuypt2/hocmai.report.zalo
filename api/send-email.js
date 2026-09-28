@@ -90,7 +90,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: 'Không có học sinh để gửi' });
     }
 
-    // ── Dedup theo email: 1 email → chỉ gửi 1 lần (giữ row đầu tiên) ──
+    if (templateBody && templateBody.length < 500 && !templateBody.includes('<') && (templateBody.includes('/') || templateBody.endsWith('.txt') || templateBody.endsWith('.html'))) {
+    console.log('[send-email] templateBody looks like a path, returning error to client to force local resolution');
+    return res.status(400).json({ ok: false, error: 'Dữ liệu template chưa được load nội dung (đang là path). Hãy nhấn "Xem mẫu" trước khi gửi.' });
+  }
+
+  // ── Dedup theo email: 1 email → chỉ gửi 1 lần (giữ row đầu tiên) ──
     // Dữ liệu nguồn trả 1 row/học sinh/lớp đã join → học sinh trong nhiều nhóm
     // sẽ có nhiều row cùng email. Tránh gửi N email trùng (bug "gửi thành 3 email").
     const seen = new Set();
