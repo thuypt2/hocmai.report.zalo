@@ -112,9 +112,12 @@ export default async function handler(req, res) {
     }
 
     // Gọi Apps Script: sendClassGroupEmails với danh sách email cụ thể + template
+    // QUAN TRỌNG: truyền limit = số lượng unique để Apps Script gửi hết
+    // (mặc định AS chỉ gửi 200 nếu không có limit — user chọn 300-500 sẽ bị cắt)
     const result = await callAppsScript({
       action: 'sendClassGroupEmails',
       secret: APPS_SCRIPT_SECRET,
+      limit: uniqueStudents.length,  // gửi hết danh sách đã chọn (tối đa do UI giới hạn 500)
       templateKey: templateKey,
       templateSubject: templateSubject,
       templateBody: templateBody,
