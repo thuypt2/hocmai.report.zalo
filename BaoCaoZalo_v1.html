@@ -1424,19 +1424,25 @@ async function sendEmail(email, username, maLop, exam, gv, linkGroup, sdtGv, maB
 }
 
 // ===== Gửi email hàng loạt (quản trị) =====
+let _sendingQueue = false;  // chống bấm gửi trùng (admin queue)
 async function sendClassGroupEmails() {
   const limit = document.getElementById('sendLimit')?.value;
   const resultBox = document.getElementById('sendEmailResult');
 
+  if (_sendingQueue) { alert('Đang gửi email, vui lòng chờ đợt hiện tại hoàn tất.'); return; }
   const confirmed = confirm('Bạn chắc chắn muốn gửi email cho các học sinh đang ở trạng thái READY?');
   if (!confirmed) return;
 
-  // Đợt gửi mới: xóa cờ DỪNG KHẨN CẤP của đợt trước
-  await ensureEmailBatchResumed();
-
+  // KHÓA TRƯỚC await: chống triple-click (set flag + disable nút ngay)
+  _sendingQueue = true;
+  const btn = document.querySelector('button[onclick="sendClassGroupEmails()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Đang gửi...'; }
   resultBox.textContent = 'Đang gửi email...';
 
   try {
+    // Đợt gửi mới: xóa cờ DỪNG KHẨN CẤP của đợt trước
+    await ensureEmailBatchResumed();
+
     const response = await fetch(EMAIL_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1458,6 +1464,9 @@ async function sendClassGroupEmails() {
 
   } catch (error) {
     resultBox.textContent = 'Lỗi hệ thống: ' + error.message;
+  } finally {
+    _sendingQueue = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Gửi email hàng loạt'; }
   }
 }
 
@@ -3133,11 +3142,14 @@ async function emailSendSelected() {
   const confirmed = confirm(`Bạn muốn gửi email "${template.name}" cho ${selected.length} học sinh?`);
   if (!confirmed) return;
 
-  await ensureEmailBatchResumed();  // xóa cờ dừng khẩn cấp của đợt trước, đợt mới gửi bình thường
+  // KHÓA TRƯỚC await: set flag + disable nút NGAY, chống triple-click
+  // (trước đây flag set SAU await → trong lúc chờ network, click 2/3 lọt qua
+  //  → N batch song song, mỗi batch gửi toàn bộ danh sách → gửi trùng N email)
   _emailSending2 = true;
   sendBtn = document.querySelector('#sub-email-vip button[onclick="emailSendSelected()"]');
   if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Đang gửi...'; }
   resultBox.textContent = `Đang gửi email cho ${selected.length} học sinh...`;
+  await ensureEmailBatchResumed();  // xóa cờ dừng khẩn cấp của đợt trước, đợt mới gửi bình thường
 
   const students = selected.map(r => ({
     email: (r.final_email || '').trim(),
@@ -3446,11 +3458,12 @@ async function emailSendSelectedES() {
   const confirmed = confirm(`Bạn muốn gửi email "${template.name}" cho ${selected.length} học sinh?`);
   if (!confirmed) return;
 
-  await ensureEmailBatchResumed();  // xóa cờ dừng khẩn cấp của đợt trước, đợt mới gửi bình thường
+  // KHÓA TRƯỚC await: chống triple-click (set flag + disable nút ngay)
   _emailSendingES = true;
   sendBtn = document.querySelector('#sub-email-s button[onclick="emailSendSelectedES()"]');
   if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Đang gửi...'; }
   resultBox.textContent = `Đang gửi email cho ${selected.length} học sinh...`;
+  await ensureEmailBatchResumed();  // xóa cờ dừng khẩn cấp của đợt trước, đợt mới gửi bình thường
 
   const students = selected.map(r => ({
     email: (r.email || '').trim(),
@@ -3767,11 +3780,12 @@ async function emailSendSelectedETC() {
   const confirmed = confirm(`Bạn muốn gửi email "${tcBody ? 'AIM - Nhắc nhở (TC)' : template.name}" cho ${selected.length} học sinh?`);
   if (!confirmed) return;
 
-  await ensureEmailBatchResumed();  // xóa cờ dừng khẩn cấp của đợt trước, đợt mới gửi bình thường
+  // KHÓA TRƯỚC await: chống triple-click (set flag + disable nút ngay)
   _emailSendingETC = true;
   sendBtn = document.querySelector('#sub-email-tc button[onclick="emailSendSelectedETC()"]');
   if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Đang gửi...'; }
   resultBox.textContent = `Đang gửi email cho ${selected.length} học sinh...`;
+  await ensureEmailBatchResumed();  // xóa cờ dừng khẩn cấp của đợt trước, đợt mới gửi bình thường
 
   const students = selected.map(r => ({
     email: (r.email || '').trim(),
