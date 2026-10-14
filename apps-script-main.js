@@ -59,6 +59,12 @@ function handleGet(e) {
       return handleGetSheet(ss, sheetParam);
     }
 
+    // ── action=upsertEmailTemplate: thêm/cập nhật 1 mẫu email trong sheet Email_templates ──
+    if (action === 'upsertEmailTemplate') {
+      if (String((e && e.parameter && e.parameter.secret) || '') !== CONFIG.ACCOUNTS_SECRET) return jsonError('Sai secret');
+      return handleUpsertEmailTemplate(ss, e.parameter);
+    }
+
     // ── action=getAccounts / verifyLogin / quản trị tài khoản (qua GET) ──
     if (action === 'getAccounts' || action === 'verifyLogin' ||
         action === 'createAccount' || action === 'updateAccount' || action === 'deleteAccount') {
@@ -120,6 +126,57 @@ function handleGetSheet(ss, sheetName) {
   });
 
   return jsonOutput({ ok: true, total: data.length, sheetName: sheet.getName(), data: data });
+}
+
+// ===== Thêm/cập nhật mẫu email trong sheet Email_templates =====
+// Dùng cho GET ?action=upsertEmailTemplate&secret=...&template_key=...&subject=...&html_body=...&active=TRUE
+function handleUpsertEmailTemplate(ss, p) {
+  p = p || {};
+  var sheetName = CONFIG.EMAIL_TEMPLATE_SHEET; // 'Email_templates'
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    var all = ss.getSheets();
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].getName().toLowerCase() === sheetName.toLowerCase()) { sheet = all[i]; break; }
+    }
+  }
+  if (!sheet) return jsonOutput({ ok: false, error: 'Khong tim thay sheet ' + sheetName });
+
+  var key     = String(p.template_key || '').trim();
+  var subject = String(p.subject || '').trim();
+  var body    = String(p.html_body || '').trim();
+  var active  = (String(p.active || 'TRUE').toUpperCase() === 'FALSE') ? 'FALSE' : 'TRUE';
+  if (!key) return jsonOutput({ ok: false, error: 'Thieu template_key' });
+
+  var values = sheet.getDataRange().getDisplayValues();
+  var headers = (values[0] || []).map(function (h) { return String(h).trim().toLowerCase(); });
+  function colOf(names, fallback) {
+    for (var n = 0; n < names.length; n++) { var idx = headers.indexOf(names[n]); if (idx >= 0) return idx; }
+    return fallback;
+  }
+  var keyCol  = colOf(['template_key', 'templatekey', 'key'], 0);
+  var subjCol = colOf(['subject'], 1);
+  var bodyCol = colOf(['html_body', 'htmlbody', 'body'], 2);
+  var actCol  = colOf(['active'], 3);
+
+  var rowIdx = -1;
+  for (var r = 1; r < values.length; r++) {
+    if (String(values[r][keyCol]).trim() === key) { rowIdx = r + 1; break; } // 1-based sheet row
+  }
+
+  if (rowIdx > 0) {
+    sheet.getRange(rowIdx, subjCol + 1).setValue(subject);
+    sheet.getRange(rowIdx, bodyCol + 1).setValue(body);
+    sheet.getRange(rowIdx, actCol + 1).setValue(active);
+    return jsonOutput({ ok: true, action: 'updated', row: rowIdx, template_key: key });
+  }
+
+  var newRow = Math.max(values.length, 1) + 1;
+  sheet.getRange(newRow, keyCol + 1).setValue(key);
+  sheet.getRange(newRow, subjCol + 1).setValue(subject);
+  sheet.getRange(newRow, bodyCol + 1).setValue(body);
+  sheet.getRange(newRow, actCol + 1).setValue(active);
+  return jsonOutput({ ok: true, action: 'inserted', row: newRow, template_key: key });
 }
 
 // ===== Wait_member =====
