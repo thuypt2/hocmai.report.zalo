@@ -98,12 +98,12 @@ module.exports = async function handler(req, res) {
     const idxNguoiDuyet = colIdx(['người duyệt', 'nguoi_duyet', 'nguoi duyet']);
 
     // Sheet users columns (theo vị trí thật):
-    //   H = exam, K = Tên nhóm AIM
+    //   H = exam (index 7), K = mabaomatS (index 10), L = tencongdong = Tên nhóm AIM (index 11)
     // Ưu tiên map theo tên header; nếu không tìm thấy, fallback THEO VỊ TRÍ CỘT
     const idxExam     = colIdx(['exam', 'kỳ thi', 'ky_thi', 'kythi']);
-    const idxTenGroup  = colIdx(['tên nhóm aim', 'name_group_aim', 'ten_group_aim', 'ten nhom aim', 'tên group cộng đồng', 'ten_group']);
+    const idxTenGroup  = colIdx(['tencongdong', 'ten_cong_dong', 'tên cộng đồng', 'tên nhóm aim', 'name_group_aim', 'ten_group_aim', 'ten nhom aim', 'tên group cộng đồng', 'ten_group']);
     const posExamIdx   = (headers.length > 7)  ? 7  : -1;  // cột H (index 7)
-    const posTenGroupIdx = (headers.length > 10) ? 10 : -1; // cột K (index 10)
+    const posTenGroupIdx = (headers.length > 11) ? 11 : -1; // cột L (index 11) = tencongdong
     const effectiveExam    = idxExam    >= 0 ? idxExam    : posExamIdx;
     const effectiveTenGroup = idxTenGroup >= 0 ? idxTenGroup : posTenGroupIdx;
 
