@@ -92,7 +92,8 @@ module.exports = async function handler(req, res) {
     const idxMabaomat = colIdx(['mabaomats', 'mabaomat', 'ma_bao_mat']);
     const idxLinknhom = colIdx(['linknhom', 'link_nhom', 'link nhóm', 'link group']);
     const idxMaillan1 = colIdx(['maillan1', 'mail_lan1']);
-    const idxNoti     = colIdx(['trạng thái bắn noti', 'noti']);
+    const idxNoti     = colIdx(['trạng thái bắn noti', 'trang_thai_ban_noti', 'noti']);
+    const idxNgayGui  = colIdx(['noti_time', 'ngày gửi', 'ngay_gui', 'ngay gui', 'thời gian gửi', 'thoi_gian_gui']);
     const idxDuyet    = colIdx(['trạng thái duyệt', 'trang_thai_duyet', 'status']);
     const idxNgayDuyet = colIdx(['ngày duyệt', 'ngay_duyet', 'ngay duyet']);
     const idxNguoiDuyet = colIdx(['người duyệt', 'nguoi_duyet', 'nguoi duyet']);
@@ -106,6 +107,9 @@ module.exports = async function handler(req, res) {
     const posTenGroupIdx = (headers.length > 11) ? 11 : -1; // cột L (index 11) = tencongdong
     const effectiveExam    = idxExam    >= 0 ? idxExam    : posExamIdx;
     const effectiveTenGroup = idxTenGroup >= 0 ? idxTenGroup : posTenGroupIdx;
+    // Cột W = noti_time (Ngày gửi) — fallback theo vị trí nếu header đổi tên
+    const posNgayGuiIdx  = (headers.length > 22) ? 22 : -1;
+    const effectiveNgayGui = idxNgayGui >= 0 ? idxNgayGui : posNgayGuiIdx;
 
     function get(row, idx) { return idx >= 0 ? String(row[idx] || '').trim() : ''; }
 
@@ -119,6 +123,7 @@ module.exports = async function handler(req, res) {
       link_nhom: get(row, idxLinknhom),
       maillan1: get(row, idxMaillan1),
       noti: get(row, idxNoti),
+      ngay_gui: get(row, effectiveNgayGui),
       trang_thai_duyet: get(row, idxDuyet),
       ngay_duyet: get(row, idxNgayDuyet),
       nguoi_duyet: get(row, idxNguoiDuyet),

@@ -586,6 +586,12 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
               <option value="chua">Chưa duyệt</option>
             </select>
           </label>
+          <label>Ngày gửi từ
+            <input type="date" id="fS-ngaygui-from">
+          </label>
+          <label>Đến ngày
+            <input type="date" id="fS-ngaygui-to">
+          </label>
         </div>
 
         <div class="toolbar">
@@ -603,6 +609,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
             <tbody></tbody>
           </table>
         </div>
+        <div class="pager" id="pager-s-group" style="display:none"></div>
 
       </div><!-- /sub-s-group -->
 
@@ -848,6 +855,19 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
           <option value="duyet">Đã duyệt</option>
           <option value="chua">Chưa duyệt</option>
         </select>
+      </label>
+      <label>Trạng thái mail
+        <select id="fES-mail">
+          <option value="">-- Tất cả --</option>
+          <option value="success">Success</option>
+          <option value="fail">Fail</option>
+        </select>
+      </label>
+      <label>Ngày gửi từ
+        <input type="date" id="fES-ngaygui-from">
+      </label>
+      <label>Đến ngày
+        <input type="date" id="fES-ngaygui-to">
       </label>
     </div>
 
@@ -2351,6 +2371,36 @@ function fmtDate(v){
   return s;
 }
 
+// Trả về khóa ngày 'YYYY-MM-DD' theo giờ Việt Nam (dùng để so sánh khoảng ngày)
+function vnDateKey(v){
+  if (!v) return '';
+  const s = String(v).trim();
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s) && /(?:Z|[+-]\d{2}:?\d{2})$/.test(s)) {
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      try {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Asia/Ho_Chi_Minh',
+          year: 'numeric', month: '2-digit', day: '2-digit'
+        }).formatToParts(d);
+        const g = t => (parts.find(p => p.type === t) || {}).value || '';
+        return `${g('year')}-${g('month')}-${g('day')}`;
+      } catch (e) {}
+    }
+  }
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+}
+
+// Chỉ hiển thị NGÀY (dd/mm/yyyy) theo giờ Việt Nam — dùng cho cột Ngày gửi / Ngày duyệt
+function fmtDateVN(v){
+  const k = vnDateKey(v);
+  if (!k) return '';
+  const m = k.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(v);
+}
+
 function renderLookup(rows, pane, cols){
   pane = pane || 1;
   cols = cols || COLS_21;
@@ -3221,16 +3271,12 @@ let _emailSendingES = false;  // chống bấm gửi trùng
 function initEmailSHeaders() {
   const thead = document.getElementById('thead-email-s');
   if (!thead) return;
-  const getCols = () => {
-    if (isDVKH()) return S_COLS.filter(c => !c.isEmailBtnSGroup && c.key !== '_email_sent_time');
-    return S_COLS.filter(c => !c.isEmailBtnSGroup && c.key !== '_email_sent_time');
-  };
-  const cols = getCols();
+  const cols = S_COLS;  // đồng bộ bộ cột với bảng dữ liệu 2.2
   let html = '<th style="width:40px;text-align:center"><input type="checkbox" id="email-checkall-es" onchange="emailToggleAllES()" title="Chọn tất cả"></th>';
   html += cols.map(c => {
     const w = c.width ? ` style="width:${c.width};min-width:${c.width}"` : '';
     const p = [];
-    if (c.isSTT || /^(userid|SĐT|email|noti)/.test(c.label)) p.push('num');
+    if (c.isSTT || /^(userid|sđt|email|noti)/i.test(c.label)) p.push('num');
     const cls = p.length ? ` class="${p.join(' ')}"` : '';
     return `<th${w}${cls}>${c.label}</th>`;
   }).join('');
@@ -3243,6 +3289,9 @@ function applyFilterES() {
   const q = (document.getElementById('qES')?.value || '').trim().toLowerCase();
   const fAim = (document.getElementById('fES-aim')?.value || '');
   const fExam = (document.getElementById('fES-exam')?.value || '');
+  const fMail = (document.getElementById('fES-mail')?.value || '');
+  const fFrom = (document.getElementById('fES-ngaygui-from')?.value || '');
+  const fTo = (document.getElementById('fES-ngaygui-to')?.value || '');
 
   let pool = S_GROUP_DATA.filter(r => (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim());
   if (q) {
@@ -3255,6 +3304,10 @@ function applyFilterES() {
   if (fAim === 'duyet') pool = pool.filter(r => (r.trang_thai_duyet || '').trim() === 'Duyệt');
   else if (fAim === 'chua') pool = pool.filter(r => (r.trang_thai_duyet || '').trim() !== 'Duyệt');
   if (fExam) pool = pool.filter(r => String(r.exam || '').trim().toLowerCase() === String(fExam).toLowerCase());
+
+  // Lọc trạng thái mail (cột P - maillan1) và khoảng Ngày gửi (cột W - noti_time)
+  if (fMail) pool = pool.filter(r => inMailStatus(r, fMail));
+  if (fFrom || fTo) pool = pool.filter(r => inNgayGuiRange(r, fFrom, fTo));
 
   // Dedup theo email: hiện 1 row/học sinh (giữ row đầu tiên) — tránh gửi trùng N email
   {
@@ -3282,11 +3335,7 @@ function renderEmailSTable(rows) {
   const tb = document.querySelector('#tbl-email-s tbody');
   if (!tb) return;
   tb.innerHTML = '';
-  const getCols = () => {
-    if (isDVKH()) return S_COLS.filter(c => !c.isEmailBtnSGroup && c.key !== '_email_sent_time');
-    return S_COLS.filter(c => !c.isEmailBtnSGroup && c.key !== '_email_sent_time');
-  };
-  const cols = getCols();
+  const cols = S_COLS;  // đồng bộ bộ cột với bảng dữ liệu 2.2
 
   for (let j = 0; j < pg.slice.length; j++) {
     const r = pg.slice[j];
@@ -3299,6 +3348,15 @@ function renderEmailSTable(rows) {
       if (c.isLinkSGroup) {
         const url = escapeHtml(r.link_nhom || '');
         html += `<td><a href="${url}" target="_blank" rel="noopener" class="link-zalo">zalo ↗</a><button class="copy-btn" onclick="copyLink(this, '${url.replace(/\"/g, '&quot;')}')">Copy</button></td>`;
+        continue;
+      }
+      if (c.isDate) {
+        const t = fmtDateVN(r[c.key]);
+        html += `<td>${t ? escapeHtml(t) : '<span class="muted">—</span>'}</td>`;
+        continue;
+      }
+      if (c.key === 'trang_thai_duyet') {
+        html += `<td>${badgeStatus(r.trang_thai_duyet)}</td>`;
         continue;
       }
       const val = r[c.key] != null ? String(r[c.key]) : '';
@@ -3336,6 +3394,12 @@ function resetFilterES() {
   if (aimSel) aimSel.value = '';
   const examSel = document.getElementById('fES-exam');
   if (examSel) examSel.value = '';
+  const mailSel = document.getElementById('fES-mail');
+  if (mailSel) mailSel.value = '';
+  const fromEl = document.getElementById('fES-ngaygui-from');
+  if (fromEl) fromEl.value = '';
+  const toEl = document.getElementById('fES-ngaygui-to');
+  if (toEl) toEl.value = '';
   document.getElementById('qES').value = '';
   applyFilterES();
 }
@@ -3532,7 +3596,7 @@ function initEmailTCHeaders() {
   html += cols.map(c => {
     const w = c.width ? ` style="width:${c.width};min-width:${c.width}"` : '';
     const p = [];
-    if (c.isSTT || /^(userid|SĐT|email|noti)/.test(c.label)) p.push('num');
+    if (c.isSTT || /^(userid|sđt|email|noti)/i.test(c.label)) p.push('num');
     const cls = p.length ? ` class="${p.join(' ')}"` : '';
     return `<th${w}${cls}>${c.label}</th>`;
   }).join('');
@@ -3873,23 +3937,29 @@ async function loadEmailTemplatesFor(selectId) {
 }
 
 // ===== 2.2 Lọc học sinh theo nhóm S =====
-let S_GROUP_DATA = [];
+let S_GROUP_DATA = [];        // toàn bộ dữ liệu nhóm S từ API
+let S_GROUP_VIEW = [];        // kết quả sau khi lọc (nguồn cho bảng 2.2, có phân trang)
+const S_PAGES = { 's-group': 1 };  // trang hiện tại của bảng 2.2
+// Bộ cột dùng CHUNG cho bảng 2.2 và bảng dữ liệu 3.2 (đồng bộ 1 nguồn)
+// Mapping với sheet users: A=username, B=student_hmid, C=phone, D=email, F=product_id,
+// H=exam, L=tencongdong, K=mabaomatS, M=linknhom, P=maillan1, V=Trạng thái bắn noti,
+// W=noti_time, AA=Trạng thái duyệt, AB=Ngày duyệt
 const S_COLS = [
   {key:"_stt", label:"STT", isSTT:true, width:"50px"},
   {key:"username", label:"Username", width:"280px", wordBreak:true},
-  {key:"userid", label:"UserID", width:"90px"},
+  {key:"userid", label:"userID", width:"90px"},
   {key:"sdt", label:"SĐT", width:"110px"},
   {key:"email", label:"Email", width:"220px"},
-  {key:"product", label:"product", width:"100px"},
+  {key:"product", label:"Product ID", width:"100px"},
   {key:"exam", label:"Exam", width:"110px"},
   {key:"ten_group_aim", label:"Tên nhóm AIM", width:"220px", wordBreak:true},
-  {key:"mabaomat", label:"mabaomat", width:"110px"},
-  {key:"link_nhom", label:"link nhóm", isLinkSGroup:true, width:"130px"},
-  {key:"maillan1", label:"maillan1", width:"100px"},
-  {key:"noti", label:"noti", width:"80px"},
-  {key:"trang_thai_duyet", label:"Trạng thái duyệt", width:"100px"},
-  {key:"_email_btn", label:"Gửi email", isEmailBtnSGroup:true, width:"100px"},
-  {key:"_email_sent_time", label:"TG gửi email", width:"140px"},
+  {key:"mabaomat", label:"Mã bảo mật", width:"110px"},
+  {key:"link_nhom", label:"Link nhóm", isLinkSGroup:true, width:"130px"},
+  {key:"maillan1", label:"mailan1", width:"100px"},
+  {key:"noti", label:"Noti", width:"90px"},
+  {key:"ngay_gui", label:"Ngày gửi", isDate:true, width:"110px"},
+  {key:"trang_thai_duyet", label:"Trạng thái duyệt", width:"120px"},
+  {key:"ngay_duyet", label:"Ngày duyệt", isDate:true, width:"110px"},
 ];
 
 function initSGroupHeaders() {
@@ -3898,16 +3968,16 @@ function initSGroupHeaders() {
   tr.innerHTML = cols.map(c => {
     const w = c.width ? ` style="width:${c.width};min-width:${c.width}"` : '';
     const p = [];
-    if (c.isSTT || /^(userid|SĐT|email|noti)/.test(c.label)) p.push('num');
+    if (c.isSTT || /^(userid|sđt|email|noti)/i.test(c.label)) p.push('num');
     const cls = p.length ? ` class="${p.join(' ')}"` : '';
     return `<th${w}${cls}>${c.label}</th>`;
   }).join('');
 }
 
 function getSCols() {
-  if (!isDVKH()) return S_COLS;
-  // DVKH: ẩn cột Gửi email và TG gửi email, vẫn hiển thị Trạng thái duyệt
-  return S_COLS.filter(function(c) { return !c.isEmailBtnSGroup && c.key !== '_email_sent_time'; });
+  // DVKH không được thấy nút gửi email — bộ cột hiện không còn cột gửi email,
+  // nên giữ nguyên cho mọi role (đồng bộ với bảng dữ liệu 3.2).
+  return S_COLS;
 }
 
 async function loadSGroupData() {
@@ -4064,10 +4134,32 @@ function renderSOverview() {
   });
 }
 
+// ===== Lọc theo khoảng NGÀY GỬI (cột W - noti_time) — dùng chung 2.2 và 3.2 =====
+// from/to là giá trị input type=date ('YYYY-MM-DD'); so sánh theo ngày giờ Việt Nam
+function inNgayGuiRange(row, from, to) {
+  if (!from && !to) return true;
+  const k = vnDateKey(row && row.ngay_gui);  // '' nếu chưa gửi
+  if (!k) return false;                      // đã lọc ngày → chỉ giữ dòng có ngày gửi
+  if (from && k < from) return false;
+  if (to && k > to) return false;
+  return true;
+}
+
+// ===== Lọc theo TRẠNG THÁI MAIL (cột P - maillan1: SUCCESS / FAIL) =====
+function inMailStatus(row, status) {
+  if (!status) return true;
+  const v = String((row && row.maillan1) || '').trim().toLowerCase();
+  if (status === 'success') return v === 'success' || v === 'thành công' || v === 'thanh cong';
+  if (status === 'fail') return v === 'fail' || v === 'failed' || v === 'thất bại' || v === 'that bai';
+  return true;
+}
+
 function applyFilterSGroup() {
   const q = (document.getElementById('qS')?.value || '').trim().toLowerCase();
   const fAim = (document.getElementById('fS-aim')?.value || '');
   const fExam = (document.getElementById('fS-exam')?.value || '');
+  const fFrom = (document.getElementById('fS-ngaygui-from')?.value || '');
+  const fTo = (document.getElementById('fS-ngaygui-to')?.value || '');
 
   // DVKH: phải nhập từ khóa tìm kiếm mới hiển thị danh sách (không hiển thị toàn bộ)
   if (isDVKH() && !q) {
@@ -4110,6 +4202,12 @@ function applyFilterSGroup() {
     pool = pool.filter(r => String(r.exam || '').trim().toLowerCase() === String(fExam).toLowerCase());
   }
 
+  // Lọc theo khoảng Ngày gửi
+  if (fFrom || fTo) {
+    pool = pool.filter(r => inNgayGuiRange(r, fFrom, fTo));
+  }
+
+  S_PAGES['s-group'] = 1;  // đổi bộ lọc → về trang 1
   renderSGroupTable(pool);
 }
 
@@ -4119,21 +4217,34 @@ function resetFilterSGroup() {
   if (aimSel) aimSel.value = '';
   const examSel = document.getElementById('fS-exam');
   if (examSel) examSel.value = '';
+  const fromEl = document.getElementById('fS-ngaygui-from');
+  if (fromEl) fromEl.value = '';
+  const toEl = document.getElementById('fS-ngaygui-to');
+  if (toEl) toEl.value = '';
+  S_PAGES['s-group'] = 1;
   applyFilterSGroup();
 }
 
+function gotoPageSGroup(p) {
+  S_PAGES['s-group'] = p;
+  renderSGroupTable(S_GROUP_VIEW);
+}
+
 function renderSGroupTable(rows) {
+  S_GROUP_VIEW = rows || [];
   const tb = document.querySelector('#tbl-s-group tbody');
   const cols = getSCols();
   tb.innerHTML = '';
-  const MAX = 500;
-  const slice = rows.slice(0, MAX);
+  const pg = paginate(S_GROUP_VIEW, S_PAGES['s-group'] || 1, PAGE_SIZE);
+  S_PAGES['s-group'] = pg.page || 1;
+  const slice = pg.slice;
+  const offset = ((pg.page || 1) - 1) * PAGE_SIZE;
   for (let i = 0; i < slice.length; i++) {
     const r = slice[i];
     const tr = document.createElement('tr');
     let html = '';
     for (const c of cols) {
-      if (c.isSTT) { html += `<td class="num">${i + 1}</td>`; continue; }
+      if (c.isSTT) { html += `<td class="num">${offset + i + 1}</td>`; continue; }
       if (c.isLinkSGroup) {
         const url = escapeHtml(r.link_nhom || '');
         if (url) {
@@ -4146,6 +4257,11 @@ function renderSGroupTable(rows) {
       }
       if (c.key === 'trang_thai_duyet') {
         html += `<td>${badgeStatus(r.trang_thai_duyet)}</td>`;
+        continue;
+      }
+      if (c.isDate) {
+        const t = fmtDateVN(r[c.key]);
+        html += `<td>${t ? escapeHtml(t) : '<span class="muted">—</span>'}</td>`;
         continue;
       }
       if (c.isEmailBtnSGroup) {
@@ -4176,9 +4292,12 @@ function renderSGroupTable(rows) {
     tr.innerHTML = html;
     tb.appendChild(tr);
   }
-  const total = rows.length;
+  const total = S_GROUP_VIEW.length;
   document.getElementById('result-info-s').textContent =
-    total > MAX ? `Hiển thị ${MAX} / ${total} dòng` : `Hiển thị ${total} dòng`;
+    total > PAGE_SIZE
+      ? `Hiển thị ${slice.length} dòng (trang ${pg.page}/${pg.totalPages}) / tổng ${total.toLocaleString('vi-VN')} dòng`
+      : `Hiển thị ${total.toLocaleString('vi-VN')} dòng`;
+  renderPager('pager-s-group', total, pg.page || 1, pg.totalPages || 0, 'gotoPageSGroup');
 }
 
 async function sendEmailSGroup(btn) {
@@ -4266,7 +4385,7 @@ function initTCHeaders() {
   tr.innerHTML = TC_COLS.map(c => {
     const w = c.width ? ` style="width:${c.width};min-width:${c.width}"` : '';
     const p = [];
-    if (c.isSTT || /^(userid|SĐT|email|noti)/.test(c.label)) p.push('num');
+    if (c.isSTT || /^(userid|sđt|email|noti)/i.test(c.label)) p.push('num');
     const cls = p.length ? ` class="${p.join(' ')}"` : '';
     return `<th${w}${cls}>${c.label}</th>`;
   }).join('');
