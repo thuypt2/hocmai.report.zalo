@@ -29,6 +29,8 @@ nav a.active{color:var(--pri);border-bottom-color:var(--pri)}
 .sub-pane.active{display:block}
 .ov-pane{display:none;margin-top:14px}
 .ov-pane.active{display:block}
+.ov-multi-pane{display:none}
+.ov-multi-pane.active{display:block}
 .sub-tab-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .sub-tab-bar .tab-pill{padding:6px 14px;border:1px solid var(--bd);border-radius:18px;cursor:pointer;background:#fff;font-size:13px;font-weight:500;color:var(--mut);transition:all .15s}
 .sub-tab-bar .tab-pill:hover{background:#eef2ff;color:var(--pri);border-color:#c7d2fe}
@@ -263,11 +265,10 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 <div class="tab-pane active" id="tab-overview">
 
   <div style="margin-bottom:14px">
-      <span class="sub-tab active" data-ov="r1">1.1 · TỔNG QUAN DUYỆT NHÓM</span>
+      <span class="sub-tab active" data-ov="r1">1.1 · TỔNG QUAN</span>
             <span class="sub-tab" data-ov="r1-chart">1.2 · BIỂU ĐỒ XU HƯỚNG</span>
-            <span class="sub-tab" data-ov="r1-stats">1.3 · THỐNG KÊ TỈ TRỌNG DUYỆT 1:30</span>
-            <span class="sub-tab" data-ov="r1-cross-exam">1.4 · HỌC SINH ĐĂNG KÝ NHIỀU KÌ THI</span>
-            <span class="sub-tab" data-ov="r1-multi-ma">1.5 · HỌC SINH NHIỀU MÃ BẢO MẬT</span>
+            <span class="sub-tab" data-ov="r1-stats">1.3 · TỈ LỆ DUYỆT VIP</span>
+            <span class="sub-tab" data-ov="r1-multi">1.4 · HỌC VIÊN MULTI</span>
           </div>
 
   <!-- ===== Bộ lọc toàn cục Mục 1: Từ ngày → Đến ngày + Exam (áp cho mọi bảng/biểu đồ mục 1) ===== -->
@@ -292,7 +293,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
   </div>
 
 <section id="r1" class="ov-pane active">
-  <h2>1.1 · Tổng quan duyệt nhóm</h2>
+  <h2>1.1 · Tổng quan</h2>
 
   <div class="kpis" id="kpis"></div>
   <table id="tbl-exam">
@@ -422,15 +423,23 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
 </section>
 
 <section id="r1-stats" class="ov-pane">
-  <h2>1.3 · Thống kê tỉ trọng duyệt 1:30</h2>
+  <h2>1.3 · Tỉ lệ duyệt VIP</h2>
   <p class="muted">Chọn kỳ thi bên dưới để xem danh sách các nhóm lớp thuộc kỳ đó, sắp xếp theo tỉ lệ duyệt nhóm 1:30 giảm dần (cao → thấp).</p>
   <div id="groups-pie-wrap" style="max-width:520px;margin:0 auto 16px"><canvas id="cGroups-pie"></canvas></div>
   <div class="sub-tab-bar" id="tabs-groups"></div>
   <div id="groups-content"></div>
 </section>
 
-<section id="r1-cross-exam" class="ov-pane">
-  <h2>1.4 · Học sinh đăng ký nhiều kì thi</h2>
+<section id="r1-multi" class="ov-pane">
+  <h2>1.4 · Học viên multi</h2>
+  <div class="sub-tab-bar" id="ov-multi-bar" style="margin-bottom:14px">
+    <span class="tab-pill active" data-ovm="cross-exam">Học viên đăng ký nhiều kì thi</span>
+    <span class="tab-pill" data-ovm="multi-ma">Học sinh nhiều mã bảo mật</span>
+  </div>
+
+  <!-- ===== 1.4a Học viên đăng ký nhiều kì thi ===== -->
+  <div class="ov-multi-pane active" id="ovm-cross-exam">
+  <h3 style="margin:0 0 8px;font-size:15px;color:#1e3a8a">Học viên đăng ký nhiều kì thi</h3>
   <p class="muted">Phân tích số lượng học sinh đăng ký từ 2 kỳ thi trở lên tại HOCMAI (nhóm theo email). Mỗi ô là số học sinh xuất hiện ở cả 2 kỳ thi (giao thoa).</p>
 
   <div class="kpis" id="kpis-cross-exam"></div>
@@ -471,10 +480,11 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
       <div class="chart-wrap" style="height:380px"><canvas id="cCrossPair"></canvas></div>
     </div>
   </div>
-</section>
+  </div><!-- /ovm-cross-exam -->
 
-<section id="r1-multi-ma" class="ov-pane">
-  <h2>1.5 · Học sinh nhiều mã bảo mật</h2>
+  <!-- ===== 1.4b Học sinh nhiều mã bảo mật ===== -->
+  <div class="ov-multi-pane" id="ovm-multi-ma">
+  <h3 style="margin:0 0 8px;font-size:15px;color:#1e3a8a">Học sinh nhiều mã bảo mật</h3>
   <p class="muted">Mỗi học sinh chỉ được phép có 1 mã bảo mật cho 1 nhóm lớp của 1 gói học đã đăng ký. Báo cáo kiểm tra mức độ lặp dữ liệu theo từng kỳ thi: đếm học sinh có nhiều mã bảo mật khác nhau (cùng email trong cùng kỳ thi). Cột "Cùng nhóm lớp" = 1 nhóm lớp bị gán 2 mã (lặp thật sự); "Khác nhóm lớp" = học sinh đăng ký nhiều gói ở các nhóm khác nhau.</p>
 
   <div class="kpis" id="kpis-multi-ma"></div>
@@ -499,6 +509,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
       <tbody></tbody>
     </table>
   </div>
+  </div><!-- /ovm-multi-ma -->
 </section>
 
 </div><!-- /tab-overview -->
@@ -510,7 +521,7 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
     <span class="sub-tab active" data-sub="filter-group">2.1 · NHÓM VIP</span>
     <span class="sub-tab" data-sub="s-group">2.2 · NHÓM S, A</span>
     <span class="sub-tab" data-sub="tc-thpt">2.3 · NHÓM TC</span>
-    <span class="sub-tab" data-sub="wait-member">2.4 · HỌC SINH CHỜ DUYỆT KẾT NỐI</span>
+    <span class="sub-tab" data-sub="wait-member">2.4 · HỌC VIÊN CHỜ DUYỆT</span>
     <span class="sub-tab" data-sub="multi-mabaomat">2.5 · HỌC SINH NHIỀU MÃ BẢO MẬT</span>
   </div>
 
@@ -1056,16 +1067,16 @@ function applyRoleUI(){
     var al=document.getElementById('adminPageLink');
     if(al) al.style.display=isAdmin()?'':'none';
   }
-  // GVCN: muc 1 Tong quan chi xem 1.3 (Thong ke ti trong); an 1.1, 1.2 (Bieu do xu huong), 1.4, 1.5
+  // GVCN: muc 1 Tong quan chi xem 1.3 (Ti le duyet VIP); an 1.1, 1.2 (Bieu do xu huong), 1.4
     if (isGVCN()) {
-      ['r1','r1-cross-exam','r1-multi-ma','r1-chart'].forEach(function(id){
+      ['r1','r1-multi','r1-chart'].forEach(function(id){
         var el=document.getElementById(id);
         if(el) el.style.display='none';
       });
       // Ẩn sub-tab buttons tương ứng (kể cả 1.2 biểu đồ xu hướng)
       document.querySelectorAll('#tab-overview .sub-tab[data-ov]').forEach(function(s){
         var ov = s.dataset.ov;
-        if (ov === 'r1' || ov === 'r1-cross-exam' || ov === 'r1-multi-ma' || ov === 'r1-chart') s.style.display = 'none';
+        if (ov === 'r1' || ov === 'r1-multi' || ov === 'r1-chart') s.style.display = 'none';
       });
       // Auto-switch sang 1.3
       switchOvTab('r1-stats');
@@ -2187,6 +2198,15 @@ function switchOvTab(ov){
     p.classList.toggle('active', p.id === ov);
   });
   if (ov === 'r1-chart') applyCharts();
+}
+// 1.4 Học viên multi: 2 báo cáo nhỏ bên trong
+function switchOvMulti(sub){
+  document.querySelectorAll('#ov-multi-bar .tab-pill').forEach(function(p){
+    p.classList.toggle('active', p.dataset.ovm === sub);
+  });
+  document.querySelectorAll('#r1-multi .ov-multi-pane').forEach(function(p){
+    p.classList.toggle('active', p.id === 'ovm-' + sub);
+  });
 }
 function switchTab(tab){
   document.querySelectorAll('#mainNav a').forEach(a=>a.classList.toggle('active', a.dataset.tab===tab));
@@ -4992,7 +5012,7 @@ function hideCrossStudents(){
   document.getElementById('cross-detail').style.display = 'none';
 }
 
-// ===== 1.5 Học sinh nhiều mã bảo mật =====
+// ===== 1.4b Học sinh nhiều mã bảo mật =====
 let MULTI_MA = { groups: {}, exams: [] };
 
 function buildMultiMa(){
@@ -5461,6 +5481,9 @@ document.querySelectorAll('#mainNav a').forEach(a=>{
 document.querySelectorAll('#tab-overview .sub-tab').forEach(s=>{
   s.addEventListener('click', ()=>switchOvTab(s.dataset.ov));
 });
+document.querySelectorAll('#ov-multi-bar .tab-pill').forEach(s=>{
+  s.addEventListener('click', ()=>switchOvMulti(s.dataset.ovm));
+});
 document.querySelectorAll('#tab-lookup .sub-tab').forEach(s=>{
   s.addEventListener('click', ()=>switchSub(s.dataset.sub));
 });
@@ -5496,7 +5519,7 @@ async function loadData(){
     // Init 2.4 (học sinh nhiều mã bảo mật) — tính từ LOOKUP
     initMultiMabaomat();
 
-    // Init 1.5 (Học sinh nhiều mã bảo mật theo kỳ thi)
+    // Init 1.4b (Học sinh nhiều mã bảo mật theo kỳ thi)
     buildMultiMa(); initMultiMaFilters(); renderMultiMa();
 
     // Load Wait_member data for tab 2.3 (await để tránh trắng dữ liệu khi user click sớm)
