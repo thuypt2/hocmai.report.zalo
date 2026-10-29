@@ -3316,7 +3316,7 @@ function applyFilterES() {
   let pool = S_GROUP_DATA.filter(r => (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim());
   if (q) {
     pool = pool.filter(r => {
-      const blob = [r.username, r.sdt, r.email, r.userid, r.product, r.mabaomat]
+      const blob = [r.username, r.sdt, r.email, r.userid, r.product, r.mabaomat, r.class, r.type]
         .map(x => String(x || '').toLowerCase()).join('|');
       return blob.includes(q);
     });
@@ -3631,7 +3631,7 @@ function applyFilterETC() {
   let pool = TC_THPT_DATA.filter(r => (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim());
   if (q) {
     pool = pool.filter(r => {
-      const blob = [r.username, r.sdt, r.email, r.userid, r.product, r.mabaomat]
+      const blob = [r.username, r.sdt, r.email, r.userid, r.product, r.mabaomat, r.class, r.type]
         .map(x => String(x || '').toLowerCase()).join('|');
       return blob.includes(q);
     });
@@ -3962,8 +3962,8 @@ let S_GROUP_VIEW = [];        // kết quả sau khi lọc (nguồn cho bảng 2
 const S_PAGES = { 's-group': 1 };  // trang hiện tại của bảng 2.2
 // Bộ cột dùng CHUNG cho bảng 2.2 và bảng dữ liệu 3.2 (đồng bộ 1 nguồn)
 // Mapping với sheet users: A=username, B=student_hmid, C=phone, D=email, F=product_id,
-// H=exam, L=tencongdong, K=mabaomatS, M=linknhom, P=maillan1, V=Trạng thái bắn noti,
-// W=noti_time, AA=Trạng thái duyệt, AB=Ngày duyệt
+// H=exam, I=class, J=type, K=mabaomatS, L=tencongdong, M=linknhom, P=maillan1,
+// V=Trạng thái bắn noti, W=noti_time, AA=Trạng thái duyệt, AB=Ngày duyệt
 const S_COLS = [
   {key:"_stt", label:"STT", isSTT:true, width:"50px"},
   {key:"username", label:"Username", width:"280px", wordBreak:true},
@@ -3972,6 +3972,8 @@ const S_COLS = [
   {key:"email", label:"Email", width:"220px"},
   {key:"product", label:"Product ID", width:"100px"},
   {key:"exam", label:"Exam", width:"110px"},
+  {key:"class", label:"Class", width:"80px"},
+  {key:"type", label:"Type", width:"80px"},
   {key:"ten_group_aim", label:"Tên nhóm AIM", width:"220px", wordBreak:true},
   {key:"mabaomat", label:"Mã bảo mật", width:"110px"},
   {key:"link_nhom", label:"Link nhóm", isLinkSGroup:true, width:"130px"},
@@ -4198,7 +4200,7 @@ function applyFilterSGroup() {
   // Lọc theo ô tìm kiếm (độc lập với AIM)
   if (q) {
     pool = pool.filter(r => {
-      const blob = [r.username, r.sdt, r.email, r.userid, r.product, r.mabaomat]
+      const blob = [r.username, r.sdt, r.email, r.userid, r.product, r.mabaomat, r.class, r.type]
         .map(x => String(x || '').toLowerCase()).join('|');
       return blob.includes(q);
     });

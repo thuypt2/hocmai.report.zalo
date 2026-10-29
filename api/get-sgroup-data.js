@@ -102,10 +102,16 @@ module.exports = async function handler(req, res) {
     //   H = exam (index 7), K = mabaomatS (index 10), L = tencongdong = Tên nhóm AIM (index 11)
     // Ưu tiên map theo tên header; nếu không tìm thấy, fallback THEO VỊ TRÍ CỘT
     const idxExam     = colIdx(['exam', 'kỳ thi', 'ky_thi', 'kythi']);
+    const idxClass    = colIdx(['class', 'lớp', 'lop', 'class_name', 'ma_lop']);
+    const idxType     = colIdx(['type', 'loại', 'loai', 'type_name']);
     const idxTenGroup  = colIdx(['tencongdong', 'ten_cong_dong', 'tên cộng đồng', 'tên nhóm aim', 'name_group_aim', 'ten_group_aim', 'ten nhom aim', 'tên group cộng đồng', 'ten_group']);
     const posExamIdx   = (headers.length > 7)  ? 7  : -1;  // cột H (index 7)
+    const posClassIdx  = (headers.length > 8)  ? 8  : -1;  // cột I (index 8) = class
+    const posTypeIdx   = (headers.length > 9)  ? 9  : -1;  // cột J (index 9) = type
     const posTenGroupIdx = (headers.length > 11) ? 11 : -1; // cột L (index 11) = tencongdong
     const effectiveExam    = idxExam    >= 0 ? idxExam    : posExamIdx;
+    const effectiveClass   = idxClass   >= 0 ? idxClass   : posClassIdx;
+    const effectiveType    = idxType    >= 0 ? idxType    : posTypeIdx;
     const effectiveTenGroup = idxTenGroup >= 0 ? idxTenGroup : posTenGroupIdx;
     // Cột W = noti_time (Ngày gửi) — fallback theo vị trí nếu header đổi tên
     const posNgayGuiIdx  = (headers.length > 22) ? 22 : -1;
@@ -128,6 +134,8 @@ module.exports = async function handler(req, res) {
       ngay_duyet: get(row, idxNgayDuyet),
       nguoi_duyet: get(row, idxNguoiDuyet),
       exam: get(row, effectiveExam),
+      class: get(row, effectiveClass),
+      type: get(row, effectiveType),
       ten_group_aim: get(row, effectiveTenGroup),
       link_aim: resolveAimLink(get(row, effectiveTenGroup)),
     }));
