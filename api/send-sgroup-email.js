@@ -112,6 +112,26 @@ async function callAppsScript(payload) {
   }
 }
 
+// Gói học của học sinh: 'S' hoặc 'A' — dùng cho placeholder {{lo_trinh}} và tiêu đề email.
+// Ưu tiên body.type (cột J sheet users), sau đó tên nhóm AIM, cuối cùng là mã bảo mật.
+function resolveLoTrinh(body) {
+  const t = String(body.type || '').trim().toUpperCase();
+  if (t === 'A' || t === 'S') return t;
+  const g = String(body.ten_group_aim || '').trim().toUpperCase();
+  if (/^HOCMAI\s+A\b/.test(g) || /\bA\s+(HSA|TSA|V-ACT|QDA)\b/.test(g)) return 'A';
+  const ma = String(body.mabaomats || '').trim().toUpperCase();
+  if (/^A\d/.test(ma)) return 'A';
+  return 'S';
+}
+
+// Tiêu đề trong sheet Email_Templates đang ghi "...Nhóm AIM S..." — với gói A đổi thành AIM A
+// để email khớp đúng gói học sinh nhận.
+function subjectForLoTrinh(subject, loTrinh) {
+  const s = String(subject || '');
+  if (loTrinh !== 'A') return s;
+  return s.replace(/(Nhóm\s*AIM)\s*S\b/gi, '$1 A');
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -125,8 +145,11 @@ export default async function handler(req, res) {
     let body = {};
     try { body = JSON.parse(rawBody); } catch { body = {}; }
 
-    const { email, username, linknhom, link_group, mabaomats, link_aim, exam, ten_group_aim, templateKey, templateSubject, templateBody } = body;
+    const { email, username, linknhom, link_group, mabaomats, link_aim, exam, ten_group_aim, templateKey, templateSubject, templateBody, type, class: klass } = body;
     if (!email) return res.status(400).json({ ok: false, error: 'Thiếu email' });
+
+    // Gói học sinh: S hay A — quyết định {{lo_trinh}} trong nội dung + "AIM S/A" trong tiêu đề
+    const loTrinh = resolveLoTrinh(body);
 
     // Resolve template trên Vercel: nếu client đã gửi templateBody sẵn (đã resolve),
     // dùng luôn. Ngược lại resolve theo templateKey.
@@ -136,6 +159,10 @@ export default async function handler(req, res) {
     } else {
       tmpl = await getResolvedTemplate(templateKey || 'SSC:HDAIM-S');
     }
+    tmpl.subject = subjectForLoTrinh(tmpl.subject, loTrinh);
+    // Render luôn {{lo_trinh}} ở Vercel (giá trị đã biết theo từng học sinh) để email
+    // không bao giờ lộ placeholder, kể cả khi Apps Script chưa cập nhật mapping mới.
+    tmpl.htmlBody = String(tmpl.htmlBody || '').replace(/{{\s*lo_trinh\s*}}/gi, loTrinh);
 
     // Thêm ảnh hướng dẫn AIM
     const htmlBodyWithImage = appendImageGuide(tmpl.htmlBody);
@@ -147,6 +174,9 @@ export default async function handler(req, res) {
       link_aim: link_aim || '',
       exam: exam || '',
       ten_group_aim: ten_group_aim || '',
+      type: type || '',
+      class: klass || '',
+      lo_trinh: loTrinh,
     };
 
     const result = await callAppsScript({

@@ -408,6 +408,18 @@ function handleSendClassGroupEmails(body) {
 }
 
 // ===== (A) Gửi selected emails từ tab 2.2 =====
+// Suy ra gói học (S hay A) cho placeholder {{lo_trinh}}:
+// ưu tiên cột type (J sheet users), sau đó tên nhóm AIM ("HOCMAI A ..."), cuối cùng là mã bảo mật (Axxxxxx).
+function sGroupLoTrinh(student) {
+  var t = String((student && student.type) || '').trim().toUpperCase();
+  if (t === 'A' || t === 'S') return t;
+  var g = String((student && student.ten_group_aim) || '').trim().toUpperCase();
+  if (/^HOCMAI\s+A\b/.test(g) || /\bA\s+(HSA|TSA|V-ACT|QDA)\b/.test(g)) return 'A';
+  var ma = String((student && student.mabaomats) || '').trim().toUpperCase();
+  if (/^A\d/.test(ma)) return 'A';
+  return 'S';  // mặc định: gói S (không bao giờ để lộ placeholder)
+}
+
 function handleSendSelectedEmails(ss, body) {
   var selectedEmails = body.selectedEmails || [];
   var selectedStudents = body.selectedStudents || [];
@@ -463,10 +475,13 @@ function handleSendSelectedEmails(ss, body) {
         'tencongdong': student.tencongdong || '',
         'linknhom':    student.linknhom    || '',
         'mabaomatS':   student.mabaomats   || '',
-        // Nhóm S: bắt đúng thông tin kỳ thi + tên nhóm AIM + link nhóm AIM
+        // Nhóm S / nhóm A: bắt đúng thông tin kỳ thi + tên nhóm AIM + link nhóm AIM
         'exam':        student.exam          || '',
+        'type':        student.type          || '',
+        'class':       student['class']      || '',
         'ten_group_aim': student.ten_group_aim || '',
-        'Link_AIM':    student.link_aim      || '',
+        // Gói học (Lộ trình S / Lộ trình A) — mặc định S nếu thiếu để không lộ placeholder
+        'lo_trinh':    sGroupLoTrinh(student),
       };
 
       var subject, htmlBody;

@@ -113,7 +113,7 @@ color:#333333;
 text-align:justify;">
 
 Em đã đăng ký giải pháp
-<strong>HOCMAI TopUni 2027 - Lộ trình S</strong>
+<strong>HOCMAI TopUni 2027 - Lộ trình {{lo_trinh}}</strong>
 nhưng chưa tham gia đầy đủ nhóm AIM để hỏi bài, trao đổi chuyên môn với Admin/Mentor.
 
 <br>

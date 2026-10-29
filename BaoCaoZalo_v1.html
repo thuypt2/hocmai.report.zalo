@@ -3550,6 +3550,8 @@ async function previewEmailTemplateES() {
       body = `<pre style="white-space:pre-wrap; font-family:Arial, sans-serif; font-size:14px;">${body}</pre>`;
     }
   }
+  // Placeholder gói học: hiển thị "S" cho dễ xem layout (gửi thật sẽ là S hoặc A theo từng HS)
+  body = String(body || '').replace(/{{\s*lo_trinh\s*}}/gi, 'S');
   preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${body || '(Chưa có nội dung html_body)'}</div>`;
 }
 
@@ -3593,6 +3595,8 @@ async function emailSendSelectedES() {
     linknhom: r.link_nhom || '',
     mabaomats: r.mabaomat || '',
     exam: r.exam || '',
+    type: r.type || '',
+    cls: r.class || '',
     ten_group_aim: r.ten_group_aim || '',
     link_aim: r.link_aim || 'https://hocmai.link/VACTaim900plus',
   }));
@@ -3619,8 +3623,10 @@ async function emailSendSelectedES() {
             mabaomats: s.mabaomats,
             link_aim: s.link_aim,
             exam: s.exam,
+            type: s.type,
+            class: s.cls,
             ten_group_aim: s.ten_group_aim,
-            templateKey: 'SSC:HDAIM-S',
+            templateKey: key,
           })
         });
         const result = await resp.json();
@@ -3964,12 +3970,19 @@ async function emailSendSelectedETC() {
 async function loadEmailTemplatesFor(selectId) {
   const tplSel = document.getElementById(selectId);
   if (!tplSel) return;
+  // Mẫu mặc định cho từng tab: 3.2 (nhóm S, A) mặc định mẫu SSC:HDAIM-S
+  const DEFAULT_KEY = { emailTemplateES: 'SSC:HDAIM-S', emailTemplateETC: 'SSC:HDAIM' };
+  const applyDefault = () => {
+    const want = DEFAULT_KEY[selectId];
+    if (want && !tplSel.value && EMAIL_TEMPLATES_LOADED[want]) tplSel.value = want;
+  };
   if (Object.keys(EMAIL_TEMPLATES_LOADED).length > 0) {
     // Already loaded
     tplSel.innerHTML = '<option value="">-- Chọn mẫu email --</option>';
     for (const [key, t] of Object.entries(EMAIL_TEMPLATES_LOADED)) {
       tplSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(key)}">${escapeHtml(t.name)}</option>`);
     }
+    applyDefault();
     return;
   }
   try {
@@ -3990,6 +4003,7 @@ async function loadEmailTemplatesFor(selectId) {
         EMAIL_TEMPLATES_LOADED[t.key] = { key: t.key, name: t.name, subject: t.subject, html_body: htmlBody, is_html: true };
         tplSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(t.key)}">${escapeHtml(t.name)}</option>`);
       }
+      applyDefault();
     }
   } catch (err) { console.warn('Không tải được mẫu email:', err.message); }
 }
@@ -4432,6 +4446,7 @@ function renderSGroupTable(rows) {
           data-linknhom="${esc(r.link_nhom||'')}"
           data-mabaomat="${esc(r.mabaomat||'')}"
           data-exam="${esc(r.exam||'')}"
+          data-type="${esc(r.type||'')}"
           data-ten-group-aim="${esc(r.ten_group_aim||'')}"
           data-link-aim="${esc(r.link_aim||'')}"
           data-userid="${esc(r.userid||'')}"
@@ -4462,6 +4477,7 @@ async function sendEmailSGroup(btn) {
   const linknhom = btn.getAttribute('data-linknhom') || '';
   const mabaomat = btn.getAttribute('data-mabaomat') || '';
   const exam     = btn.getAttribute('data-exam')     || '';
+  const type     = btn.getAttribute('data-type')     || '';
   const tenGroupAim = btn.getAttribute('data-ten-group-aim') || '';
   const userid   = btn.getAttribute('data-userid')   || '';
 
@@ -4485,6 +4501,7 @@ async function sendEmailSGroup(btn) {
       link_aim:     link_aim,
       mabaomats:    mabaomat,
       exam:         exam,
+      type:         type,
       ten_group_aim: tenGroupAim,
       templateKey:  'SSC:HDAIM-S',
     })
