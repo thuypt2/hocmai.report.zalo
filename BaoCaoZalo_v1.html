@@ -3075,6 +3075,16 @@ async function fetchEmailTemplates() {
   }
 }
 
+// Mẫu email mặc định theo từng tab — 3.2 (nhóm S, A) chọn sẵn SSC:HDAIM-S,
+// 3.3 (nhóm TC) chọn sẵn SSC:HDAIM, để bấm gửi là gửi được ngay.
+const TEMPLATE_DEFAULT_KEY = { emailTemplateES: 'SSC:HDAIM-S', emailTemplateETC: 'SSC:HDAIM' };
+function applyTemplateDefault(selectId) {
+  const el = document.getElementById(selectId);
+  if (!el || el.value) return;
+  const want = TEMPLATE_DEFAULT_KEY[selectId];
+  if (want && EMAIL_TEMPLATES_LOADED[want]) el.value = want;
+}
+
 async function fetchEmailTemplatesES() {
   const tplSel = document.getElementById('emailTemplateES');
   try {
@@ -3095,6 +3105,7 @@ async function fetchEmailTemplatesES() {
         EMAIL_TEMPLATES_LOADED[t.key] = { key: t.key, name: t.name, subject: t.subject, html_body: htmlBody, is_html: true };
         tplSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(t.key)}">${escapeHtml(t.name)}</option>`);
       }
+      applyTemplateDefault('emailTemplateES');
     } else {
       await loadHardcodedTemplatesES(tplSel);
     }
@@ -3123,6 +3134,7 @@ async function fetchEmailTemplatesETC() {
         EMAIL_TEMPLATES_LOADED[t.key] = { key: t.key, name: t.name, subject: t.subject, html_body: htmlBody, is_html: true };
         tplSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(t.key)}">${escapeHtml(t.name)}</option>`);
       }
+      applyTemplateDefault('emailTemplateETC');
     } else {
       await loadHardcodedTemplates(tplSel);
     }
@@ -3564,7 +3576,8 @@ async function emailSendSelectedES() {
   // Chống bấm gửi trùng (đang gửi thì khóa nút)
   if (_emailSendingES) { alert('Đang gửi email, vui lòng chờ đợt hiện tại hoàn tất.'); return; }
 
-  const key = tplSel?.value;
+  // Không chọn mẫu → mặc định mẫu nhóm S (SSC:HDAIM-S); gói A được đổi Lộ trình/tiêu đề tự động
+  const key = tplSel?.value || (EMAIL_TEMPLATES_LOADED['SSC:HDAIM-S'] ? 'SSC:HDAIM-S' : '');
   const template = EMAIL_TEMPLATES_LOADED[key];
   if (!template) { alert('Vui lòng chọn mẫu email.'); return; }
 
@@ -3970,12 +3983,7 @@ async function emailSendSelectedETC() {
 async function loadEmailTemplatesFor(selectId) {
   const tplSel = document.getElementById(selectId);
   if (!tplSel) return;
-  // Mẫu mặc định cho từng tab: 3.2 (nhóm S, A) mặc định mẫu SSC:HDAIM-S
-  const DEFAULT_KEY = { emailTemplateES: 'SSC:HDAIM-S', emailTemplateETC: 'SSC:HDAIM' };
-  const applyDefault = () => {
-    const want = DEFAULT_KEY[selectId];
-    if (want && !tplSel.value && EMAIL_TEMPLATES_LOADED[want]) tplSel.value = want;
-  };
+  const applyDefault = () => applyTemplateDefault(selectId);
   if (Object.keys(EMAIL_TEMPLATES_LOADED).length > 0) {
     // Already loaded
     tplSel.innerHTML = '<option value="">-- Chọn mẫu email --</option>';
