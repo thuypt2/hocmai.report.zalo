@@ -590,6 +590,16 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
               <option value="">-- Tất cả --</option>
             </select>
           </label>
+          <label>Class
+            <select id="fS-class">
+              <option value="">-- Tất cả --</option>
+            </select>
+          </label>
+          <label>Type
+            <select id="fS-type">
+              <option value="">-- Tất cả --</option>
+            </select>
+          </label>
           <label id="fS-aim-label">Trạng thái duyệt AIM
             <select id="fS-aim">
               <option value="">-- Tất cả --</option>
@@ -857,6 +867,16 @@ footer{padding:14px;text-align:center;color:var(--mut);font-size:12px}
     <div class="filter-row" style="position:sticky;top:0;z-index:10;background:#fff;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--bd)">
       <label>Exam
         <select id="fES-exam">
+          <option value="">-- Tất cả --</option>
+        </select>
+      </label>
+      <label>Class
+        <select id="fES-class">
+          <option value="">-- Tất cả --</option>
+        </select>
+      </label>
+      <label>Type
+        <select id="fES-type">
           <option value="">-- Tất cả --</option>
         </select>
       </label>
@@ -3309,6 +3329,8 @@ function applyFilterES() {
   const q = (document.getElementById('qES')?.value || '').trim().toLowerCase();
   const fAim = (document.getElementById('fES-aim')?.value || '');
   const fExam = (document.getElementById('fES-exam')?.value || '');
+  const fClass = (document.getElementById('fES-class')?.value || '');
+  const fType = (document.getElementById('fES-type')?.value || '');
   const fMail = (document.getElementById('fES-mail')?.value || '');
   const fFrom = (document.getElementById('fES-ngaygui-from')?.value || '');
   const fTo = (document.getElementById('fES-ngaygui-to')?.value || '');
@@ -3324,6 +3346,9 @@ function applyFilterES() {
   if (fAim === 'duyet') pool = pool.filter(r => (r.trang_thai_duyet || '').trim() === 'Duyệt');
   else if (fAim === 'chua') pool = pool.filter(r => (r.trang_thai_duyet || '').trim() !== 'Duyệt');
   if (fExam) pool = pool.filter(r => String(r.exam || '').trim().toLowerCase() === String(fExam).toLowerCase());
+  // Lọc Class (cột I) / Type (cột J) sheet users
+  if (fClass) pool = pool.filter(r => String(r.class || '').trim().toLowerCase() === String(fClass).toLowerCase());
+  if (fType) pool = pool.filter(r => String(r.type || '').trim().toLowerCase() === String(fType).toLowerCase());
 
   // Lọc trạng thái mail (cột P - maillan1) và khoảng Ngày gửi (cột W - noti_time)
   if (fMail) pool = pool.filter(r => inMailStatus(r, fMail));
@@ -3414,6 +3439,10 @@ function resetFilterES() {
   if (aimSel) aimSel.value = '';
   const examSel = document.getElementById('fES-exam');
   if (examSel) examSel.value = '';
+  const classSel = document.getElementById('fES-class');
+  if (classSel) classSel.value = '';
+  const typeSel = document.getElementById('fES-type');
+  if (typeSel) typeSel.value = '';
   const mailSel = document.getElementById('fES-mail');
   if (mailSel) mailSel.value = '';
   const fromEl = document.getElementById('fES-ngaygui-from');
@@ -4031,16 +4060,43 @@ async function loadSGroupData() {
   applyFilterSGroup();
 }
 
-// Populate 2 select Exam (mục 2.2 và 3.2) từ S_GROUP_DATA
+// Populate select Exam / Class / Type (mục 2.2 và 3.2) từ S_GROUP_DATA
 function populateSGroupExamFilters() {
-  const exams = uniq(S_GROUP_DATA.map(r => (r.exam || '').trim()).filter(Boolean));
-  const opts = ['<option value="">-- Tất cả --</option>']
-    .concat(exams.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`))
+  const exams = uniq(S_GROUP_DATA.map(r => (r.exam || '').trim()).filter(Boolean))
+    .sort((a, b) => a.localeCompare(b, 'vi'));
+  // Class: sắp xếp theo số nếu là số (1,2,3...10,11,12), ngược lại theo chữ
+  const classes = uniq(S_GROUP_DATA.map(r => String(r.class || '').trim()).filter(Boolean))
+    .sort((a, b) => {
+      const na = parseFloat(a), nb = parseFloat(b);
+      if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+      return String(a).localeCompare(String(b), 'vi');
+    });
+  const types = uniq(S_GROUP_DATA.map(r => (r.type || '').trim()).filter(Boolean))
+    .sort((a, b) => a.localeCompare(b, 'vi'));
+
+  const buildOpts = (arr) => ['<option value="">-- Tất cả --</option>']
+    .concat(arr.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`))
     .join('');
-  const selS = document.getElementById('fS-exam');
-  if (selS) { const prev = selS.value; selS.innerHTML = opts; if (prev) selS.value = prev; }
-  const selES = document.getElementById('fES-exam');
-  if (selES) { const prev = selES.value; selES.innerHTML = opts; if (prev) selES.value = prev; }
+
+  const fill = (id, opts) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const prev = el.value;
+    el.innerHTML = opts;
+    if (prev) el.value = prev;
+    // Nếu giá trị cũ không còn trong danh sách thì về "Tất cả"
+    if (el.value !== prev) el.value = '';
+  };
+
+  const optExam  = buildOpts(exams);
+  const optClass = buildOpts(classes);
+  const optType  = buildOpts(types);
+  fill('fS-exam', optExam);
+  fill('fS-class', optClass);
+  fill('fS-type', optType);
+  fill('fES-exam', optExam);
+  fill('fES-class', optClass);
+  fill('fES-type', optType);
 }
 
 function renderSOverview() {
@@ -4180,6 +4236,8 @@ function applyFilterSGroup() {
   const q = (document.getElementById('qS')?.value || '').trim().toLowerCase();
   const fAim = (document.getElementById('fS-aim')?.value || '');
   const fExam = (document.getElementById('fS-exam')?.value || '');
+  const fClass = (document.getElementById('fS-class')?.value || '');
+  const fType = (document.getElementById('fS-type')?.value || '');
   const fFrom = (document.getElementById('fS-ngaygui-from')?.value || '');
   const fTo = (document.getElementById('fS-ngaygui-to')?.value || '');
 
@@ -4224,6 +4282,14 @@ function applyFilterSGroup() {
     pool = pool.filter(r => String(r.exam || '').trim().toLowerCase() === String(fExam).toLowerCase());
   }
 
+  // Lọc theo Class (cột I) và Type (cột J) sheet users
+  if (fClass) {
+    pool = pool.filter(r => String(r.class || '').trim().toLowerCase() === String(fClass).toLowerCase());
+  }
+  if (fType) {
+    pool = pool.filter(r => String(r.type || '').trim().toLowerCase() === String(fType).toLowerCase());
+  }
+
   // Lọc theo khoảng Ngày gửi
   if (fFrom || fTo) {
     pool = pool.filter(r => inNgayGuiRange(r, fFrom, fTo));
@@ -4239,6 +4305,10 @@ function resetFilterSGroup() {
   if (aimSel) aimSel.value = '';
   const examSel = document.getElementById('fS-exam');
   if (examSel) examSel.value = '';
+  const classSel = document.getElementById('fS-class');
+  if (classSel) classSel.value = '';
+  const typeSel = document.getElementById('fS-type');
+  if (typeSel) typeSel.value = '';
   const fromEl = document.getElementById('fS-ngaygui-from');
   if (fromEl) fromEl.value = '';
   const toEl = document.getElementById('fS-ngaygui-to');
