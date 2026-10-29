@@ -125,11 +125,11 @@ function resolveLoTrinh(body) {
 }
 
 // Tiêu đề trong sheet Email_Templates đang ghi "...Nhóm AIM S..." — với gói A đổi thành AIM A
-// để email khớp đúng gói học sinh nhận.
+// để email khớp đúng gói học sinh nhận. Bắt cả biến thể "Nhóm AIM S" và "AIM S".
 function subjectForLoTrinh(subject, loTrinh) {
   const s = String(subject || '');
   if (loTrinh !== 'A') return s;
-  return s.replace(/(Nhóm\s*AIM)\s*S\b/gi, '$1 A');
+  return s.replace(/\bAIM\s+S\b/gi, (m) => m.replace(/S$/i, 'A'));
 }
 
 export default async function handler(req, res) {
