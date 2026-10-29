@@ -3320,7 +3320,7 @@ async function emailSendSelected() {
     resultBox.textContent = `[${stamp}] Lỗi hệ thống: ` + err.message;
   } finally {
     _emailSending2 = false;
-    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Gửi email cho ' + EMAIL_SELECTED.size + ' học sinh đã chọn'; }
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.innerHTML = 'Gửi email cho <span id="email-send-count">' + EMAIL_SELECTED.size + '</span> học sinh đã chọn'; }
   }
 }
 
@@ -3542,8 +3542,10 @@ function emailUpdateSelectionES() {
     if (cb.checked) EMAIL_S_SELECTED.add(idx);
     else EMAIL_S_SELECTED.delete(idx);
   });
-  document.getElementById('email-send-count-es').textContent = EMAIL_S_SELECTED.size;
-  document.getElementById('email-selected-count-es').textContent = EMAIL_S_SELECTED.size;
+  const cntEs = document.getElementById('email-send-count-es');
+  if (cntEs) cntEs.textContent = EMAIL_S_SELECTED.size;
+  const selEs = document.getElementById('email-selected-count-es');
+  if (selEs) selEs.textContent = EMAIL_S_SELECTED.size;
 }
 
 async function previewEmailTemplateES() {
@@ -3652,7 +3654,7 @@ async function emailSendSelectedES() {
     resultBox.textContent = `[${stamp}] Lỗi: ` + err.message;
   } finally {
     _emailSendingES = false;
-    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Gửi email cho ' + EMAIL_S_SELECTED.size + ' học sinh đã chọn'; }
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.innerHTML = 'Gửi email cho <span id="email-send-count-es">' + EMAIL_S_SELECTED.size + '</span> học sinh đã chọn'; }
   }
 }
 
@@ -3845,7 +3847,8 @@ function emailUpdateSelectionETC() {
     if (cb.checked) EMAIL_TC_SELECTED.add(idx);
     else EMAIL_TC_SELECTED.delete(idx);
   });
-  document.getElementById('email-send-count-etc').textContent = EMAIL_TC_SELECTED.size;
+  const cntEtc = document.getElementById('email-send-count-etc');
+  if (cntEtc) cntEtc.textContent = EMAIL_TC_SELECTED.size;
   document.getElementById('email-selected-count-etc').textContent = EMAIL_TC_SELECTED.size;
 }
 
@@ -3975,7 +3978,7 @@ async function emailSendSelectedETC() {
     resultBox.textContent = `[${stamp}] Lỗi: ` + err.message;
   } finally {
     _emailSendingETC = false;
-    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Gửi email cho ' + EMAIL_TC_SELECTED.size + ' học sinh đã chọn'; }
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.innerHTML = 'Gửi email cho <span id="email-send-count-etc">' + EMAIL_TC_SELECTED.size + '</span> học sinh đã chọn'; }
   }
 }
 
