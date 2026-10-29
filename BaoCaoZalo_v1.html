@@ -68,6 +68,7 @@ section h3{margin:18px 0 8px;font-size:15px;color:#374151}
 .bar .fill{height:100%;display:flex;align-items:center;padding:0 6px;color:#fff;font-size:11px;font-weight:600;white-space:nowrap}
 .fill-130{background:#2563eb}      /* xanh dương - duyệt 1:30 */
 .fill-aim{background:#f59e0b}      /* cam - duyệt AIM */
+.fill-aim-a{background:#10b981}    /* xanh lá - duyệt AIM nhóm A */
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{border:1px solid var(--bd);padding:6px 8px;text-align:left;vertical-align:top}
 th{background:#eef2ff;font-weight:600;color:#1e3a8a}
@@ -127,11 +128,12 @@ tr:nth-child(even) td{background:#fafbfc}
 .bar-tbl tfoot td{background:#FAFAFA;font-weight:700;border-top:2px solid #E5E7EB}
 .ov-section-divider td{background:#eef2ff;color:#1e3a8a;font-weight:700;font-size:13px;text-align:left;padding:8px 10px;border-left:none;border-right:none}
 .ov-section-divider td.github {background:#fffbeb;color:#b45309;border-left:3px solid #f59e0b;padding-left:8px}
-/* Layout Mục 1.1: hàng VIP (trên) + hàng S (dưới) — thẳng cột theo kỳ thi */
+/* Layout Mục 1.1: hàng VIP (trên) + hàng S + hàng A — thẳng cột theo kỳ thi */
 .ov-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:12px}
-.ov-row .ov-vip,.ov-row .ov-s-slot{min-width:0}
+.ov-row .ov-vip,.ov-row .ov-s-slot,.ov-row .ov-a-slot{min-width:0}
 .ov-row .ov-s-slot .kpi{border-left:3px solid #f59e0b}
-.ov-s-empty{font-size:12px;color:#9ca3af;border:1px dashed #e5e7eb;border-radius:8px;padding:14px;text-align:center;height:100%}
+.ov-row .ov-a-slot .kpi{border-left:3px solid #10b981}
+.ov-s-empty,.ov-a-empty{font-size:12px;color:#9ca3af;border:1px dashed #e5e7eb;border-radius:8px;padding:14px;text-align:center;height:100%}
 .bar-tbl .cell-total{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px}
 .bar-tbl-wrap{max-height:calc(100vh - 260px);overflow:auto;border:none}
 .bar-tbl-wrap .bar-tbl thead th{top:0}
@@ -1745,7 +1747,7 @@ function renderKPI(){
   const totalAll = DATA.total_rows || 0;
   const d130All  = DATA.exams.reduce((s,e)=>s+(DATA.exam_stats[e]?.duyet_130||0), 0);
   const daimAll  = DATA.exams.reduce((s,e)=>s+(DATA.exam_stats[e]?.duyet_aim||0), 0);
-  root.insertAdjacentHTML('beforeend', `<h3 style="margin:0 0 10px;font-size:15px;color:#1e3a8a">TỔNG QUAN DUYỆT NHÓM — GÓI VIP & GÓI S (VIP 1 hàng, S 1 hàng tương ứng)</h3>`);
+  root.insertAdjacentHTML('beforeend', `<h3 style="margin:0 0 10px;font-size:15px;color:#1e3a8a">TỔNG QUAN DUYỆT NHÓM — GÓI VIP, GÓI S &amp; GÓI A (mỗi gói 1 hàng, thẳng cột theo kỳ thi)</h3>`);
 
   // ===== Hàng 1: VIP — tất cả card xếp 1 hàng ngang =====
   root.insertAdjacentHTML('beforeend', `<div class="ov-row ov-row-vip">` +
@@ -1764,6 +1766,13 @@ function renderKPI(){
       `<div class="ov-s-slot" data-s-exam="${escapeAttr(ex)}"><div class="ov-s-empty">(không có gói S)</div></div>`
     ).join('') + '</div>');
 
+  // ===== Hàng 3: A — slot cho từng kỳ thi tương ứng (renderSOverview điền) =====
+  root.insertAdjacentHTML('beforeend', `<div class="ov-row ov-row-a">` +
+    `<div class="ov-a-slot" data-a-exam="__TOTAL__"><div class="ov-a-empty">—</div></div>` +
+    DATA.exams.map(ex =>
+      `<div class="ov-a-slot" data-a-exam="${escapeAttr(ex)}"><div class="ov-a-empty">(không có gói A)</div></div>`
+    ).join('') + '</div>');
+
   // Card riêng cho dòng chưa có exam/mã lớp
   const noExam = DATA.rows_no_exam || 0;
   if (noExam > 0) {
@@ -1780,7 +1789,7 @@ function renderExamTable(){
   tb.innerHTML = ''; tf.innerHTML = '';
   // Thêm dòng tiêu đề hai phần: VIP nhóm 1:30 + S đăng ký AIM
   tb.insertAdjacentHTML('beforeend',
-    `<tr class="ov-section-divider"><td colspan="8"><b>GÓI VIP</b> — hoc sinh vao nhom 1:30 & AIM (loc theo paid_time). Dòng <span style="color:#b45309">"…S (chỉ AIM)"</span> bên dưới từng kỳ thi là GÓI S tương ứng.</td></tr>`);
+    `<tr class="ov-section-divider"><td colspan="8"><b>GÓI VIP</b> — hoc sinh vao nhom 1:30 & AIM (loc theo paid_time). Dòng <span style="color:#b45309">"…S (chỉ AIM)"</span> là GÓI S và dòng <span style="color:#047857">"…A (chỉ AIM)"</span> là GÓI A (tách theo cột type) của từng kỳ thi.</td></tr>`);
   let totalN=0, d130N=0, daimN=0, nhomN=0;
   let gvN = 0;
 
@@ -4099,98 +4108,143 @@ function populateSGroupExamFilters() {
   fill('fES-type', optType);
 }
 
+// ===== 1.1 Tổng quan: 2 gói S và A (tách theo cột J = type của sheet users) =====
+// Mỗi gói render 1 hàng card song song hàng VIP + 1 dòng trong bảng #tbl-exam.
+const S_OVERVIEW_GROUPS = [
+  { type:'S', label:'S', slotSel:'.ov-row-s', slotClass:'ov-s-slot', emptyClass:'ov-s-empty',
+    totalId:'kpi-s-total', rowClass:'ov-s-row', fillClass:'fill-aim',
+    accent:'#f59e0b', totalBg:'#fffbeb', totalColor:'#b45309', dataAttr:'data-s-exam' },
+  { type:'A', label:'A', slotSel:'.ov-row-a', slotClass:'ov-a-slot', emptyClass:'ov-a-empty',
+    totalId:'kpi-a-total', rowClass:'ov-a-row', fillClass:'fill-aim-a',
+    accent:'#10b981', totalBg:'#ecfdf5', totalColor:'#047857', dataAttr:'data-a-exam' },
+];
+
+// Lọc dòng theo type (cột J sheet users) — không phân biệt hoa thường
+function sGroupRowsByType(rows, type) {
+  const t = String(type || '').trim().toLowerCase();
+  return (rows || []).filter(r => String((r && r.type) || '').trim().toLowerCase() === t);
+}
+
+// Card KPI của 1 gói (S hoặc A): tổng HS + tỉ lệ duyệt AIM
+function sGroupSlotHTML(id, title, st, cfg, isTotal) {
+  const pctVn = v => v.toFixed(1).replace('.', ',') + '%';
+  const boxStyle = isTotal
+    ? `border-left:3px solid ${cfg.accent};background:${cfg.totalBg}`
+    : `border-left:3px solid ${cfg.accent}`;
+  return `<div class="kpi" id="${id}" style="${boxStyle}">
+      <div class="lbl">${escapeHtml(title)} <span style="font-size:10px;color:${cfg.totalColor}">(chỉ AIM)</span></div>
+      <div class="val">${st.total.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span></div>
+      <div class="bar-row">
+        <div class="bar-cap"><span>Nhóm AIM</span><span><b>${st.duyetAim.toLocaleString('vi-VN')}</b> · ${pctVn(st.pctAim)}</span></div>
+        <div class="bar"><div class="fill ${cfg.fillClass}" style="width:${st.wAim.toFixed(1)}%">${st.labelAimInside ? st.duyetAim.toLocaleString('vi-VN')+' · '+pctVn(st.pctAim) : ''}</div></div>
+        ${!st.labelAimInside && st.pctAim>0 ? `<div style="font-size:10px;color:#374151;text-align:right;margin-top:-4px">${st.duyetAim.toLocaleString('vi-VN')} · ${pctVn(st.pctAim)}</div>` : ''}
+      </div>
+    </div>`;
+}
+
 function renderSOverview() {
   // Lọc bỏ dòng trống (không có username, email lẫn sđt) + áp bộ lọc toàn cục Mục 1
   const validRows = getSGroupFiltered().filter(function(r) {
     return (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim();
   });
-  // Trước khi render, dọn sạch các slot S cũ và các cột S-only thêm (nhưng giữ .ov-s-empty placeholder)
+
   const kpisRoot = document.getElementById('kpis');
-  const sRow = kpisRoot.querySelector('.ov-row-s');
   const vipRow = kpisRoot.querySelector('.ov-row-vip');
-  kpisRoot.querySelectorAll('.ov-s-slot').forEach(slot => {
-    // Ghi đè nội dung: nếu đang là card S thì reset về placeholder
-    slot.innerHTML = '<div class="ov-s-empty">' + (slot.getAttribute('data-s-exam') === '__TOTAL__' ? '—' : '(không có gói S)') + '</div>';
+  const tb = document.querySelector('#tbl-exam tbody');
+
+  // Dọn dấu vết lần render trước (cột giữ chỗ thêm động + dòng bảng S/A)
+  kpisRoot.querySelectorAll('.ov-vip.v-only-vip').forEach(el => el.remove());
+  if (tb) tb.querySelectorAll('tr.ov-s-row, tr.ov-a-row').forEach(el => el.remove());
+
+  // Reset nội dung hàng S/A về placeholder trước khi tính lại
+  S_OVERVIEW_GROUPS.forEach(cfg => {
+    const row = kpisRoot.querySelector(cfg.slotSel);
+    if (!row) return;
+    const totalAttr = cfg.dataAttr;
+    row.querySelectorAll('.' + cfg.slotClass).forEach(slot => {
+      const isTotal = slot.getAttribute(totalAttr) === '__TOTAL__';
+      slot.className = cfg.slotClass;
+      slot.innerHTML = `<div class="${cfg.emptyClass}">${isTotal ? '—' : '(không có gói ' + cfg.label + ')'}</div>`;
+    });
   });
-  // Xóa các slot S-only (kỳ thi không có VIP) đã thêm ở lần render trước
-  if (sRow) sRow.querySelectorAll('.ov-s-slot.s-only-slot').forEach(el => el.remove());
-  if (vipRow) vipRow.querySelectorAll('.ov-vip.v-only-vip').forEach(el => el.remove());
 
   if (!validRows.length) return;
 
-  // ── Tách riêng từng kỳ thi có trong dữ liệu nhóm S (đăng ký S vào AIM) ──
-  function statFor(exam) {
-    const sub = validRows.filter(r => (r.exam || '').trim() === exam);
+  // ── Cột kỳ thi dùng chung cho cả 3 hàng (VIP / S / A) để luôn thẳng cột ──
+  const vipExams = new Set((DATA.exams || []).map(ex => String(ex)));
+  const allExams = [...new Set(validRows.map(r => (r.exam || '').trim()).filter(Boolean))].sort();
+  const colExams = [];
+  if (vipRow) vipRow.querySelectorAll('[data-vip-exam]').forEach(el => colExams.push(el.getAttribute('data-vip-exam')));
+  allExams.forEach(ex => { if (colExams.indexOf(ex) < 0) colExams.push(ex); });
+
+  // Kỳ thi chỉ có gói S/A (không có VIP) → thêm cột giữ chỗ ở hàng VIP cho thẳng cột
+  if (vipRow) {
+    colExams.forEach(ex => {
+      if (!vipRow.querySelector('[data-vip-exam="' + CSS.escape(ex) + '"]')) {
+        vipRow.insertAdjacentHTML('beforeend',
+          `<div class="ov-vip v-only-vip" data-vip-exam="${escapeAttr(ex)}"><div class="ov-s-empty">—</div></div>`);
+      }
+    });
+  }
+
+  // Thống kê 1 kỳ thi trong phạm vi 1 gói
+  function statFor(rows, exam) {
+    const sub = rows.filter(r => (r.exam || '').trim() === exam);
     const total = sub.length;
     if (!total) return null;
     const duyetAim = sub.filter(r => (r.trang_thai_duyet || '').trim() === 'Duyệt').length;
     const pctAim = duyetAim / total * 100;
-    const wAim = Math.max(0, Math.min(100, pctAim));
-    const labelAimInside = pctAim >= 8;
-    return { total, duyetAim, pctAim, wAim, labelAimInside };
+    return { total, duyetAim, pctAim, wAim: Math.max(0, Math.min(100, pctAim)), labelAimInside: pctAim >= 8 };
   }
 
-  function sCardHTML(id, title, st, isTotal) {
-    const boxStyle = isTotal
-      ? 'border-left:3px solid #f59e0b;background:#fffbeb'
-      : 'border-left:3px solid #f59e0b';
-    return `<div class="kpi" id="${id}" style="${boxStyle}">
-      <div class="lbl">${escapeHtml(title)} <span style="font-size:10px;color:#b45309">(chỉ AIM)</span></div>
-      <div class="val">${st.total.toLocaleString('vi-VN')} <span class="muted" style="font-size:12px;font-weight:500">HS</span></div>
-      <div class="bar-row">
-        <div class="bar-cap"><span>Nhóm AIM</span><span><b>${st.duyetAim.toLocaleString('vi-VN')}</b> · ${st.pctAim.toFixed(1).replace('.',',')}%</span></div>
-        <div class="bar"><div class="fill fill-aim" style="width:${st.wAim.toFixed(1)}%">${st.labelAimInside ? st.duyetAim.toLocaleString('vi-VN')+' · '+st.pctAim.toFixed(1).replace('.',',')+'%' : ''}</div></div>
-        ${!st.labelAimInside && st.pctAim>0 ? `<div style="font-size:10px;color:#374151;text-align:right;margin-top:-4px">${st.duyetAim.toLocaleString('vi-VN')} · ${st.pctAim.toFixed(1).replace('.',',')}%</div>` : ''}
-      </div>
-    </div>`;
-  }
+  // ── Hàng card KPI cho từng gói (TỔNG + từng kỳ thi) ──
+  S_OVERVIEW_GROUPS.forEach(cfg => {
+    const row = kpisRoot.querySelector(cfg.slotSel);
+    if (!row) return;
+    const rows = sGroupRowsByType(validRows, cfg.type);
 
-  // ── KPI: điền S card vào slot tương ứng (hàng S dưới, thẳng cột với VIP) ──
-  const sExams = [...new Set(validRows.map(r => (r.exam || '').trim()).filter(Boolean))].sort();
-  const vipExams = new Set((DATA.exams || []).map(ex => String(ex)));
-
-  // ==== Card TỔNG S (mọi exam) — tương tự TỔNG VIP (mọi exam) ====
-  const sTotal = validRows.length;
-  const sTotalDuyet = validRows.filter(r => (r.trang_thai_duyet || '').trim() === 'Duyệt').length;
-  const sTotalPct = sTotal ? sTotalDuyet / sTotal * 100 : 0;
-  const sTotalStat = { total: sTotal, duyetAim: sTotalDuyet, pctAim: sTotalPct, wAim: Math.max(0, Math.min(100, sTotalPct)), labelAimInside: sTotalPct >= 8 };
-  const sTotalSlot = kpisRoot.querySelector('.ov-row-s [data-s-exam="__TOTAL__"]');
-  if (sTotalSlot) sTotalSlot.innerHTML = sCardHTML('kpi-s-total', 'TỔNG S (mọi exam)', sTotalStat, true);
-
-  sExams.forEach(ex => {
-    const st = statFor(ex);
-    if (!st) return;
-    const cid = 'kpi-s-' + ex.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const html = sCardHTML(cid, ex + ' S', st);
-    const slot = kpisRoot.querySelector('.ov-row-s [data-s-exam="' + CSS.escape(ex) + '"]');
-    if (slot) {
-      slot.innerHTML = html;
-    } else if (vipExams.has(ex)) {
-      // Nếu kỳ thi có VIP nhưng renderKPI không tạo slot (edge) — tạo slot ở hàng S sau VIP tương ứng
-      const vipSlot = kpisRoot.querySelector('.ov-row-vip [data-vip-exam="' + CSS.escape(ex) + '"]');
-      const newSlot = document.createElement('div');
-      newSlot.className = 'ov-s-slot';
-      newSlot.setAttribute('data-s-exam', ex);
-      newSlot.innerHTML = html;
-      if (vipSlot && vipSlot.nextElementSibling) vipSlot.parentNode.insertBefore(newSlot, vipSlot.nextElementSibling);
-      else if (sRow) sRow.appendChild(newSlot);
+    // Card TỔNG của gói (mọi kỳ thi)
+    let html = '';
+    if (rows.length) {
+      const tot = rows.length;
+      const totDuyet = rows.filter(r => (r.trang_thai_duyet || '').trim() === 'Duyệt').length;
+      const totPct = tot ? totDuyet / tot * 100 : 0;
+      html += `<div class="${cfg.slotClass}" ${cfg.dataAttr}="__TOTAL__">` +
+        sGroupSlotHTML(cfg.totalId, 'TỔNG ' + cfg.label + ' (mọi exam)',
+          { total: tot, duyetAim: totDuyet, pctAim: totPct, wAim: Math.max(0, Math.min(100, totPct)), labelAimInside: totPct >= 8 },
+          cfg, true) + '</div>';
     } else {
-      // Kỳ thi này chỉ có S (không có VIP trong DATA.exams) → thêm cột giữ chỗ cả 2 hàng
-      if (vipRow) vipRow.insertAdjacentHTML('beforeend', `<div class="ov-vip v-only-vip"><div class="ov-s-empty">—</div></div>`);
-      if (sRow) sRow.insertAdjacentHTML('beforeend', `<div class="ov-s-slot s-only-slot" data-s-exam="${escapeAttr(ex)}">${html}</div>`);
+      html += `<div class="${cfg.slotClass}" ${cfg.dataAttr}="__TOTAL__"><div class="${cfg.emptyClass}">—</div></div>`;
     }
+
+    // Card từng kỳ thi — đúng thứ tự cột của hàng VIP
+    colExams.forEach(ex => {
+      const st = statFor(rows, ex);
+      if (!st) {
+        html += `<div class="${cfg.slotClass}" ${cfg.dataAttr}="${escapeAttr(ex)}"><div class="${cfg.emptyClass}">(không có gói ${cfg.label})</div></div>`;
+        return;
+      }
+      const cid = 'kpi-' + cfg.type.toLowerCase() + '-' + ex.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      html += `<div class="${cfg.slotClass}" ${cfg.dataAttr}="${escapeAttr(ex)}">` +
+        sGroupSlotHTML(cid, ex + ' ' + cfg.label, st, cfg) + '</div>';
+    });
+
+    row.innerHTML = html;
   });
 
-  // ── Exam table: dòng S đặt NGAY SAU dòng VIP cùng kỳ thi (song song) ──
-  const tb = document.querySelector('#tbl-exam tbody');
-  tb.querySelectorAll('tr.ov-s-row').forEach(el => el.remove());
-  sExams.forEach(ex => {
-    const st = statFor(ex);
-    if (!st) return;
-    const taim = st.total ? (st.duyetAim / st.total * 100).toFixed(2) : '0';
-    const rowId = 'row-s-' + ex.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const rowHtml = `<tr id="${rowId}" class="ov-s-row" style="background:#fffbeb">
-      <td><b>${escapeHtml(ex)} S</b> <span style="font-size:11px;color:#b45309">(chỉ AIM)</span></td>
+  // ── Bảng #tbl-exam: dòng gói S, rồi dòng gói A, đặt ngay sau dòng VIP cùng kỳ thi ──
+  if (!tb) return;
+  S_OVERVIEW_GROUPS.forEach((cfg, gi) => {
+    const rows = sGroupRowsByType(validRows, cfg.type);
+    if (!rows.length) return;
+    colExams.forEach(ex => {
+      const st = statFor(rows, ex);
+      if (!st) return;
+      const taim = st.total ? (st.duyetAim / st.total * 100).toFixed(2) : '0';
+      const slug = ex.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const rowId = 'row-' + cfg.type.toLowerCase() + '-' + slug;
+      const rowHtml = `<tr id="${rowId}" class="${cfg.rowClass}" style="background:${cfg.totalBg}">
+      <td><b>${escapeHtml(ex)} ${cfg.label}</b> <span style="font-size:11px;color:${cfg.totalColor}">(chỉ AIM)</span></td>
       <td class="muted">—</td>
       <td class="num muted">—</td>
       <td class="num">${st.total.toLocaleString('vi-VN')}</td>
@@ -4199,18 +4253,28 @@ function renderSOverview() {
       <td class="num">${st.duyetAim.toLocaleString('vi-VN')}</td>
       <td class="num">${taim}%</td>
     </tr>`;
-    // Tìm dòng VIP cuối cùng bắt đầu bằng tên kỳ thi (trước S nếu đã có)
-    const trs = [...tb.querySelectorAll('tr')];
-    let anchor = null;
-    for (let i = trs.length - 1; i >= 0; i--) {
-      const td = trs[i].firstElementChild;
-      if (!td || trs[i].classList.contains('ov-s-row')) continue;
-      if (td.textContent.trim().startsWith(ex)) { anchor = trs[i]; break; }
-    }
-    if (anchor && anchor.id !== rowId) anchor.insertAdjacentHTML('afterend', rowHtml);
-    else tb.insertAdjacentHTML('beforeend', rowHtml);
+
+      // Anchor: dòng gói trước đó của cùng kỳ thi (A nằm sau S), nếu không có thì dòng VIP của kỳ thi
+      let anchor = null;
+      if (gi > 0) {
+        anchor = tb.querySelector('#row-' + S_OVERVIEW_GROUPS[gi - 1].type.toLowerCase() + '-' + slug);
+      }
+      if (!anchor) {
+        const trs = [...tb.querySelectorAll('tr')];
+        for (let i = trs.length - 1; i >= 0; i--) {
+          const tr = trs[i];
+          if (tr.classList.contains('ov-s-row') || tr.classList.contains('ov-a-row')) continue;
+          const td = tr.firstElementChild;
+          if (!td) continue;
+          if (td.textContent.trim().startsWith(ex)) { anchor = tr; break; }
+        }
+      }
+      if (anchor) anchor.insertAdjacentHTML('afterend', rowHtml);
+      else tb.insertAdjacentHTML('beforeend', rowHtml);
+    });
   });
 }
+
 
 // ===== Lọc theo khoảng NGÀY GỬI (cột W - noti_time) — dùng chung 2.2 và 3.2 =====
 // from/to là giá trị input type=date ('YYYY-MM-DD'); so sánh theo ngày giờ Việt Nam
