@@ -3566,7 +3566,11 @@ async function previewEmailTemplateES() {
   }
   // Placeholder gói học: hiển thị "S" cho dễ xem layout (gửi thật sẽ là S hoặc A theo từng HS)
   body = String(body || '').replace(/{{\s*lo_trinh\s*}}/gi, 'S');
-  preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${body || '(Chưa có nội dung html_body)'}</div>`;
+  // Mẫu nhóm S/A: tiêu đề + Lộ trình được đổi tự động theo cột type của từng học sinh
+  const autoNote = (key === 'SSC:HDAIM-S')
+    ? `<div style="margin-top:6px;font-size:12px;color:#b45309">Gói A: tiêu đề tự đổi thành “Nhóm AIM A” và nội dung thành “Lộ trình A” — tự động theo cột <b>Type</b> của từng học sinh.</div>`
+    : '';
+  preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}${autoNote}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${body || '(Chưa có nội dung html_body)'}</div>`;
 }
 
 async function emailSendSelectedES() {
