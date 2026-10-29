@@ -1031,6 +1031,9 @@ function roleLabel(r){return r==='admin'?'Quản trị viên':r==='gvcn'?'Giáo 
 function isAdmin(){return CURRENT_USER&&CURRENT_USER.role==='admin';}
 function isGVCN(){return CURRENT_USER&&CURRENT_USER.role==='gvcn';}
 function isDVKH(){return CURRENT_USER&&CURRENT_USER.role==='dvkh';}
+// Vai trò chỉ được TRA CỨU (DVKH, CTV.GVCN... — mọi role không phải admin/gvcn):
+// chỉ hiển thị ô tìm kiếm, bắt buộc nhập từ khóa >= 5 ký tự, không xem được toàn bộ danh sách
+function isSearchOnlyRole(){return !!(CURRENT_USER)&&!isAdmin()&&!isGVCN();}
 function getScopedLookup(){
   // Login gate overlay handles access control — return data regardless of login state
   if(isAdmin()||isDVKH()||isGVCN()) return LOOKUP;
@@ -1125,6 +1128,13 @@ function applyRoleUI(){
     // 2.3 TC THPT: DVKH chỉ có quyền search, ẩn filter row (giữ nút Lọc/Reset)
     var tcFilterRow = document.getElementById('fTC-filter-row');
     if(tcFilterRow) tcFilterRow.style.display='none';
+  }
+  // Vai trò chỉ tra cứu (DVKH, CTV.GVCN...): mục 2.3 chỉ hiển thị ô tìm kiếm
+  if(isSearchOnlyRole()){
+    var tcFR = document.getElementById('fTC-filter-row');
+    if(tcFR) tcFR.style.display='none';
+    var tcAimLabel = document.getElementById('fTC-aim-label');
+    if(tcAimLabel) tcAimLabel.style.display='none';
   }
 }
 (function autoGate(){
@@ -4570,7 +4580,7 @@ const TC_COLS = [
 
 function initTCHeaders() {
   const tr = document.getElementById('thead-tc-thpt');
-  tr.innerHTML = TC_COLS.map(c => {
+  tr.innerHTML = getColsTC().map(c => {
     const w = c.width ? ` style="width:${c.width};min-width:${c.width}"` : '';
     const p = [];
     if (c.isSTT || /^(userid|sđt|email|noti)/i.test(c.label)) p.push('num');
@@ -4597,11 +4607,27 @@ async function loadTCThptData() {
   applyFilterTC();
 }
 
+function getColsTC() {
+  // Vai trò chỉ tra cứu (DVKH, CTV.GVCN...): ẩn nút gửi email + cột TG gửi email
+  if (!isSearchOnlyRole()) return TC_COLS;
+  return TC_COLS.filter(c => !c.isEmailBtnTC && c.key !== '_email_sent_time');
+}
+
 function applyFilterTC() {
+  const searchOnly = isSearchOnlyRole();
   const q = document.getElementById('qTC').value.trim().toLowerCase();
-  const fAim = document.getElementById('fTC-aim').value;
+  const aimSel = document.getElementById('fTC-aim');
+  const fAim = searchOnly ? '' : (aimSel ? aimSel.value : '');
 
   let pool = TC_THPT_DATA.filter(r => (r.username || '').trim() || (r.email || '').trim() || (r.sdt || '').trim());
+
+  // Vai trò chỉ tra cứu: bắt buộc nhập đủ SĐT/email/username (>=5 ký tự), KHÔNG hiển thị toàn bộ danh sách
+  if (searchOnly && q.length < 5) {
+    renderTCTable([]);
+    document.getElementById('result-info-tc').textContent =
+      'Vui lòng nhập đầy đủ số điện thoại, email hoặc username rồi bấm Lọc.';
+    return;
+  }
 
   if (q) {
     pool = pool.filter(r => {
@@ -4642,7 +4668,7 @@ function renderTCTable(rows) {
     const r = slice[i];
     const tr = document.createElement('tr');
     let html = '';
-    for (const c of TC_COLS) {
+    for (const c of getColsTC()) {
           if (c.isSTT) { html += `<td class="num">${i + 1}</td>`; continue; }
           if (c.key === 'trang_thai_duyet') {
             html += `<td>${badgeStatus(r.trang_thai_duyet)}</td>`;
