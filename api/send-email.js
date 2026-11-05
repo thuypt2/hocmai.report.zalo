@@ -95,6 +95,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, error: 'Dữ liệu template chưa được load nội dung (đang là path). Hãy nhấn "Xem mẫu" trước khi gửi.' });
   }
 
+  // Tab 3.1 là nhóm VIP → render {{tengiaiphap}} một lần cho cả batch (giá trị
+  // đồng nhất trong tab). Học sinh nào có cột Type (S/A) thì Apps Script vẫn render
+  // lại theo từng bạn nếu client gửi kèm type.
+  const renderedBody = String(templateBody || '').replace(
+    /{{\s*tengiaiphap\s*}}/gi,
+    'HOCMAI TopUni 2027 - Lộ trình VIP'
+  );
+
   // ── Dedup theo email: 1 email → chỉ gửi 1 lần (giữ row đầu tiên) ──
     // Dữ liệu nguồn trả 1 row/học sinh/lớp đã join → học sinh trong nhiều nhóm
     // sẽ có nhiều row cùng email. Tránh gửi N email trùng (bug "gửi thành 3 email").
@@ -120,7 +128,7 @@ export default async function handler(req, res) {
       limit: uniqueStudents.length,  // gửi hết danh sách đã chọn (tối đa do UI giới hạn 500)
       templateKey: templateKey,
       templateSubject: templateSubject,
-      templateBody: templateBody,
+      templateBody: renderedBody,
       selectedEmails: uniqueStudents.map(s => s.email),
       selectedStudents: uniqueStudents,
     });

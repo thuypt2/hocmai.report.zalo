@@ -132,6 +132,18 @@ function subjectForLoTrinh(subject, loTrinh) {
   return s.replace(/\bAIM\s+S\b/gi, (m) => m.replace(/S$/i, 'A'));
 }
 
+// Tên giải pháp học sinh đã đăng ký — dùng cho placeholder {{tengiaiphap}}
+// (template "Hướng dẫn nhận sách Luyện đề"). Không bao giờ trả rỗng để email
+// không bị câu cụt kiểu "Với Giải pháp  đã đăng ký".
+function resolveTenGiaiPhap(type) {
+  const t = String(type || '').trim().toUpperCase();
+  if (t === 'S') return 'HOCMAI TopUni 2027 - Lộ trình S';
+  if (t === 'A') return 'HOCMAI TopUni 2027 - Lộ trình A';
+  if (t === 'TC') return 'HOCMAI TopUni 2027 - Lộ trình Tiêu chuẩn';
+  if (t === 'VIP') return 'HOCMAI TopUni 2027 - Lộ trình VIP';
+  return 'HOCMAI TopUni 2027';
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -163,9 +175,16 @@ export default async function handler(req, res) {
     // Render luôn {{lo_trinh}} ở Vercel (giá trị đã biết theo từng học sinh) để email
     // không bao giờ lộ placeholder, kể cả khi Apps Script chưa cập nhật mapping mới.
     tmpl.htmlBody = String(tmpl.htmlBody || '').replace(/{{\s*lo_trinh\s*}}/gi, loTrinh);
+    // Tên giải pháp: ưu tiên cột Type của học sinh, fallback theo nhóm S/A suy ra được
+    tmpl.htmlBody = tmpl.htmlBody.replace(
+      /{{\s*tengiaiphap\s*}}/gi,
+      resolveTenGiaiPhap(body.type || loTrinh)
+    );
 
-    // Thêm ảnh hướng dẫn AIM
-    const htmlBodyWithImage = appendImageGuide(tmpl.htmlBody);
+    // Thêm ảnh hướng dẫn AIM (chỉ với mẫu nhắc nhở vào nhóm AIM — mẫu khác như
+    // "Hướng dẫn nhận sách Luyện đề" không liên quan tới nhóm AIM nên bỏ qua)
+    const needAimGuide = !/HDNhansach/i.test(String(templateKey || ''));
+    const htmlBodyWithImage = needAimGuide ? appendImageGuide(tmpl.htmlBody) : tmpl.htmlBody;
 
     const student = {
       email, username,

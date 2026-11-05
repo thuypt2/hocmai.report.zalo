@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOCMAI TopUni 2027</title>
+</head>
+
+<body style="margin:0;padding:0;background:#F3F6FB;">
+
+<center style="width:100%;background:#F3F6FB;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F3F6FB">
+
+<tr>
+<td align="center" style="padding:20px 10px;">
+
+<!-- ================= CONTAINER ================= -->
+
+<table role="presentation" width="800" cellpadding="0" cellspacing="0" border="0"
+       style="width:800px;max-width:800px;background:#FFFFFF;border:1px solid #D9E7FF;border-radius:18px;overflow:hidden;">
+
+<!-- ================= HEADER ================= -->
+
+<tr>
+<td style="padding:20px 24px;">
+<a href="https://hocmai.vn" target="_blank" style="text-decoration:none;">
+<img src="https://huongnghiep.hocmai.vn/wp-content/uploads/2026/08/54-scaled.png"
+     alt="HOCMAI TopUni" width="240"
+     style="display:block;width:240px;max-width:240px;height:auto;border:0;outline:none;text-decoration:none;">
+</a>
+</td>
+</tr>
+
+<tr>
+<td style="border-top:1px solid #E7EEF8;"></td>
+</tr>
+
+<!-- ================= NỘI DUNG ================= -->
+
+<tr>
+<td style="padding:40px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<!-- TIÊU ĐỀ -->
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:24px;line-height:34px;font-weight:bold;color:#005BAC;">
+HƯỚNG DẪN NHẬN SÁCH GIAI ĐOẠN LUYỆN ĐỀ - TOPUNI 2027
+</td>
+</tr>
+
+<tr><td height="24"></td></tr>
+
+<!-- LỜI CHÀO -->
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:30px;color:#333333;text-align:justify;">
+Chào <strong>{{username}}</strong>,
+</td>
+</tr>
+
+<tr><td height="18"></td></tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:30px;color:#333333;text-align:justify;">
+Với Giải pháp <strong>{{tengiaiphap}}</strong> đã đăng ký tại HOCMAI, em sẽ được tặng bộ sách
+<strong>Thực chiến Luyện đề</strong> để đồng hành trong giai đoạn Luyện đề.
+</td>
+</tr>
+
+<tr><td height="18"></td></tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:30px;color:#333333;text-align:justify;">
+Bộ sách là phiên bản in của các đề luyện tập trong khóa học, giúp em chủ động ôn luyện, củng cố kiến thức
+và rèn luyện kỹ năng làm bài. Đặc biệt, em có thể kết hợp làm đề trên sách với việc luyện tập trên máy tính
+thông qua các đề thi có cấu trúc và câu hỏi cố định tại khóa Luyện đề tương ứng trên Phòng luyện.
+</td>
+</tr>
+
+<tr><td height="18"></td></tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:30px;color:#333333;text-align:justify;">
+Để nhận bộ sách, em vui lòng thực hiện theo hướng dẫn dưới đây:
+</td>
+</tr>
+
+<tr><td height="30"></td></tr>
+
+</table>
+
+<!-- ================= CÁC BƯỚC ĐĂNG KÝ VÀ NHẬN SÁCH ================= -->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="border:1px solid #F2F8F2;background:#F7FCF7;border-radius:16px;overflow:hidden;">
+
+<tr>
+<td style="padding:24px 28px;">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:30px;font-weight:bold;color:#2E7D32;">
+📌 CÁC BƯỚC ĐĂNG KÝ VÀ NHẬN SÁCH
+</td>
+</tr>
+
+<tr><td height="24"></td></tr>
+
+<!-- BƯỚC 1 -->
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:28px;color:#005BAC;font-weight:bold;">
+1️⃣ Bước 1. Đăng ký nhận sách
+</td>
+</tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
+Em đăng nhập tài khoản tại Hocmai.vn, truy cập đường link
+<a href="https://hocmai.vn/study/gift/topuni" target="_blank"
+   style="color:#005BAC;font-weight:bold;text-decoration:underline;">https://hocmai.vn/study/gift/topuni</a>
+và điền đầy đủ thông tin đăng ký nhận sách.
+</td>
+</tr>
+
+<tr><td height="14"></td></tr>
+
+<tr>
+<td>
+<table width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background:#FFF8EA;border:1px solid #FFF8EA;border-radius:12px;overflow:hidden;">
+<tr>
+<td style="padding:16px;">
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:26px;color:#444444;">
+<strong style="color:#E67E00;">Lưu ý:</strong>
+Em cần cung cấp chính xác địa chỉ nhận hàng theo địa giới hành chính cũ (3 cấp)
+để đảm bảo quá trình giao sách diễn ra thuận lợi.
+</div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<tr><td height="22"></td></tr>
+
+<!-- BƯỚC 2 -->
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:28px;color:#005BAC;font-weight:bold;">
+2️⃣ Bước 2. Chờ HOCMAI xác nhận thông tin
+</td>
+</tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
+Trong vòng <strong>02 ngày làm việc</strong> kể từ khi đăng ký, HOCMAI sẽ kiểm tra và xác nhận thông tin
+nhận sách của em.
+<br>
+Sau khi thông tin được xác nhận hợp lệ, hệ thống sẽ cập nhật trạng thái và thông tin đơn vận chuyển
+tại mục <strong>Đăng ký nhận sách</strong>.
+</td>
+</tr>
+
+<tr><td height="22"></td></tr>
+
+<!-- BƯỚC 3 -->
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:28px;color:#005BAC;font-weight:bold;">
+3️⃣ Bước 3. Theo dõi đơn hàng
+</td>
+</tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
+Em chủ động theo dõi tình trạng vận chuyển bằng cách kiểm tra mã vận đơn được cập nhật tại mục
+<strong>Đăng ký nhận sách</strong> trên hệ thống.
+</td>
+</tr>
+
+<tr><td height="22"></td></tr>
+
+<!-- BƯỚC 4 -->
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:28px;color:#005BAC;font-weight:bold;">
+4️⃣ Bước 4. Nhận sách và thanh toán phí vận chuyển
+</td>
+</tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
+Khi nhận được sách, em thanh toán <strong style="color:#E53935;">38.000đ</strong> phí vận chuyển
+trực tiếp cho đơn vị giao hàng.
+</td>
+</tr>
+
+</table>
+
+</td>
+</tr>
+
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td height="28"></td></tr>
+</table>
+
+<!-- ================= MỘT SỐ LƯU Ý QUAN TRỌNG ================= -->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="border:1px solid #FFF3F3;background:#FFF7F7;border-radius:16px;overflow:hidden;">
+
+<tr>
+<td style="padding:24px 28px;">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:30px;font-weight:bold;color:#C62828;">
+⚠️ MỘT SỐ LƯU Ý QUAN TRỌNG
+</td>
+</tr>
+
+<tr><td height="20"></td></tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
+• Đơn vị vận chuyển sẽ liên hệ với người nhận <strong>tối thiểu 02 lần</strong>. Em vui lòng chú ý điện thoại
+để không bỏ lỡ cuộc gọi giao hàng.
+</td>
+</tr>
+
+<tr><td height="12"></td></tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
+• HOCMAI hỗ trợ giao sách <strong>tối đa 02 lần/học viên</strong>. Vì vậy, em hãy chủ động sắp xếp thời gian
+và đảm bảo có thể nhận hàng theo lịch giao dự kiến.
+</td>
+</tr>
+
+<tr><td height="12"></td></tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
+• Vui lòng kiểm tra kỹ thông tin đăng ký trước khi gửi để hạn chế sai sót trong quá trình giao nhận.
+</td>
+</tr>
+
+</table>
+
+</td>
+</tr>
+
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td height="28"></td></tr>
+</table>
+
+<!-- ================= HƯỚNG DẪN CHI TIẾT + KẾT ================= -->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:30px;color:#333333;text-align:justify;">
+🔗 Xem hướng dẫn chi tiết về quy trình đăng ký và nhận sách tại:
+<a href="https://hocmai.link/HDNhansach" target="_blank"
+   style="color:#005BAC;font-weight:bold;text-decoration:underline;">https://hocmai.link/HDNhansach</a>
+</td>
+</tr>
+
+<tr><td height="24"></td></tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:30px;color:#333333;text-align:justify;">
+Chúc em có quá trình ôn luyện hiệu quả, tự tin chinh phục kỳ thi cùng HOCMAI!
+</td>
+</tr>
+
+<tr><td height="16"></td></tr>
+
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:30px;color:#333333;text-align:justify;">
+<strong style="color:#005BAC;">HOCMAI – Đồng hành cùng em trên hành trình chinh phục mục tiêu.</strong>
+</td>
+</tr>
+
+</table>
+
+<!-- ======================= CTA ======================= -->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr><td height="32"></td></tr>
+
+<tr>
+<td align="center">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td align="center">
+<a href="https://hocmai.vn/study/gift/topuni" target="_blank"
+   style="display:inline-block;width:260px;background:#FF8A00;color:#FFFFFF;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;line-height:48px;text-align:center;text-decoration:none;border-radius:6px;">
+ĐĂNG KÝ NHẬN SÁCH NGAY
+</a>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<tr><td height="40"></td></tr>
+
+</table>
+
+<!-- ======================= CHỮ KÝ ======================= -->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+<td align="right"
+    style="padding:0 0 0 40px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:30px;color:#333333;">
+Thân gửi,
+<br>
+<strong style="color:#005BAC;">Đội ngũ HOCMAI</strong>
+</td>
+</tr>
+
+<tr><td height="40"></td></tr>
+
+</table>
+
+<!-- ======================= FOOTER ======================= -->
+
+<tr>
+<td bgcolor="#005BAC" style="padding:18px 30px;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+<tr>
+
+<td align="center" width="20%"
+    style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#FFFFFF;">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="#FFFFFF" style="vertical-align:middle;margin-right:6px;"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+1900 6933
+</td>
+
+<td width="1" bgcolor="#4A8ED8"></td>
+
+<td align="center" width="20%">
+<a href="mailto:hotro@hocmai.vn"
+   style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#FFFFFF;text-decoration:none;">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="#FFFFFF" style="vertical-align:middle;margin-right:6px;"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+hotro@hocmai.vn
+</a>
+</td>
+
+<td width="1" bgcolor="#4A8ED8"></td>
+
+<td align="center" width="60%"
+    style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#FFFFFF;">
+
+Kết nối với HOCMAI
+
+<a href="https://www.facebook.com/Hocmai.vnTHPT/" target="_blank" style="text-decoration:none;">
+<img src="https://hocmai-report-zalo.vercel.app/api/icons?name=facebook.png" alt="Facebook" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+</a>
+
+<a href="https://www.tiktok.com/@hocmai.official" target="_blank" style="text-decoration:none;">
+<img src="https://hocmai-report-zalo.vercel.app/api/icons?name=tiktok.png" alt="TikTok" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+</a>
+
+<a href="https://www.threads.com/@hocmai_official" target="_blank" style="text-decoration:none;">
+<img src="https://hocmai-report-zalo.vercel.app/api/icons?name=threads.png" alt="Threads" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+</a>
+
+<a href="https://www.youtube.com/@HOCMAITHPT" target="_blank" style="text-decoration:none;">
+<img src="https://hocmai-report-zalo.vercel.app/api/icons?name=youtube.png" alt="YouTube" width="30" height="30" style="display:inline-block;width:30px;height:30px;border-radius:15px;margin:0 5px;vertical-align:middle;">
+</a>
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+</tr>
+
+<!-- ======================= KẾT THÚC PHẦN NỘI DUNG ======================= -->
+
+</td>
+</tr>
+</table>
+
+<!-- ======================= ĐÓNG CONTAINER ======================= -->
+
+</table>
+
+</td>
+</tr>
+
+</table>
+
+</center>
+
+</body>
+
+</html>
