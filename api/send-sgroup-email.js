@@ -132,16 +132,33 @@ function subjectForLoTrinh(subject, loTrinh) {
   return s.replace(/\bAIM\s+S\b/gi, (m) => m.replace(/S$/i, 'A'));
 }
 
-// Tên giải pháp học sinh đã đăng ký — dùng cho placeholder {{tengiaiphap}}
-// (template "Hướng dẫn nhận sách Luyện đề"). Không bao giờ trả rỗng để email
-// không bị câu cụt kiểu "Với Giải pháp  đã đăng ký".
-function resolveTenGiaiPhap(type) {
-  const t = String(type || '').trim().toUpperCase();
+// Tên giải pháp / sản phẩm học sinh đã đăng ký — dùng cho placeholder
+// {{ $json.product_name }} (và {{tengiaiphap}} kiểu cũ).
+// Không bao giờ trả rỗng để email không bị câu cụt "Với Giải pháp  đã đăng ký".
+function resolveProductName(body) {
+  const direct = String(body.product_name || body.san_pham || body.ten_giai_phap || '').trim();
+  if (direct) return direct;
+  const t = String(body.type || '').trim().toUpperCase();
   if (t === 'S') return 'HOCMAI TopUni 2027 - Lộ trình S';
   if (t === 'A') return 'HOCMAI TopUni 2027 - Lộ trình A';
   if (t === 'TC') return 'HOCMAI TopUni 2027 - Lộ trình Tiêu chuẩn';
   if (t === 'VIP') return 'HOCMAI TopUni 2027 - Lộ trình VIP';
+  const exam = String(body.exam || '').trim();
+  if (exam) return 'HOCMAI TopUni 2027 - ' + exam;
   return 'HOCMAI TopUni 2027';
+}
+const resolveTenGiaiPhap = resolveProductName;
+
+// Render placeholder ngay trên Vercel cho các biến đã biết theo từng học sinh.
+// Hỗ trợ CẢ HAI kiểu: {{ $json.username }} (n8n style) và {{username}} (kiểu cũ).
+function renderStudentVars(html, body, loTrinh) {
+  const tenGP = resolveProductName(body);
+  return String(html || '')
+    .replace(/{{\s*\$json\.username\s*}}/gi, String(body.username || ''))
+    .replace(/{{\s*username\s*}}/gi, String(body.username || ''))
+    .replace(/{{\s*\$json\.product_name\s*}}/gi, tenGP)
+    .replace(/{{\s*tengiaiphap\s*}}/gi, tenGP)
+    .replace(/{{\s*lo_trinh\s*}}/gi, loTrinh);
 }
 
 export default async function handler(req, res) {
@@ -172,14 +189,10 @@ export default async function handler(req, res) {
       tmpl = await getResolvedTemplate(templateKey || 'SSC:HDAIM-S');
     }
     tmpl.subject = subjectForLoTrinh(tmpl.subject, loTrinh);
-    // Render luôn {{lo_trinh}} ở Vercel (giá trị đã biết theo từng học sinh) để email
-    // không bao giờ lộ placeholder, kể cả khi Apps Script chưa cập nhật mapping mới.
-    tmpl.htmlBody = String(tmpl.htmlBody || '').replace(/{{\s*lo_trinh\s*}}/gi, loTrinh);
-    // Tên giải pháp: ưu tiên cột Type của học sinh, fallback theo nhóm S/A suy ra được
-    tmpl.htmlBody = tmpl.htmlBody.replace(
-      /{{\s*tengiaiphap\s*}}/gi,
-      resolveTenGiaiPhap(body.type || loTrinh)
-    );
+    // Render sẵn các biến theo từng học sinh ở Vercel ({{ $json.username }},
+    // {{ $json.product_name }}, {{lo_trinh}}) để email không bao giờ lộ placeholder,
+    // kể cả khi Apps Script chưa cập nhật mapping mới.
+    tmpl.htmlBody = renderStudentVars(tmpl.htmlBody, body, loTrinh);
 
     // Thêm ảnh hướng dẫn AIM (chỉ với mẫu nhắc nhở vào nhóm AIM — mẫu khác như
     // "Hướng dẫn nhận sách Luyện đề" không liên quan tới nhóm AIM nên bỏ qua)

@@ -58,7 +58,7 @@ HƯỚNG DẪN NHẬN SÁCH GIAI ĐOẠN LUYỆN ĐỀ - TOPUNI 2027
 
 <tr>
 <td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:30px;color:#333333;text-align:justify;">
-Chào <strong>{{username}}</strong>,
+Chào <strong>{{ $json.username }}</strong>,
 </td>
 </tr>
 
@@ -66,7 +66,7 @@ Chào <strong>{{username}}</strong>,
 
 <tr>
 <td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:30px;color:#333333;text-align:justify;">
-Với Giải pháp <strong>{{tengiaiphap}}</strong> đã đăng ký tại HOCMAI, em sẽ được tặng bộ sách
+Với Giải pháp <strong>{{ $json.product_name }}</strong> đã đăng ký tại HOCMAI, em sẽ được tặng bộ sách
 <strong>Thực chiến Luyện đề</strong> để đồng hành trong giai đoạn Luyện đề.
 </td>
 </tr>

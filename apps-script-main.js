@@ -359,6 +359,8 @@ function handleSendIndividualEmail(body) {
     'tencongdong': tencongdong,
     'linknhom':    linknhom,
     'mabaomatS':   mabaomats,
+    // Biến kiểu n8n {{ $json.product_name }} — tên giải pháp/sản phẩm học sinh
+    'product_name': body.product_name || body.ten_giai_phap || '',
   };
 
   var subject = renderTemplate(tmpl.subject, data);
@@ -482,6 +484,8 @@ function handleSendSelectedEmails(ss, body) {
         'ten_group_aim': student.ten_group_aim || '',
         // Gói học (Lộ trình S / Lộ trình A) — mặc định S nếu thiếu để không lộ placeholder
         'lo_trinh':    sGroupLoTrinh(student),
+        // Tên giải pháp/sản phẩm — cho template dùng {{ $json.product_name }}
+        'product_name': student.product_name || student.ten_giai_phap || '',
       };
 
       var subject, htmlBody;
@@ -802,6 +806,9 @@ function renderTemplate(text, data) {
     var escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     var pattern = new RegExp('{{\\s*' + escapedKey + '\\s*}}', 'gi');
     result = result.replace(pattern, value);
+    // Alias kiểu n8n: {{ $json.<key> }} cũng render cùng giá trị
+    var patternJson = new RegExp('{{\\s*\\$json\\.' + escapedKey + '\\s*}}', 'gi');
+    result = result.replace(patternJson, value);
   }
   return result;
 }
