@@ -3646,36 +3646,35 @@ async function emailSendSelectedES() {
 
   const stamp = nowStamp();
   try {
-    // Gửi từng email qua API send-sgroup-email (xử lý template S-Group)
+    // Gửi theo LÔ (chunk) qua API send-sgroup-email: 1 request/lô thay vì 1 request/học sinh
+    // → 404 học sinh chỉ còn ~7 lần gọi thay vì 404 lần (trước đây ~14 phút + dễ nghẽn quota).
+    const SEND_CHUNK = 60;
     let sentOk = 0, sentErr = 0;
     const sentIds = [];
-    for (const s of students) {
+    for (let i = 0; i < students.length; i += SEND_CHUNK) {
       // Dừng khẩn cấp (client-side): bấm "Dừng gửi email khẩn cấp"
       if (_emailBatchStop) {
         resultBox.textContent = `[${stamp}] ĐÃ DỪNG KHẨN CẤP sau ${sentIds.length} email.`;
         break;
       }
+      const chunk = students.slice(i, i + SEND_CHUNK);
+      resultBox.textContent = `[${stamp}] Đang gửi ${i + chunk.length}/${students.length}...`;
       try {
         const resp = await fetch('/api/send-sgroup-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: s.email,
-            username: s.username,
-            linknhom: s.linknhom,
-            mabaomats: s.mabaomats,
-            link_aim: s.link_aim,
-            exam: s.exam,
-            type: s.type,
-            class: s.cls,
-            ten_group_aim: s.ten_group_aim,
-            templateKey: key,
-          })
+          body: JSON.stringify({ students: chunk, templateKey: key })
         });
         const result = await resp.json();
-        if (result.ok) { sentOk++; sentIds.push(s.email); }
-        else { sentErr++; }
-      } catch (e) { sentErr++; }
+        if (result.ok) {
+          sentOk += result.sent || 0;
+          sentErr += result.errors || 0;
+          if (Array.isArray(result.sent_ids)) sentIds.push(...result.sent_ids);
+        } else {
+          sentErr += chunk.length;
+          console.warn('Lỗi gửi lô:', result.error);
+        }
+      } catch (e) { sentErr += chunk.length; console.warn('Lỗi gửi lô:', e.message); }
     }
     resultBox.textContent = `[${stamp}] Gửi xong!\nThành công: ${sentOk}\nLỗi: ${sentErr}\n${sentIds.length ? 'Đã gửi: ' + sentIds.join(', ') : ''}`;
   } catch (err) {
@@ -3978,36 +3977,39 @@ async function emailSendSelectedETC() {
 
   const stamp = nowStamp();
   try {
+    // Gửi theo LÔ (chunk): 1 request/lô thay vì 1 request/học sinh
+    const SEND_CHUNK = 60;
     let sentOk = 0, sentErr = 0;
     const sentIds = [];
-    for (const s of students) {
+    for (let i = 0; i < students.length; i += SEND_CHUNK) {
       // Dừng khẩn cấp (client-side): bấm "Dừng gửi email khẩn cấp"
       if (_emailBatchStop) {
         resultBox.textContent = `[${stamp}] ĐÃ DỪNG KHẨN CẤP sau ${sentIds.length} email.`;
         break;
       }
+      const chunk = students.slice(i, i + SEND_CHUNK);
+      resultBox.textContent = `[${stamp}] Đang gửi ${i + chunk.length}/${students.length}...`;
       try {
         const resp = await fetch('/api/send-sgroup-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: s.email,
-            username: s.username,
-            linknhom: s.linknhom,
-            mabaomats: s.mabaomats,
-            link_aim: s.link_aim,
-            exam: s.exam,
-            ten_group_aim: s.ten_group_aim,
-            type: s.type || '',
+            students: chunk,
             templateKey: key || 'SSC:HDAIM',
             templateSubject: tcSubject || '',
             templateBody: tcHtmlBody || '',
           })
         });
         const result = await resp.json();
-        if (result.ok) { sentOk++; sentIds.push(s.email); }
-        else { sentErr++; }
-      } catch (e) { sentErr++; }
+        if (result.ok) {
+          sentOk += result.sent || 0;
+          sentErr += result.errors || 0;
+          if (Array.isArray(result.sent_ids)) sentIds.push(...result.sent_ids);
+        } else {
+          sentErr += chunk.length;
+          console.warn('Lỗi gửi lô:', result.error);
+        }
+      } catch (e) { sentErr += chunk.length; console.warn('Lỗi gửi lô:', e.message); }
     }
     resultBox.textContent = `[${stamp}] Gửi xong!\nThành công: ${sentOk}\nLỗi: ${sentErr}\n${sentIds.length ? 'Đã gửi: ' + sentIds.join(', ') : ''}`;
   } catch (err) {

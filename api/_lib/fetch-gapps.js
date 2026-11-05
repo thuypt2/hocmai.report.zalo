@@ -48,7 +48,13 @@ function fetchGET(url, attempts) {
 }
 
 // POST JSON tới Apps Script, dùng https module (tránh Google security block khi dùng fetch())
-function fetchPostOnce(url, body) {
+// PITFALL: Apps Script trả 302 → https://script.googleusercontent.com/macros/echo?...
+// Endpoint đó CHỈ nhận GET. POST lại vào URL redirect sẽ trả 405 + trang HTML của Google
+// → parse JSON fail → route báo "Google trả HTML thay vì JSON (rate-limit)" và TOÀN BỘ
+// email trong đợt bị tính là lỗi (bug "Thành công: 0 / Lỗi: 404" ngày 05/11/2026).
+// Đúng chuẩn HTTP: 301/302/303 → đổi sang GET (bỏ body); chỉ 307/308 mới giữ POST.
+function fetchPostOnce(url, body, redirectDepth) {
+  const depth = redirectDepth || 0;
   return new Promise((resolve, reject) => {
     const data = JSON.stringify(body);
     const parsed = new URL(url);
@@ -69,7 +75,14 @@ function fetchPostOnce(url, body) {
     const req = mod.request(options, (res) => {
       // Follow 302 redirect (script.google.com → script.googleusercontent.com)
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        resolve(fetchPostOnce(res.headers.location, body));
+        res.resume();  // xả body để giải phóng socket
+        if (depth > 5) return reject(new Error('Quá nhiều redirect từ Apps Script'));
+        // 301/302/303: script ĐÃ CHẠY XONG, chỉ cần GET kết quả (KHÔNG gửi lại body → tránh gửi trùng email)
+        if (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 303) {
+          resolve(fetchOnce(res.headers.location));
+        } else {
+          resolve(fetchPostOnce(res.headers.location, body, depth + 1));
+        }
         return;
       }
       let text = '';
@@ -78,7 +91,9 @@ function fetchPostOnce(url, body) {
         try { resolve(JSON.parse(text)); }
         catch(e) {
           const isHtml = /^\s*<!DOCTYPE/i.test(text) || /^\s*<html/i.test(text);
-          reject(new Error(isHtml ? 'Google trả HTML thay vì JSON (rate-limit)' : 'Không parse JSON: ' + text.slice(0, 200)));
+          reject(new Error(isHtml
+            ? 'Google trả HTML thay vì JSON (HTTP ' + res.statusCode + ', có thể do rate-limit)'
+            : 'Không parse JSON (HTTP ' + res.statusCode + '): ' + text.slice(0, 200)));
         }
       });
     });

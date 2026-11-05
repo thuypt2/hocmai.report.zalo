@@ -161,6 +161,92 @@ function renderStudentVars(html, body, loTrinh) {
     .replace(/{{\s*lo_trinh\s*}}/gi, loTrinh);
 }
 
+// Gửi theo LÔ: gom học sinh theo (lộ trình, tên sản phẩm) → mỗi nhóm 1 lần gọi
+// Apps Script. Biến {{username}} để Apps Script render theo từng em; các biến còn lại
+// (product_name / lo_trinh) đã cố định trong nhóm nên render ngay ở Vercel.
+async function handleBatch(body, res) {
+  // Dedup theo email: 1 học sinh nằm nhiều nhóm lớp → tránh gửi trùng
+  const seen = new Set();
+  const students = body.students.filter(s => {
+    const e = String((s && s.email) || '').trim().toLowerCase();
+    if (!e || !e.includes('@') || seen.has(e)) return false;
+    seen.add(e);
+    return true;
+  });
+  if (!students.length) return res.status(400).json({ ok: false, error: 'Không có email hợp lệ' });
+
+  const templateKey = body.templateKey || 'SSC:HDAIM-S';
+
+  // Resolve template 1 lần cho cả lô
+  let base;
+  if (body.templateBody) {
+    base = { subject: body.templateSubject || '', htmlBody: body.templateBody };
+  } else {
+    base = await getResolvedTemplate(templateKey);
+  }
+
+  const groups = new Map();
+  for (const s of students) {
+    const lo = resolveLoTrinh(s);
+    const pn = resolveProductName(s);
+    const k = lo + '||' + pn;
+    if (!groups.has(k)) groups.set(k, { lo, pn, rows: [] });
+    groups.get(k).rows.push({
+      email: String(s.email || '').trim(),
+      username: s.username || '',
+      linknhom: s.linknhom || s.link_group || '',
+      mabaomats: s.mabaomats || '',
+      link_aim: s.link_aim || '',
+      exam: s.exam || '',
+      ten_group_aim: s.ten_group_aim || '',
+      type: s.type || '',
+      class: s.class || s.cls || '',
+      lo_trinh: lo,
+    });
+  }
+
+  let sent = 0, errors = 0;
+  const sent_ids = [];
+  const error_details = [];
+  const needAimGuide = !/HDNhansach/i.test(String(templateKey));
+
+  for (const { lo, pn, rows } of groups.values()) {
+    // subject: đổi "AIM S" → "AIM A" theo gói của nhóm
+    const subject = subjectForLoTrinh(base.subject, lo);
+    // body: render biến cố định của nhóm; {{username}} giữ nguyên cho Apps Script
+    let html = String(base.htmlBody || '')
+      .replace(/{{\s*\$json\.username\s*}}/gi, '{{username}}')
+      .replace(/{{\s*\$json\.product_name\s*}}/gi, pn)
+      .replace(/{{\s*tengiaiphap\s*}}/gi, pn)
+      .replace(/{{\s*lo_trinh\s*}}/gi, lo);
+    if (needAimGuide) html = appendImageGuide(html);
+
+    const r = await callAppsScript({
+      action: 'sendClassGroupEmails',
+      secret: APPS_SCRIPT_SECRET,
+      limit: rows.length,
+      templateKey,
+      templateSubject: subject,
+      templateBody: html,
+      selectedEmails: rows.map(x => x.email),
+      selectedStudents: rows,
+    });
+
+    if (!r || r.ok === false) {
+      errors += rows.length;
+      error_details.push({ product_name: pn, lo_trinh: lo, error: (r && r.error) || 'unknown' });
+      rows.forEach(x => error_details.push({ email: x.email, error: (r && r.error) || 'unknown' }));
+      continue;
+    }
+    sent += r.sent || 0;
+    errors += r.errors || 0;
+    if (Array.isArray(r.sent_ids)) sent_ids.push(...r.sent_ids);
+    if (Array.isArray(r.error_details)) error_details.push(...r.error_details);
+  }
+
+  return res.status(200).json({ ok: true, sent, errors, sent_ids, error_details, groups: groups.size });
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -173,6 +259,14 @@ export default async function handler(req, res) {
     const rawBody = await readBody(req);
     let body = {};
     try { body = JSON.parse(rawBody); } catch { body = {}; }
+
+    // ── LÔ (batch): tab 3.2 / 3.3 gửi nhiều học sinh trong 1 request ──
+    // Trước đây client gọi 1 request/học sinh → 404 học sinh = 404 lần gọi Apps Script
+    // (chậm ~14 phút, dễ nghẽn quota). Gộp theo (lộ trình, tên sản phẩm) rồi để
+    // Apps Script tự lặp và render {{username}} cho từng em.
+    if (Array.isArray(body.students) && body.students.length) {
+      return await handleBatch(body, res);
+    }
 
     const { email, username, linknhom, link_group, mabaomats, link_aim, exam, ten_group_aim, templateKey, templateSubject, templateBody, type, class: klass } = body;
     if (!email) return res.status(400).json({ ok: false, error: 'Thiếu email' });
