@@ -36,7 +36,7 @@
 
                                 <a href="https://hocmai.vn" target="_blank" style="text-decoration:none;">
 
-                                    <img src="https://huongnghiep.hocmai.vn/wp-content/uploads/2026/08/54-scaled.png"
+                                    <img src="https://hocmai-report-zalo.vercel.app/logo-topuni.png"
                                         alt="HOCMAI TopUni" width="240" style="
 display:block;
 width:240px;
