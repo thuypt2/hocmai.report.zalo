@@ -2588,6 +2588,16 @@ function resetFilter1(){
 let EMAIL_STUDENTS = [];  // filtered search results (đã dedup theo email)
 let EMAIL_SELECTED = new Set();  // selected student indices (vào currentFilter2)
 let EMAIL_TEMPLATES_LOADED = {};
+
+// Xem trước: thay biến kiểu n8n bằng giá trị mẫu để thấy đúng bố cục email
+// (gửi thật thì Vercel render đúng username / product_name của từng học sinh)
+function previewSampleVars(html) {
+  return String(html || '')
+    .replace(/{{\s*\$json\.username\s*}}/gi, 'hocmai.hocsinh')
+    .replace(/{{\s*username\s*}}/gi, 'hocmai.hocsinh')
+    .replace(/{{\s*\$json\.product_name\s*}}/gi, 'HOCMAI TopUni 2027 - Lộ trình S')
+    .replace(/{{\s*tengiaiphap\s*}}/gi, 'HOCMAI TopUni 2027 - Lộ trình S');
+}
 let currentFilter2 = null;
 const PAGE_SIZE = 500;  // mỗi trang tối đa 500 dòng
 const EMAIL_PAGES = { 'email-2': 1, 'email-es': 1, 'email-etc': 1 };  // trang hiện tại theo bảng
@@ -3227,6 +3237,8 @@ async function previewEmailTemplate2() {
     }
   }
   
+  // Placeholder kiểu n8n ({{ $json.username }} / {{ $json.product_name }})
+  body = previewSampleVars(body);
   preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${body || '(Chưa có nội dung html_body)'}</div>`;
 }
 
@@ -3576,6 +3588,8 @@ async function previewEmailTemplateES() {
   }
   // Placeholder gói học: hiển thị "S" cho dễ xem layout (gửi thật sẽ là S hoặc A theo từng HS)
   body = String(body || '').replace(/{{\s*lo_trinh\s*}}/gi, 'S');
+  // Placeholder kiểu n8n: hiển thị giá trị mẫu để xem trước bố cục email
+  body = previewSampleVars(body);
   // Mẫu nhóm S/A: tiêu đề + Lộ trình được đổi tự động theo cột type của từng học sinh
   const autoNote = (key === 'SSC:HDAIM-S')
     ? `<div style="margin-top:6px;font-size:12px;color:#b45309">Gói A: tiêu đề tự đổi thành “Nhóm AIM A” và nội dung thành “Lộ trình A” — tự động theo cột <b>Type</b> của từng học sinh.</div>`
@@ -3882,6 +3896,8 @@ async function previewEmailTemplateETC() {
       body = `<pre style="white-space:pre-wrap; font-family:Arial, sans-serif; font-size:14px;">${body}</pre>`;
     }
   }
+  // Placeholder kiểu n8n ({{ $json.username }} / {{ $json.product_name }})
+  body = previewSampleVars(body);
   preview.innerHTML = `<b style="color:#2563eb">Subject:</b> ${escapeHtml(t.subject || '')}<br><br><div style="border:1px solid #e5e7eb;padding:10px;border-radius:6px;background:#fff">${body || '(Chưa có nội dung html_body)'}</div>`;
 }
 
