@@ -26,9 +26,9 @@
 <tr>
 <td style="padding:20px 24px;">
 <a href="https://hocmai.vn" target="_blank" style="text-decoration:none;display:inline-block;">
-<!-- Logo host tren Vercel: domain huongnghiep.hocmai.vn (WordPress + Cloudflare) hay bi
-     Google Image Proxy chan -> logo khong hien trong Gmail. Dung /api/logo cho chac chan. -->
-<img src="https://hocmai-report-zalo.vercel.app/api/logo"
+<!-- Logo host tren Vercel (file tinh /logo-topuni.png): domain huongnghiep.hocmai.vn
+     (WordPress + Cloudflare) hay bi Google Image Proxy chan -> logo khong hien trong Gmail. -->
+<img src="https://hocmai-report-zalo.vercel.app/logo-topuni.png"
      alt="HOCMAI TopUni" width="240" height="35"
      style="display:block;width:240px;max-width:240px;height:auto;border:0;outline:none;text-decoration:none;">
 </a>
