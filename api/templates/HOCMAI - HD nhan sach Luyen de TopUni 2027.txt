@@ -145,17 +145,13 @@ Em cần cung cấp chính xác địa chỉ nhận hàng theo địa giới hà
 
 <tr>
 <td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:28px;color:#005BAC;font-weight:bold;">
-2️⃣ Bước 2. Chờ HOCMAI xác nhận thông tin
+2️⃣ Bước 2. HOCMAI xác nhận thông tin
 </td>
 </tr>
 
 <tr>
 <td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
-• Trong vòng <strong>02 ngày làm việc</strong> kể từ khi đăng ký, HOCMAI sẽ kiểm tra và xác nhận thông tin
-nhận sách của em.
-<br>
-• Sau khi thông tin được xác nhận hợp lệ, hệ thống sẽ cập nhật trạng thái và thông tin đơn vận chuyển
-tại mục <strong>Đăng ký nhận sách</strong>.
+Trong vòng <strong>02 ngày làm việc</strong> kể từ khi đăng ký, HOCMAI sẽ kiểm tra và xác nhận thông tin nhận sách của em. Sau khi thông tin được xác nhận hợp lệ, hệ thống sẽ cập nhật trạng thái và thông tin đơn vận chuyển tại mục <strong>Nhận sách TopUni</strong>.
 </td>
 </tr>
 
@@ -172,7 +168,7 @@ tại mục <strong>Đăng ký nhận sách</strong>.
 <tr>
 <td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
 Em chủ động theo dõi tình trạng vận chuyển bằng cách kiểm tra mã vận đơn được cập nhật tại mục
-<strong>Đăng ký nhận sách</strong> trên hệ thống.
+<strong>Nhận sách TopUni</strong>.
 </td>
 </tr>
 
@@ -188,7 +184,7 @@ Em chủ động theo dõi tình trạng vận chuyển bằng cách kiểm tra 
 
 <tr>
 <td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
-Khi nhận được sách, em thanh toán <strong style="color:#E53935;">38.000đ</strong> phí vận chuyển
+Khi nhận được sách, người nhận thanh toán <strong style="color:#E53935;">38.000đ</strong> phí vận chuyển
 trực tiếp cho đơn vị giao hàng.
 </td>
 </tr>
@@ -224,8 +220,7 @@ trực tiếp cho đơn vị giao hàng.
 
 <tr>
 <td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
-• Đơn vị vận chuyển sẽ liên hệ với người nhận <strong>02 lần</strong>. Em vui lòng chú ý điện thoại
-để không bỏ lỡ cuộc gọi giao hàng.
+• Đơn vị vận chuyển sẽ liên hệ với người nhận <strong>02 lần</strong>. Em hãy chú ý điện thoại để không bỏ lỡ cuộc gọi giao hàng.
 </td>
 </tr>
 
@@ -233,8 +228,7 @@ trực tiếp cho đơn vị giao hàng.
 
 <tr>
 <td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
-• HOCMAI hỗ trợ giao sách <strong>tối đa 02 lần/học viên</strong>. Vì vậy, em hãy chủ động sắp xếp thời gian
-và đảm bảo có thể nhận hàng theo lịch giao dự kiến.
+• HOCMAI hỗ trợ giao sách <strong>tối đa 02 lần/đơn hàng</strong>. Vì vậy, các em hãy chủ động sắp xếp thời gian nhận hàng để tránh phát sinh việc giao lại.
 </td>
 </tr>
 
