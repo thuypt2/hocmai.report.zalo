@@ -4,3 +4,7 @@ node_modules/
 .vercel
 .jscheck/
 sgroup_test.json
+_rows.json
+_tpl.json
+_d.json
+_l.json
