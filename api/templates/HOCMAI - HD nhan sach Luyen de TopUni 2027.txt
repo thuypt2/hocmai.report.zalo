@@ -58,7 +58,7 @@ Chào <strong>{{ $json.username }}</strong>,
 
 <tr>
 <td style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:30px;color:#333333;text-align:justify;">
-Với <strong>{{ $json.product_name }}</strong> đã đăng ký tại HOCMAI, em sẽ được tặng bộ sách
+Với <strong>Giải pháp {{ $json.product_name }}</strong> đã đăng ký tại HOCMAI, em sẽ được tặng bộ sách
 <strong>Thực chiến Luyện đề</strong> để đồng hành trong giai đoạn Luyện đề.
 </td>
 </tr>
@@ -151,10 +151,10 @@ Em cần cung cấp chính xác địa chỉ nhận hàng theo địa giới hà
 
 <tr>
 <td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
-Trong vòng <strong>02 ngày làm việc</strong> kể từ khi đăng ký, HOCMAI sẽ kiểm tra và xác nhận thông tin
+• Trong vòng <strong>02 ngày làm việc</strong> kể từ khi đăng ký, HOCMAI sẽ kiểm tra và xác nhận thông tin
 nhận sách của em.
 <br>
-Sau khi thông tin được xác nhận hợp lệ, hệ thống sẽ cập nhật trạng thái và thông tin đơn vận chuyển
+• Sau khi thông tin được xác nhận hợp lệ, hệ thống sẽ cập nhật trạng thái và thông tin đơn vận chuyển
 tại mục <strong>Đăng ký nhận sách</strong>.
 </td>
 </tr>
@@ -224,7 +224,7 @@ trực tiếp cho đơn vị giao hàng.
 
 <tr>
 <td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:28px;color:#333333;text-align:justify;">
-• Đơn vị vận chuyển sẽ liên hệ với người nhận <strong>tối thiểu 02 lần</strong>. Em vui lòng chú ý điện thoại
+• Đơn vị vận chuyển sẽ liên hệ với người nhận <strong>02 lần</strong>. Em vui lòng chú ý điện thoại
 để không bỏ lỡ cuộc gọi giao hàng.
 </td>
 </tr>
